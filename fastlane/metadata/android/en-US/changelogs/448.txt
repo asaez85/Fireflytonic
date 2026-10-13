@@ -1,0 +1,3 @@
+This release brings quite a few new features. Most noticeably, the Transaction screen has been revamped completely to make the transaction easier to input and to make from/to clearer - it now behaves more than the Firefly III webinterface.
+
+Full Changelog on GitHub: https://github.com/asaez85/waterfly-fintonic/releases/tag/v1.1.0

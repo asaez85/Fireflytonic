@@ -1,0 +1,90 @@
+name: APK de prueba (Fireflytonic)
+
+# Compila un APK instalable desde la rama main y lo publica como descarga
+# directa en un release "dev" (prerelease). Pensado para probar la app en el
+# móvil sin necesidad de keystore: si no hay key.properties, el build de
+# release se firma con la clave de depuración (ver android/app/build.gradle.kts).
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Preparar entorno Flutter
+        uses: ./.github/actions/setup_env
+        with:
+          java-version: 17.x
+
+      # El runner de GitHub tiene ~7 GB de RAM; el gradle.properties del repo
+      # pide -Xmx8G (pensado para equipos locales) y eso provoca que el SO mate
+      # la JVM (SIGTERM/143). Lo bajamos solo aquí, en el checkout efímero.
+      - name: Ajustar memoria de Gradle para el runner
+        run: |
+          sed -i 's/-Xmx8G/-Xmx4g/; s/MaxMetaspaceSize=4G/MaxMetaspaceSize=1g/' \
+            android/gradle.properties
+          echo "org.gradle.workers.max=2" >> android/gradle.properties
+          cat android/gradle.properties
+
+      # APK de depuración: sin R8/minify (evita el OOM del runner) y firmado
+      # con la clave debug, por lo que es instalable para pruebas.
+      - name: Compilar APK (debug)
+        run: flutter build apk --debug --flavor beta
+
+      - name: Renombrar APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-beta-debug.apk \
+             fireflytonic-build${{ github.run_number }}.apk
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: fireflytonic-apk
+          retention-days: 3
+          path: fireflytonic-build${{ github.run_number }}.apk
+
+      - name: Generar version.json para In-App Updater
+        run: |
+          PUBSPEC_VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //')
+          CLEAN_VERSION=$(echo "$PUBSPEC_VERSION" | cut -d'+' -f1)
+          BUILD_CODE=${{ github.run_number }}
+          cat <<EOF > version.json
+          {
+            "version": "$CLEAN_VERSION (build $BUILD_CODE)",
+            "versionCode": $BUILD_CODE,
+            "apkUrl": "https://github.com/${{ github.repository }}/releases/download/dev/fireflytonic-build$BUILD_CODE.apk",
+            "changelog": "Compilación de prueba dev build $BUILD_CODE de Fireflytonic."
+          }
+          EOF
+
+      - name: Publicar en el release "dev"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev
+          name: Fireflytonic — build de prueba
+          prerelease: true
+          files: |
+            fireflytonic-build${{ github.run_number }}.apk
+            version.json
+          body: |
+            APK de prueba generado automáticamente desde `main`
+            (build ${{ github.run_number }}, commit ${{ github.sha }}).
+
+            Firmado con la clave de depuración, por lo que es instalable.
+            En el móvil, activa "instalar apps de orígenes desconocidos".

@@ -1,0 +1,257 @@
+name: Build and Release
+
+on:
+  release:
+    types:
+      - created
+      - published
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Canal de lanzamiento (stable o beta)"
+        required: true
+        default: "stable"
+        type: choice
+        options:
+          - "stable"
+          - "beta"
+
+env:
+  PROPERTIES_PATH: "./android/key.properties"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  # This job runs the syntax check workflow.
+  check:
+    name: Code Check
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter environment
+        uses: ./.github/actions/setup_env
+        with:
+          java-version: 17.x
+
+      - name: Check for any formatting issues
+        run: dart format --set-exit-if-changed .
+
+      - name: Statically analyze the Dart code
+        run: dart analyze .
+
+      - name: Run flutter tests
+        run: flutter test
+
+  # This job builds the signed Android APKs and uploads them to GitHub Release.
+  build:
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      !contains(github.event.head_commit.message, '[skip build]') &&
+      (needs.check.result == 'success' || needs.check.result == 'skipped')
+    needs: [check]
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter environment
+        uses: ./.github/actions/setup_env
+        with:
+          java-version: 17.x
+
+      - name: Ajustar memoria de Gradle para el runner
+        run: |
+          sed -i 's/-Xmx8G/-Xmx4g/; s/MaxMetaspaceSize=4G/MaxMetaspaceSize=1g/' \
+            android/gradle.properties
+          echo "org.gradle.workers.max=2" >> android/gradle.properties
+          cat android/gradle.properties
+
+      - name: Generate keystore from base64 secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "${{ runner.temp }}/upload-keystore.jks"
+
+      - name: Create key.properties file for signing
+        run: |
+          echo "storeFile=${{ runner.temp }}/upload-keystore.jks" > ${{env.PROPERTIES_PATH}}
+          echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> ${{env.PROPERTIES_PATH}}
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> ${{env.PROPERTIES_PATH}}
+          echo "keyAlias=upload" >> ${{env.PROPERTIES_PATH}}
+
+      - name: Set version and build number
+        id: versioning
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          INPUT_CHANNEL="${{ inputs.channel }}"
+
+          if [[ -n "$INPUT_CHANNEL" ]]; then
+            CHANNEL="$INPUT_CHANNEL"
+          elif [[ "$TAG_NAME" =~ -beta|-rc|-alpha || "$TAG_NAME" == "beta" ]]; then
+            CHANNEL="beta"
+          else
+            CHANNEL="stable"
+          fi
+
+          if [[ -z "$TAG_NAME" || "$TAG_NAME" == "main" || "$TAG_NAME" == "develop" || "$TAG_NAME" == "beta" ]]; then
+            TAG_NAME=$(grep '^version: ' pubspec.yaml | sed 's/version: //')
+          fi
+          CLEAN_VER=$(echo "$TAG_NAME" | sed 's/^v//' | cut -d'+' -f1)
+          BUILD_CODE=${{ github.run_number }}
+          sed -i "s/^version: .*/version: $CLEAN_VER+$BUILD_CODE/" pubspec.yaml
+          echo "channel=$CHANNEL" >> $GITHUB_OUTPUT
+          echo "flavor=$CHANNEL" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "version=$CLEAN_VER" >> $GITHUB_OUTPUT
+          echo "build_code=$BUILD_CODE" >> $GITHUB_OUTPUT
+
+      - name: Generate localization files
+        run: mkdir -p build && flutter gen-l10n
+
+      - name: Build APKs (Release firmados)
+        run: |
+          flutter build apk \
+            --flavor ${{ steps.versioning.outputs.flavor }} \
+            --obfuscate \
+            --split-debug-info=build/app/outputs/symbols/apk \
+            --release \
+            --split-per-abi \
+            --dart-define=cronetHttpNoPlay=true
+
+      - name: Preparar artefactos y version.json
+        id: prepare
+        run: |
+          CHANNEL="${{ steps.versioning.outputs.channel }}"
+          VERSION="${{ steps.versioning.outputs.version }}"
+          BUILD_CODE="${{ steps.versioning.outputs.build_code }}"
+
+          TAG="${{ steps.versioning.outputs.tag }}"
+          GITHUB_REPO="${{ github.repository }}"
+
+          if [[ "$CHANNEL" == "beta" ]]; then
+            PREFIX="fireflytonic-beta"
+            DEST_DIR="${{ secrets.VPS_UPDATE_DIR_BETA }}"
+            UPDATE_URL_BASE="${{ secrets.UPDATE_URL_BASE_BETA || format('https://github.com/{0}/releases/download/{1}', github.repository, steps.versioning.outputs.tag) }}"
+            APP_DISPLAY_NAME="Fireflytonic Beta"
+            IS_PRERELEASE="true"
+          else
+            PREFIX="fireflytonic"
+            DEST_DIR="${{ secrets.VPS_UPDATE_DIR }}"
+            UPDATE_URL_BASE="${{ secrets.UPDATE_URL_BASE || format('https://github.com/{0}/releases/download/{1}', github.repository, steps.versioning.outputs.tag) }}"
+            APP_DISPLAY_NAME="Fireflytonic"
+            IS_PRERELEASE="false"
+          fi
+
+          # Copiar APKs buscando por patron ABI en outputs de flutter-apk
+          cp $(find build/app/outputs/flutter-apk/ -name "*arm64-v8a*release.apk" | head -n 1) "${PREFIX}-arm64-v8a.apk"
+          cp $(find build/app/outputs/flutter-apk/ -name "*armeabi-v7a*release.apk" | head -n 1) "${PREFIX}-armeabi-v7a.apk"
+          cp $(find build/app/outputs/flutter-apk/ -name "*x86_64*release.apk" | head -n 1) "${PREFIX}-x86_64.apk"
+
+          python3 - << 'EOF'
+          import json, os, re
+
+          version = "${{ steps.versioning.outputs.version }}"
+          build_code = "${{ steps.versioning.outputs.build_code }}"
+          arm64_code = int(build_code) * 10 + 3
+          channel = "${{ steps.versioning.outputs.channel }}"
+          prefix = "fireflytonic-beta" if channel == "beta" else "fireflytonic"
+          update_url_base = os.environ.get("UPDATE_URL_BASE", f"https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'asaez85/Fireflytonic')}/releases/download/${{ steps.versioning.outputs.tag }}")
+          display_name = "Fireflytonic Beta" if channel == "beta" else "Fireflytonic"
+
+          changelog = ""
+          if os.path.exists("CHANGELOG.md"):
+              with open("CHANGELOG.md", "r", encoding="utf-8") as f:
+                  content = f.read()
+              pattern = rf"##\s*\[?{re.escape(version)}\]?[^\n]*\n([\s\S]*?)(?=\n##\s|\Z)"
+              match = re.search(pattern, content)
+              if match:
+                  changelog = match.group(1).strip()
+
+          if not changelog:
+              changelog = f"Versión {channel} {version} de {display_name}."
+
+          data = {
+              "version": f"{version} (build {build_code})",
+              "versionCode": arm64_code,
+              "apkUrl": f"{update_url_base}/{prefix}-arm64-v8a.apk",
+              "changelog": changelog
+          }
+
+          with open("version.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+
+          with open("release_notes.txt", "w", encoding="utf-8") as f:
+              f.write(changelog)
+          EOF
+
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "prefix=$PREFIX" >> $GITHUB_OUTPUT
+          echo "dest_dir=$DEST_DIR" >> $GITHUB_OUTPUT
+          echo "display_name=$APP_DISPLAY_NAME" >> $GITHUB_OUTPUT
+          cat version.json
+
+      - name: Subir APKs como artefactos
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: ${{ steps.prepare.outputs.prefix }}-release-apks
+          retention-days: 3
+          path: |
+            ${{ steps.prepare.outputs.prefix }}-arm64-v8a.apk
+            ${{ steps.prepare.outputs.prefix }}-armeabi-v7a.apk
+            ${{ steps.prepare.outputs.prefix }}-x86_64.apk
+            version.json
+
+      - name: Publicar en GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/beta'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versioning.outputs.tag }}
+          files: |
+            ${{ steps.prepare.outputs.prefix }}-arm64-v8a.apk
+            ${{ steps.prepare.outputs.prefix }}-armeabi-v7a.apk
+            ${{ steps.prepare.outputs.prefix }}-x86_64.apk
+            version.json
+          name: ${{ steps.prepare.outputs.display_name }} v${{ steps.versioning.outputs.version }}
+          body_path: release_notes.txt
+          draft: false
+          prerelease: ${{ steps.prepare.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true
+
+      - name: Desplegar en servidor de updates (Opcional/Personal)
+        if: (startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/beta') && env.VPS_HOST != '' && env.VPS_SSH_KEY != ''
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          PREFIX: ${{ steps.prepare.outputs.prefix }}
+          DEST_DIR: ${{ steps.prepare.outputs.dest_dir }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          PORT="${VPS_PORT:-22}"
+          DEST="${DEST_DIR:-/opt/docker/updates/html/${PREFIX}/}"
+          echo "Desplegando APKs y version.json a $VPS_USER@$VPS_HOST:$DEST ..."
+          scp -P "$PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            ${PREFIX}-arm64-v8a.apk \
+            ${PREFIX}-armeabi-v7a.apk \
+            ${PREFIX}-x86_64.apk \
+            version.json \
+            "$VPS_USER@$VPS_HOST:$DEST"
+          rm -f ~/.ssh/deploy_key
+          echo "Despliegue completado con éxito."

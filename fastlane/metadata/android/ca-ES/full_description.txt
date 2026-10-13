@@ -1,0 +1,17 @@
+Fireflytonic és una aplicació no oficial per a la teva instància de Firefly III, un gestor de finances gratuït i de codi obert.
+
+Aquesta aplicació necessita una instància pròpia de Firefly III, si us plau, visita https://www.firefly-iii.org sobre el programari. Es tracta d'una aplicació complementària que no pot funcionar per si sola!
+
+Característiques:
+
+- Quadre amb resum i gràfics del pressupost
+- Llista de transaccions amb filtres
+- Afegeix i edita transaccions amb autocompletat, inclusió d'adjunts, transaccions fraccionades i suport per múltiples divises
+- Suport per a Piggy Bank (veure i afegir diners)
+- Servei de Seguiment de Notificacions (Notification Listener Service) per crear noves transaccions fàcilment a partir de les notificacions entrants (p. ex., de Google Pay o l'aplicació del teu banc)
+- Completament de codi obert: https://github.com/asaez85/Fireflytonic
+- Sense anuncis monitoratge
+
+Contribuir:
+
+Si descobreixes un error o trobes a faltar alguna característica, no dubtis a deixar comentaris a la botiga d'aplicacions, enviar-me un correu electrònic, o obrir una incidència a GitHub.

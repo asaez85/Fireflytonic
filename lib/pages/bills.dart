@@ -1,0 +1,663 @@
+import 'package:animations/animations.dart';
+import 'package:chopper/chopper.dart' show Response;
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart' show SortingOrder;
+import 'package:waterflyiii/auth.dart';
+import 'package:waterflyiii/extensions.dart';
+import 'package:waterflyiii/generated/l10n/app_localizations.dart';
+import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
+import 'package:waterflyiii/pages/bills/billdetails.dart';
+import 'package:waterflyiii/pages/navigation.dart';
+import 'package:waterflyiii/settings.dart';
+import 'package:waterflyiii/theme.dart';
+import 'package:waterflyiii/timezonehandler.dart';
+
+class BillsPage extends StatefulWidget {
+  const BillsPage({super.key});
+
+  @override
+  State<BillsPage> createState() => _BillsPageState();
+}
+
+enum BillsLayout { grouped, list }
+
+enum BillsSort { name, frequency }
+
+class _BillsPageState extends State<BillsPage>
+    with SingleTickerProviderStateMixin {
+  final Logger log = Logger("Pages.Bills");
+  late SettingsProvider _settings;
+  late TimeZoneHandler _tzHandler;
+
+  BillsLayout get _billsLayout => _settings.billsLayout;
+  set _billsLayout(BillsLayout value) {
+    _settings.setBillsLayout(value);
+  }
+
+  BillsSort get _billsSort => _settings.billsSort;
+  set _billsSort(BillsSort value) {
+    _settings.setBillsSort(value);
+  }
+
+  SortingOrder get _billsSortOrder => _settings.billsSortOrder;
+  set _billsSortOrder(SortingOrder value) {
+    _settings.setBillsSortOrder(value);
+  }
+
+  bool get _showOnlyActiveBills => _settings.billsShowOnlyActive;
+  set _showOnlyActiveBills(bool visibility) {
+    _settings.billsShowOnlyActive = visibility;
+  }
+
+  bool get _showOnlyExpectedBills => _settings.billsShowOnlyExpected;
+  set _showOnlyExpectedBills(bool showOnlyExpected) {
+    _settings.billsShowOnlyExpected = showOnlyExpected;
+  }
+
+  Future<Map<String, List<BillRead>>>? _billsFuture;
+  Map<String, List<BillRead>>? _cachedBills;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _settings = context.read<SettingsProvider>();
+    _tzHandler = context.read<FireflyService>().tzHandler;
+    _billsFuture = _fetchBills();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+    });
+    try {
+      final Map<String, List<BillRead>> bills = await _fetchBills();
+      if (mounted) {
+        setState(() {
+          _cachedBills = bills;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    log.finest(() => "build()");
+    context.watch<SettingsProvider>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NavPageElements>().appBarActions = <Widget>[
+        IconButton(
+          icon: const Icon(Icons.settings),
+          tooltip: S.of(context).generalSettings,
+          onPressed: _showSettingsDialog,
+        ),
+        if (_billsLayout == .list)
+          IconButton(
+            icon: const Icon(Icons.sort),
+            tooltip: S.of(context).billsChangeSortOrderTooltip,
+            onPressed: _showSortOrderPickerDialog,
+          ),
+        IconButton(
+          icon: _billsLayout == .list
+              ? const Icon(Icons.table_rows_outlined)
+              : const Icon(Icons.view_agenda_outlined),
+          tooltip: S.of(context).billsChangeLayoutTooltip,
+          onPressed: _showLayoutPickerDialog,
+        ),
+      ];
+    });
+
+    final Widget content;
+    if (_cachedBills != null) {
+      content = Padding(
+        padding: const .fromLTRB(8, 0, 8, 8),
+        child: _billsLayout == .list
+            ? _listBuilder(_cachedBills!)
+            : _groupBuilder(_cachedBills!),
+      );
+    } else {
+      content = FutureBuilder<Map<String, List<BillRead>>>(
+        future: _billsFuture,
+        builder:
+            (
+              BuildContext context,
+              AsyncSnapshot<Map<String, List<BillRead>>> snapshot,
+            ) {
+              if (snapshot.connectionState == .waiting) {
+                return const Center(
+                  child: CircularProgressIndicator.adaptive(),
+                );
+              }
+              if (snapshot.hasError ||
+                  !snapshot.hasData ||
+                  snapshot.data == null) {
+                log.severe(
+                  "error fetching bills",
+                  snapshot.error,
+                  snapshot.stackTrace,
+                );
+                return Center(
+                  child: Text(
+                    S.of(context).billsErrorLoading,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                );
+              }
+              _cachedBills = snapshot.data;
+              return Padding(
+                padding: const .fromLTRB(8, 0, 8, 8),
+                child: _billsLayout == .list
+                    ? _listBuilder(snapshot.data!)
+                    : _groupBuilder(snapshot.data!),
+              );
+            },
+      );
+    }
+
+    final Widget refreshList = RefreshIndicator.adaptive(
+      onRefresh: _handleRefresh,
+      child: content,
+    );
+
+    if (_isRefreshing) {
+      return Column(
+        children: <Widget>[
+          LinearProgressIndicator(
+            minHeight: 2.5,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          Expanded(child: refreshList),
+        ],
+      );
+    }
+    return refreshList;
+  }
+
+  Widget _listBuilder(Map<String, List<BillRead>> groupedBills) {
+    final List<BillRead> billList = groupedBills.values
+        .expand((List<BillRead> x) => x)
+        .toList();
+
+    switch (_billsSort) {
+      case .name:
+        billList.sort(
+          (BillRead a, BillRead b) => _billsSortOrder == SortingOrder.ascending
+              ? a.attributes.name!.compareTo(b.attributes.name!)
+              : b.attributes.name!.compareTo(a.attributes.name!),
+        );
+      case .frequency:
+        billList.sort(
+          (BillRead a, BillRead b) => _billsSortOrder == SortingOrder.ascending
+              ? Enum.compareByIndex(
+                  a.attributes.repeatFreq!,
+                  b.attributes.repeatFreq!,
+                )
+              : Enum.compareByIndex(
+                  b.attributes.repeatFreq!,
+                  a.attributes.repeatFreq!,
+                ),
+        );
+    }
+
+    return ListView.builder(
+      itemCount: billList.length,
+      itemBuilder: (BuildContext _, int i) => _billRowBuilder(billList[i]),
+    );
+  }
+
+  Widget _groupBuilder(Map<String, List<BillRead>> groupedBills) {
+    return ListView(
+      cacheExtent: 1000,
+      children: <Widget>[
+        ...groupedBills.keys.map(
+          (String groupName) => Card(
+            clipBehavior: .hardEdge,
+            child: ExpansionTile(
+              title: Text(
+                groupName,
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              initiallyExpanded: true,
+              collapsedShape: const RoundedRectangleBorder(
+                borderRadius: .all(Radius.circular(12)),
+              ),
+              shape: const RoundedRectangleBorder(
+                borderRadius: .all(Radius.circular(12)),
+              ),
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: const .only(
+                      bottomRight: .circular(12),
+                      bottomLeft: .circular(12),
+                    ),
+                  ),
+                  child: Column(
+                    children: groupedBills[groupName]!
+                        .map((BillRead bill) => _billRowBuilder(bill))
+                        .toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _billRowBuilder(BillRead bill) {
+    return OpenContainer(
+      openBuilder: (BuildContext context, Function closedContainer) =>
+          BillDetails(bill: bill),
+      openColor: _billsLayout == .list
+          ? Theme.of(context).cardColor
+          : Theme.of(context).colorScheme.surfaceContainerHighest,
+      closedColor: _billsLayout == .list
+          ? Theme.of(context).cardColor
+          : Theme.of(context).colorScheme.surfaceContainerHighest,
+      closedShape: RoundedRectangleBorder(
+        borderRadius: _billsLayout == .list
+            ? const .only(topLeft: .circular(16), bottomLeft: .circular(16))
+            : const .all(.circular(12)),
+      ),
+      closedElevation: 0,
+      closedBuilder: (BuildContext context, Function openContainer) => ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.receipt_outlined)),
+        title: Text(bill.attributes.name!, maxLines: 1, overflow: .ellipsis),
+        titleTextStyle:
+            ListTileTheme.of(context).titleTextStyle ??
+            Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: bill.attributes.active ?? false
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).disabledColor,
+            ),
+        subtitle: Text(
+          S
+              .of(context)
+              .billsFrequencySkip(
+                bill.attributes.repeatFreq.toString(),
+                bill.attributes.skip ?? 0,
+              ),
+          maxLines: 2,
+        ),
+        subtitleTextStyle:
+            ListTileTheme.of(context).subtitleTextStyle ??
+            Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: bill.attributes.active ?? false
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).disabledColor,
+            ),
+        shape: RoundedRectangleBorder(
+          borderRadius: _billsLayout == .list
+              ? const .only(topLeft: .circular(16), bottomLeft: .circular(16))
+              : const .all(.circular(12)),
+        ),
+        isThreeLine: false,
+        trailing: RichText(
+          textAlign: .end,
+          maxLines: 2,
+          text: TextSpan(
+            style: Theme.of(context).textTheme.bodyMedium,
+            children: <InlineSpan>[
+              TextSpan(
+                text: _getAverageBillAmount(bill),
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  color: FtColors.coralOf(context),
+                  fontFeatures: const <FontFeature>[.tabularFigures()],
+                ),
+              ),
+              const TextSpan(text: "\n"),
+              _getExpectedDate(bill),
+            ],
+          ),
+        ),
+        onTap: () => openContainer(),
+      ),
+    );
+  }
+
+  String _getAverageBillAmount(BillRead item) {
+    final double min = double.tryParse(item.attributes.amountMin ?? "0") ?? 0;
+    final double max = double.tryParse(item.attributes.amountMax ?? "0") ?? 0;
+
+    final CurrencyRead currency = CurrencyRead(
+      id: "0",
+      type: "currencies",
+      attributes: CurrencyProperties(
+        code: item.attributes.currencyCode ?? "",
+        name: "",
+        symbol: item.attributes.currencySymbol ?? "",
+        decimalPlaces: item.attributes.currencyDecimalPlaces,
+      ),
+    );
+
+    return "${min != max ? "~ " : ""}${currency.fmt((min + max) / 2, context: context)}";
+  }
+
+  TextSpan _getExpectedDate(BillRead item) {
+    // Bill is inactive
+    if (!(item.attributes.active ?? false)) {
+      return TextSpan(
+        text: S.of(context).billsInactive,
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).disabledColor),
+      );
+    }
+    // Bill was paid this period
+    if (item.attributes.paidDates?.isNotEmpty ?? false) {
+      return TextSpan(
+        text: S
+            .of(context)
+            .billsPaidOn(
+              _tzHandler.sTime(item.attributes.paidDates!.last.date!).toLocal(),
+            ),
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    }
+    // Bill expected this period
+    if (item.attributes.nextExpectedMatch != null) {
+      return TextSpan(
+        text: S
+            .of(context)
+            .billsExpectedOn(
+              _tzHandler.sTime(item.attributes.nextExpectedMatch!).toLocal(),
+            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall!.copyWith(color: FtColors.warningOf(context)),
+      );
+    }
+
+    // Bill not expected this period
+    return TextSpan(
+      text: S.of(context).billsNotExpected,
+      style: Theme.of(context).textTheme.bodySmall,
+    );
+  }
+
+  void _showLayoutPickerDialog() => showModalBottomSheet<void>(
+    context: context,
+    builder: (BuildContext context) => SafeArea(
+      child: SingleChildScrollView(
+        child: ListBody(
+          children: <Widget>[
+            const SizedBox(height: 8),
+            ListTile(
+              leading: _billsLayout == .grouped
+                  ? const Icon(Icons.view_agenda)
+                  : const Icon(Icons.view_agenda_outlined),
+              title: Text(
+                S.of(context).billsLayoutGroupTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge!.copyWith(fontWeight: .bold),
+              ),
+              subtitle: Text(
+                S.of(context).billsLayoutGroupSubtitle,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: _billsLayout == .grouped
+                  ? const Icon(Icons.check)
+                  : const SizedBox.shrink(),
+              onTap: () => setState(() {
+                _billsLayout = .grouped;
+                Navigator.pop(context);
+              }),
+            ),
+            const Divider(indent: 8, endIndent: 8),
+            ListTile(
+              leading: _billsLayout == .list
+                  ? const Icon(Icons.table_rows)
+                  : const Icon(Icons.table_rows_outlined),
+              title: Text(
+                S.of(context).billsLayoutListTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge!.copyWith(fontWeight: .bold),
+              ),
+              subtitle: Text(
+                S.of(context).billsLayoutListSubtitle,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: _billsLayout == .list
+                  ? const Icon(Icons.check)
+                  : const SizedBox.shrink(),
+              onTap: () => setState(() {
+                _billsLayout = .list;
+                _billsSort = .name;
+                _billsSortOrder = .ascending;
+                Navigator.pop(context);
+              }),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  void _showSortOrderPickerDialog() => showModalBottomSheet<void>(
+    context: context,
+    builder: (BuildContext context) => SafeArea(
+      child: SingleChildScrollView(
+        child: ListBody(
+          children: <Widget>[
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.sort),
+              title: Text(
+                S.of(context).billsSortName,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge!.copyWith(fontWeight: .bold),
+              ),
+              subtitle: Text(
+                S.of(context).billsSortAlphabetical,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: _billsSort == .name
+                  ? _billsSortOrder == .ascending
+                        ? const Icon(Icons.north)
+                        : const Icon(Icons.south)
+                  : const SizedBox.shrink(),
+              onTap: () => _onSortSelected(.name),
+            ),
+            const Divider(indent: 8, endIndent: 8),
+            ListTile(
+              leading: const Icon(Icons.sort),
+              title: Text(
+                S.of(context).billsSortFrequency,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge!.copyWith(fontWeight: .bold),
+              ),
+              subtitle: Text(
+                S.of(context).billsSortByTimePeriod,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: _billsSort == .frequency
+                  ? _billsSortOrder == .ascending
+                        ? const Icon(Icons.north)
+                        : const Icon(Icons.south)
+                  : const SizedBox.shrink(),
+              onTap: () => _onSortSelected(.frequency),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  void _showSettingsDialog() => showModalBottomSheet<void>(
+    context: context,
+    builder: (BuildContext context) => SafeArea(
+      child: SingleChildScrollView(
+        child: ListBody(
+          children: <Widget>[
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.visibility),
+              title: Text(
+                S.of(context).billsSettingsShowOnlyActive,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge!.copyWith(fontWeight: .bold),
+              ),
+              subtitle: Text(
+                S.of(context).billsSettingsShowOnlyActiveDesc,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: Switch(
+                value: _showOnlyActiveBills,
+                onChanged: _onShowOnlyActiveBillsToggled,
+              ),
+            ),
+            const Divider(indent: 8, endIndent: 8),
+            ListTile(
+              leading: const Icon(Icons.visibility),
+              title: Text(
+                S.of(context).billsSettingsShowOnlyExpected,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge!.copyWith(fontWeight: .bold),
+              ),
+              subtitle: Text(
+                S.of(context).billsSettingsShowOnlyExpectedDesc,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: Switch(
+                value: _showOnlyExpectedBills,
+                onChanged: _onShowOnlyExpectedBillsToggled,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  void _onShowOnlyActiveBillsToggled(bool value) {
+    setState(() {
+      _showOnlyActiveBills = value;
+    });
+    Navigator.pop(context);
+  }
+
+  void _onShowOnlyExpectedBillsToggled(bool value) {
+    setState(() {
+      _showOnlyExpectedBills = value;
+    });
+    Navigator.pop(context);
+  }
+
+  void _onSortSelected(BillsSort newSort) {
+    setState(() {
+      if (_billsSort == newSort) {
+        _billsSortOrder = _billsSortOrder == .ascending
+            ? SortingOrder.descending
+            : SortingOrder.ascending;
+      } else {
+        _billsSort = newSort;
+        _billsSortOrder = .ascending;
+      }
+    });
+    Navigator.pop(context);
+  }
+
+  Future<Map<String, List<BillRead>>> _fetchBills() async {
+    final FireflyIii api = context.read<FireflyService>().api;
+    // Start date set to first day of this month (period)
+    final DateTime start = DateTime.now().copyWith(day: 1);
+    // End date set to first day of upcoming month (period)
+    final DateTime end = start.copyWith(month: start.month + 1);
+    final List<BillRead> bills = <BillRead>[];
+    late Response<BillArray> response;
+    int pageNumber = 0;
+
+    do {
+      pageNumber += 1;
+      response = await api.v1BillsGet(
+        page: pageNumber,
+        start: DateFormat('yyyy-MM-dd', 'en_US').format(start),
+        end: DateFormat('yyyy-MM-dd', 'en_US').format(end),
+      );
+      apiThrowErrorIfEmpty(response, mounted ? context : null);
+
+      bills.addAll(response.body!.data);
+    } while ((response.body!.meta.pagination?.currentPage ?? 1) <
+        (response.body!.meta.pagination?.totalPages ?? 1));
+
+    bills.sort(
+      (BillRead a, BillRead b) => (a.attributes.objectGroupOrder ?? 0)
+          .compareTo(b.attributes.objectGroupOrder ?? 0),
+    );
+    final Map<String, List<BillRead>> billsMap = <String, List<BillRead>>{};
+
+    for (BillRead bill in bills) {
+      if (_showOnlyActiveBills && !(bill.attributes.active ?? true)) {
+        // Do not show the bill if it is inactive and the user elected to hide
+        // inactive bills
+        continue;
+      }
+
+      if (_showOnlyExpectedBills &&
+          bill.attributes.nextExpectedMatch == null &&
+          bill.attributes.paidDates!.isEmpty) {
+        // Do not show the bill if it is not expected this cycle and the user
+        // elected to hide all those bills that are not expected
+        continue;
+      }
+
+      final String key =
+          bill.attributes.objectGroupTitle ??
+          (mounted ? S.of(context).billsUngrouped : "");
+      if (!billsMap.containsKey(key)) {
+        billsMap[key] = <BillRead>[];
+      }
+
+      billsMap[key]!.add(bill);
+    }
+
+    return billsMap;
+  }
+}

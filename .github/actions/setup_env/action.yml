@@ -1,0 +1,48 @@
+name: Setup Flutter environment
+description: This action sets up a Flutter development environment. It installs Java, Flutter, and fetches all the project dependencies.
+inputs:
+  java-version:
+    description: 'The version of Java to be installed. e.g. 17'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Free disk space
+      run: |
+        echo "Espacio antes de limpiar:"
+        df -h /
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo rm -rf /usr/local/lib/android/sdk/ndk
+        sudo docker image prune --all --force 2>/dev/null || true
+        echo "Espacio tras limpiar:"
+        df -h /
+      shell: bash
+
+    - name: Setup Java
+      uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      with:
+        distribution: 'zulu'
+        java-version: ${{inputs.java-version}}
+        cache: ${{ runner.environment != 'self-hosted' && 'gradle' || '' }}
+
+    - name: Read Flutter version
+      id: read_flutter_version
+      run: echo "VERSION=$(cat fastlane/metadata/android/flutter-version.txt)" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      with:
+        flutter-version: ${{ steps.read_flutter_version.outputs.VERSION }}
+        cache: ${{ runner.environment != 'self-hosted' }}
+
+    - name: Disable Dart Analytics
+      run: dart --disable-analytics
+      shell: bash
+
+    - name: Get dependencies
+      run: flutter pub get
+      shell: bash

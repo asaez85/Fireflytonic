@@ -1,0 +1,15 @@
+.git
+.github
+.dart_tool
+.gradle
+build
+android
+ios
+linux
+windows
+macos
+test
+.idea
+.vscode
+*.apk
+*.aab
