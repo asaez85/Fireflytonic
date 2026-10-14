@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.2 (build 10)",
-  "versionCode": 103,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.2/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Mejoras\n- **Logo de Fireflytonic en menú lateral**: Se sustituye el icono genérico de la copa por el logotipo oficial de Fireflytonic junto al nombre de la app en la cabecera del menú lateral."
+  "version": "3.0.8-beta.3 (build 63)",
+  "versionCode": 633,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.3/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Novedades y Mejoras\n- **Acción para quitar filtros**: En la pantalla de búsqueda y filtros, se añade la acción rápida \"Quitar filtros\" para restablecer todos los criterios de búsqueda con un solo toque.\n- **Exportación de movimientos a CSV**: Nueva pantalla y servicio para exportar movimientos filtrados por rango de fechas y cuentas/tarjetas a archivo CSV."
 }

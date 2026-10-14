@@ -2,6 +2,11 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.3] - 2026-10-14
+### Novedades y Mejoras
+- **Acción para quitar filtros**: En la pantalla de búsqueda y filtros, se añade la acción rápida "Quitar filtros" (con acceso directo en la barra superior, píldora destacada en la fila de filtros y botón en la vista vacía) para restablecer todos los criterios de búsqueda con un solo toque.
+- **Exportación de movimientos a CSV**: Nueva pantalla y servicio para exportar movimientos filtrados por rango de fechas y cuentas/tarjetas a archivo CSV con formato español y codificación UTF-8 con BOM.
+
 ## [3.0.8-beta.2] - 2026-10-14
 ### Mejoras
 - **Logo de Fireflytonic en menú lateral**: Se sustituye el icono genérico de la copa por el logotipo oficial de Fireflytonic junto al nombre de la app en la cabecera del menú lateral.
