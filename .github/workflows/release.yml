@@ -168,7 +168,7 @@ jobs:
           arm64_code = int(build_code) * 10 + 3
           channel = "${{ steps.versioning.outputs.channel }}"
           prefix = "fireflytonic-beta" if channel == "beta" else "fireflytonic"
-          update_url_base = os.environ.get("UPDATE_URL_BASE", f"https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'asaez85/waterfly-fintonic')}/releases/download/${{ steps.versioning.outputs.tag }}")
+          update_url_base = os.environ.get("UPDATE_URL_BASE", f"https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'asaez85/Fireflytonic')}/releases/download/${{ steps.versioning.outputs.tag }}")
           display_name = "Fireflytonic Beta" if channel == "beta" else "Fireflytonic"
 
           changelog = ""

@@ -2,6 +2,11 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.7] - 2026-10-14
+### Novedades y Mejoras
+- **Lanzamiento oficial en nuevo repositorio**: Configuración del pipeline de release y firma con claves de producción en el repositorio público Fireflytonic.
+- **Sincronización de versiones y URLs**: Alineación de enlaces de documentación, comprobación de actualizaciones y constantes de versión en la app.
+
 ## [3.0.6] - 2026-10-13
 ### Novedades y Mejoras
 - **Importación bancaria desde la app**: Nueva pantalla en Ajustes para ejecutar el importador de Firefly III por fuente (BBVA, Trade Republic), con configuración de intervalo mínimo, límite de consultas, pausa tras error 429 y conciliación de transferencias.
