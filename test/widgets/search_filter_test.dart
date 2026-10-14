@@ -34,6 +34,27 @@ void main() {
       expect(filters.hasFilters, isFalse);
       expect(filters.accounts, isEmpty);
     });
+
+    test('reset clears all filters including dates, text and budget', () {
+      final TransactionFilters filters = TransactionFilters();
+      filters.text = 'Supermercado';
+      filters.start = DateTime(2026, 1, 1);
+      filters.end = DateTime(2026, 1, 31);
+      filters.budget = const BudgetRead(
+        id: '1',
+        type: 'budgets',
+        attributes: BudgetProperties(name: 'Comida'),
+      );
+      filters.updateFilters();
+      expect(filters.hasFilters, isTrue);
+
+      filters.reset();
+      expect(filters.hasFilters, isFalse);
+      expect(filters.text, isNull);
+      expect(filters.start, isNull);
+      expect(filters.end, isNull);
+      expect(filters.budget, isNull);
+    });
   });
 
   group('DateFilterSheet Widget Tests', () {

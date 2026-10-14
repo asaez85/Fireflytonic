@@ -39,6 +39,31 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
   List<AccountRead> _selectedAccounts = <AccountRead>[];
   BudgetRead? _selectedBudget;
 
+  bool get _hasActiveFilters =>
+      _searchController.text.trim().isNotEmpty ||
+      _startDate != null ||
+      _endDate != null ||
+      _selectedCategories.isNotEmpty ||
+      _selectedAccounts.isNotEmpty ||
+      _selectedBudget != null;
+
+  void _clearFilters() {
+    _debounceTimer?.cancel();
+    setState(() {
+      _searchController.clear();
+      _startDate = null;
+      _endDate = null;
+      _dateLabel = "Fecha";
+      _selectedCategories = <CategoryRead>[];
+      _selectedAccounts = <AccountRead>[];
+      _selectedBudget = null;
+    });
+    if (widget.initialFilters != null) {
+      widget.initialFilters!.reset();
+    }
+    unawaited(_fetchResults());
+  }
+
   // Results state
   bool _isLoading = false;
   String? _error;
@@ -82,6 +107,7 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
   }
 
   void _onSearchChanged(String _) {
+    setState(() {});
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 350), () {
       _fetchResults();
@@ -327,7 +353,9 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                                 ? IconButton(
                                     icon: const Icon(Icons.clear, size: 18),
                                     onPressed: () {
-                                      _searchController.clear();
+                                      setState(() {
+                                        _searchController.clear();
+                                      });
                                       _fetchResults();
                                     },
                                   )
@@ -339,6 +367,15 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                         ),
                       ),
                     ),
+                    if (_hasActiveFilters) ...<Widget>[
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: const Icon(Icons.filter_alt_off_outlined),
+                        tooltip: "Quitar filtros",
+                        color: FtColors.coralOf(context),
+                        onPressed: _clearFilters,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -353,6 +390,10 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: <Widget>[
+                      if (_hasActiveFilters) ...<Widget>[
+                        _buildClearFiltersPill(context),
+                        const SizedBox(width: 8),
+                      ],
                       // Pill: Fecha
                       _buildFilterPill(
                         context,
@@ -503,6 +544,25 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                                 color: isDark ? Colors.white70 : FtColors.navy,
                               ),
                             ),
+                            if (_hasActiveFilters) ...<Widget>[
+                              const SizedBox(height: 16),
+                              OutlinedButton.icon(
+                                onPressed: _clearFilters,
+                                icon: const Icon(
+                                  Icons.filter_alt_off_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text("Quitar filtros"),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: FtColors.coralOf(context),
+                                  side: BorderSide(
+                                    color: FtColors.coralOf(
+                                      context,
+                                    ).withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       )
@@ -510,6 +570,38 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClearFiltersPill(BuildContext context) {
+    final Color coral = FtColors.coralOf(context);
+
+    return InkWell(
+      onTap: _clearFilters,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: coral.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: coral.withValues(alpha: 0.4), width: 1.2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.filter_alt_off_outlined, size: 15, color: coral),
+            const SizedBox(width: 6),
+            Text(
+              "Quitar filtros",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: coral,
+              ),
+            ),
+          ],
         ),
       ),
     );

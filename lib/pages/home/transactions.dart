@@ -16,6 +16,7 @@ import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.enums.s
     as enums;
 import 'package:waterflyiii/offline_cache.dart';
 import 'package:waterflyiii/pages/home.dart';
+import 'package:waterflyiii/pages/home/transactions/export_page.dart';
 import 'package:waterflyiii/pages/home/transactions/filter.dart';
 import 'package:waterflyiii/pages/home/transactions/search_page.dart';
 import 'package:waterflyiii/pages/transaction.dart';
@@ -463,6 +464,17 @@ class HomeTransactionsState extends State<HomeTransactions>
                 settings.hideTags = !settings.hideTags;
                 _tagsHidden.value = settings.hideTags;
               },
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: "Exportar movimientos",
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) =>
+                    const ExportTransactionsPage(),
+              ),
             ),
           ),
           ChangeNotifierProvider<TransactionFilters>.value(
