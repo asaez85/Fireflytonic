@@ -20,7 +20,6 @@ import 'package:waterflyiii/generated/l10n/app_localizations.dart';
 import 'package:waterflyiii/notificationlistener.dart';
 import 'package:waterflyiii/pages/settings/connection.dart';
 import 'package:waterflyiii/pages/settings/debug.dart';
-import 'package:waterflyiii/pages/settings/importer.dart';
 import 'package:waterflyiii/pages/settings/notifications.dart';
 import 'package:waterflyiii/settings.dart';
 import 'package:waterflyiii/updater.dart';
@@ -130,21 +129,6 @@ class SettingsPageState extends State<SettingsPage>
             showDialog<void>(
               context: context,
               builder: (BuildContext context) => const ConnectionDialog(),
-            );
-          },
-        ),
-        ListTile(
-          title: const Text("Importación bancaria"),
-          subtitle: const Text(
-            "Ejecutar el importador, ver última importación y registro",
-          ),
-          leading: const CircleAvatar(child: Icon(Icons.account_balance)),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (BuildContext context) => const SettingsImporter(),
-              ),
             );
           },
         ),

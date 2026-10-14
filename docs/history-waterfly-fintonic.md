@@ -1,0 +1,145 @@
+# Historial y Registro de Commits: waterfly-fintonic (Archivado)
+
+Este documento preserva la trazabilidad histórica de desarrollo del repositorio original `asaez85/waterfly-fintonic` (archivado en modo solo lectura tras la migración a `Fireflytonic`).
+
+---
+
+## Hitos y Versiones Principales
+
+- **v3.0.7-beta.1 / v3.0.8-beta.1 (2026-10-14)**:
+  - Mover opción de importación bancaria desde Ajustes directamente al menú lateral principal (drawer/rail).
+- **v3.0.7 (2026-10-14)**:
+  - Lanzamiento oficial en el nuevo repositorio `Fireflytonic`.
+  - Pipeline de CI/CD para releases y firmas automatizadas.
+- **v3.0.6 (2026-10-13)**:
+  - Pantalla dedicada de importación bancaria en la app con protección de límites de peticiones (Enable Banking) y registro de importaciones.
+  - Servicio desacoplado `fireflytonic-import-runner`.
+  - Sanitización de configuraciones personales y parametrización de URLs.
+- **v3.0.5 (2026-10-11)**:
+  - Modo de privacidad (botón de ojo para enmascarar importes financieros).
+  - Ordenación de presupuestos por límite asignado.
+  - Soporte de canal beta con flavors (`com.asaezs.fireflytonic.beta`).
+- **v3.0.0 – v3.0.4 (2026-10-08 / 2026-10-09)**:
+  - Integración completa del sistema de presupuestos (generador inteligente, presupuestos históricos, reglas retroactivas, filtros).
+- **v2.0.0 – v2.3.6 (2026-10-05 / 2026-10-08)**:
+  - Interfaz de búsqueda y filtros estilo Fintonic.
+  - Nuevo diseño de análisis gráfico (barras mensuales compactas, filtros rápidos gastos/ingresos).
+  - Identidad de marca, logos adaptativos, nuevo tema Material 3 (Navy + Coral).
+- **v1.3.0 – v1.3.8 (2026-10-04 / 2026-10-05)**:
+  - In-App Updater integrado con consulta remota y descarga de APK.
+  - Navegación filtrada por cuenta y saldos corrientes por movimiento.
+- **Base Inicial (2026-06-14 – 2026-08-26)**:
+  - Fork inicial de `waterfly-iii` adaptado a la estética de Fintonic.
+
+---
+
+## Registro Cronológico Completo de Commits
+
+- **1a956ac** (2026-10-14): chore: add version.json for in-app updater on beta [skip ci]
+- **1b7ed21** (2026-10-14): chore(release): bump version to 3.0.7-beta.1+60
+- **0c09143** (2026-10-14): feat(navigation): move bank import option from settings to side drawer
+- **9931d24** (2026-10-13): chore(release): merge beta a main y preparar v3.0.6 estable
+- **abe838d** (2026-10-13): refactor: sanitizar configuraciones personales, CI y parametrizar URLs de actualizacion
+- **9cab083** (2026-10-13): ci(release): aumentar timeout del job build a 60m para runner self-hosted
+- **ad95cb1** (2026-10-13): ci: exportar paths de Flutter en runner self-hosted sin pasar por subosito
+- **2161070** (2026-10-13): ci: usar herramientas preinstaladas de Flutter y Java en runner self-hosted
+- **dd48bc5** (2026-10-13): ci: optimizar release.yml para runners self-hosted (eliminar doble trigger y saltar check en tags)
+- **2143e16** (2026-10-11): ci: desactivar actions/cache en runners self-hosted para evitar transferencias lentas
+- **6082110** (2026-10-13): chore(release): preparar v3.0.5-beta.4 con changelog y bump de version
+- **ade2c26** (2026-10-13): feat(settings): acción para ejecutar el importador con protección de límites y registro de importaciones
+- **03da19c** (2026-10-11): ci: desactivar actions/cache en runners self-hosted para evitar transferencias lentas
+- **7524bcd** (2026-10-11): chore(release): preparar v3.0.5 estable con changelog y bump de version
+- **3032372** (2026-10-11): ci(workflows): usar runner self-hosted y concurrency control en build y release
+- **16e3b59** (2026-10-11): feat: ordenar presupuestos por limite descendente y mover icono de privacidad a la derecha
+- **571d72d** (2026-10-09): ci(workflows): añadir continue-on-error y retention-days a artefactos para prevenir bloqueo por cuota de almacenamiento
+- **4df462f** (2026-10-09): chore(release): preparar v3.0.5-beta.2 con changelog y bump de version
+- **9489825** (2026-10-09): feat(privacy): modo para ocultar importes sensibles en toda la aplicacion
+- **013da2b** (2026-10-09): ci(build-apk): corregir ruta de salida del APK con flavor beta
+- **ec4aaaa** (2026-10-09): ci(release): ejecutar verificacion directamente para soporte en tags y branch beta
+- **1f00867** (2026-10-09): feat(budgets): ordenar categorias por uso y presupuesto asignado
+- **eea8d5b** (2026-10-09): feat(updater): soporte de canal beta configurable, flavors para convivencia de apps y pipeline CI
+- **1cd8d43** (2026-10-09): chore(release): preparar v3.0.4 con changelog y formato
+- **87f64a1** (2026-10-08): fix(budgets): safe casting of numeric IDs, currency and amounts in budget models
+- **a20cbcf** (2026-10-08): fix(budgets): safely parse integer IDs and amounts in budget models
+- **302d16b** (2026-10-08): fix(budgets): parse numeric object_group_id and IDs safely in models
+- **ece82cd** (2026-10-08): fix(budgets): handle integer IDs and object_group_id in model deserialization (v3.0.4)
+- **f98c766** (2026-10-08): feat(budgets, analysis, search): soporte historico de presupuestos, comparativa con presupuesto en analisis y filtro en busqueda (v3.0.3)
+- **b369ff6** (2026-10-08): feat(budgets): accion para aplicar reglas de presupuesto retroactivamente (v3.0.2)
+- **cbeae19** (2026-10-08): fix(budgets): inyectar Content-Type en llamadas trigger y corregir paginacion de reglas (v3.0.1)
+- **0536d86** (2026-10-08): feat(budgets): integracion completa de presupuestos y generador inteligente (v3.0.0)
+- **f48f9af** (2026-10-08): feat(search): interfaz de busqueda y filtros estilo Fintonic (v2.3.6)
+- **03e627e** (2026-10-08): feat(analysis): centrar botones de gastos e ingresos y aumentar espaciado (v2.3.5)
+- **c42904b** (2026-10-07): feat(analysis): anadir filtros rapidos de gastos e ingresos en analisis
+- **9e5c1b4** (2026-10-07): feat(analysis): pasar pagina completa con flechas laterales
+- **e073872** (2026-10-07): feat(analysis): restaurar flechas de navegacion de meses y anadir changelog in-app
+- **a087ff2** (2026-10-06): chore(release): bump version to 2.3.1
+- **3bd7491** (2026-10-06): feat(analysis): volver a 6 meses en analisis y detalle de categoria
+- **4ab338a** (2026-10-06): chore(release): bump version to 2.3.0
+- **e42c378** (2026-10-06): feat(analysis): mostrar 6 meses en análisis por defecto
+- **c059b74** (2026-10-06): chore(release): bump version to 2.2.0
+- **3b8cb35** (2026-10-06): feat(analysis): mostrar 12 meses en análisis y compactar barras para que quepan en pantalla
+- **25685e1** (2026-10-06): chore(release): bump version to 2.1.0
+- **ed95e11** (2026-10-06): fix(transactions): enviar parámetro types en endpoints de transacciones para compatibilidad con Firefly III
+- **4cb480c** (2026-10-05): chore(release): bump version to 2.0.0
+- **52accc5** (2026-10-05): feat(branding)!: nuevos logos e iconos (launcher adaptativo, notificación, iOS, web, Play Store)
+- **2ef0666** (2026-10-05): fix(transactions): descartar respuestas obsoletas al cambiar de pestaña Todos/Gastos/Ingresos/Traspasos
+- **e9042a3** (2026-10-05): feat(transactions): fix segmented tabs filter and add traspasos option
+- **690717f** (2026-10-05): ci: actualizar subosito/flutter-action a v2.18.0 y bump version a 1.3.8
+- **93193c8** (2026-10-05): chore(release): bump version to 1.3.7 y fijar Flutter 3.47.5 en CI
+- **095f8c0** (2026-10-05): feat(transactions): arreglar filtros rapidos y anadir opcion de traspasos
+- **e16bc91** (2026-10-05): style: formatear filtro con dart format 3.10
+- **3d2cfd7** (2026-10-05): fix(transactions): aplicar filtro por tipo de movimiento en cuenta seleccionada y busquedas
+- **8f447ab** (2026-10-05): fix(transactions): corregir import de enums y subir version a 1.3.5
+- **348facb** (2026-10-05): fix(transactions): arreglar filtros rapidos y anadir opcion de traspasos
+- **efc7c9e** (2026-10-05): feat(branding): actualizar icono con diseño de pilares minimalista
+- **02cd78e** (2026-10-05): ci: automatizar despliegue de APKs y version.json a VPS en release
+- **2a15ef3** (2026-10-05): chore(release): bump version to 1.3.3
+- **ece43d8** (2026-10-05): feat(branding): actualizar icono con trazos gruesos y bordes redondeados
+- **8dbc042** (2026-10-05): chore(release): bump version to 1.3.2
+- **ea39616** (2026-10-05): feat(branding): actualizar icono y logo con nuevo diseño coral
+- **4607bfa** (2026-10-05): fix(updater): alinear versionCode con override ABI y fallback semver
+- **0fd8a20** (2026-10-05): chore(release): bump version to 1.3.1
+- **7b4021b** (2026-10-04): feat(branding): actualizar icono y logo con medallón dorado de crecimiento
+- **386a57e** (2026-10-04): chore(release): bump version to 1.3.0
+- **6057951** (2026-10-04): fix(ci): formatear theme.dart y actualizar url esperada en updater_test
+- **c5408cc** (2026-10-04): feat: iconos y colores característicos y contrastados para todas las categorías
+- **3608096** (2026-10-04): feat(updater): apuntar in-app updater a updates.asaezs.com y mejorar control de errores
+- **2832dde** (2026-10-04): feat(updater): alojar updates en VPS (updates.asaezs.com) y mejorar manejo de errores HTTP
+- **24709d8** (2026-10-04): fix(ci): corregir variable isDark en transaction.dart y formatear codigo
+- **62c88de** (2026-10-04): style(theme): optimizar coherencia cromatica y contraste WCAG en modos claro y oscuro
+- **d10fe6a** (2026-10-04): fix(theme): mejorar coherencia cromatica y contraste en modo claro y oscuro
+- **2ee1d25** (2026-10-04): ci(release): automatizar compilacion y publicacion de release estable firmada
+- **6edd4d1** (2026-10-04): ci: publicar version.json en release dev para alimentar el In-App Updater
+- **760fffa** (2026-10-04): feat(updater): implementar In-App Updater con comprobacion remota y descarga de APK
+- **6796eae** (2026-10-04): fix(web): evitar cache inmutable en bundle JS/JSON de Flutter Web
+- **5ea87f7** (2026-10-04): feat(home): navegar a movimientos filtrados por cuenta y actualizar saldo en cabecera
+- **56f8cff** (2026-10-03): ci(docker): agregar Dockerfile multi-stage y config Nginx para despliegue web en Coolify
+- **802ef4b** (2026-10-03): feat(transactions): mostrar saldo actual en cabecera y saldo corriente por movimiento
+- **9eaada7** (2026-09-03): style: formatear codigo con dart format para pasar comprobacion de CI
+- **e2c1605** (2026-09-03): fix: solucionar error en carga de movimientos y unificar animaciones de recarga fluida
+- **e4f61c8** (2026-08-27): fix(ci): set continue-on-error for upload-artifact to prevent release blocking on quota limits
+- **689782a** (2026-08-27): fix(ci): add disk cleanup step to setup_env to prevent No space left on device
+- **e01a1b8** (2026-08-27): fix(ci): pin dynamic_color to <1.9.0 to fix android build script error
+- **9f5dc1a** (2026-08-27): fix(ci): pin intl to ^0.20.2 to match flutter sdk and apply dart format
+- **ac52797** (2026-08-26): feat: rebrand to Fireflytonic (com.asaezs.fireflytonic)
+- **cccfe7f** (2026-06-27): fix: resolve missing categories issue in selector
+- **fb9b173** (2026-06-27): feat: implement recategorization flow (Fintonic style)
+- **8801358** (2026-06-27): feat: redesign transaction edit screen (Fintonic style)
+- **e09c62c** (2026-06-27): feat: new fintonic-style transaction consult screen
+- **a4f9a49** (2026-06-20): style: apply global fintonic aesthetics to accounts and transactions
+- **2422740** (2026-06-20): feat: rediseño de pantalla de Análisis estilo Fintonic y optimización de carga
+- **dab5133** (2026-06-15): Análisis: paleta de categorías más distinta y filtrado de movimientos por periodo en el detalle
+- **53b1129** (2026-06-14): Análisis estilo Fintonic: barras mensuales, selector de periodo y detalle de categoría
+- **039f9a5** (2026-06-14): Menú lateral: marca Fireflytonic, quitar Facturas, arreglar Categorías y versión en Ajustes
+- **49e31ef** (2026-06-14): Eliminar test de plantilla roto (widget_test.dart referenciaba MyApp)
+- **394d81d** (2026-06-14): Modo demo con datos inventados + nueva pantalla de Inicio (resumen Fintonic)
+- **5eb3684** (2026-06-14): Movimientos: tarjeta de saldo del mes + pestañas Todos/Gastos/Ingresos (Fintonic)
+- **279bb82** (2026-06-14): CI: APK de depuración y memoria de Gradle acotada para el runner
+- **e6e2b12** (2026-06-14): CI: workflow para compilar APK de prueba y publicarlo en release 'dev'
+- **2373aa0** (2026-06-14): Nueva pantalla Análisis estilo Fintonic + barra inferior Inicio/Movimientos/Análisis
+- **53006cb** (2026-06-14): Ajustes Inicio/Movimientos: títulos en español, FAB acoplado sobre la barra, bandas de día y chips planos
+- **e1b8bc5** (2026-06-14): Navegación inferior estilo Fintonic en Inicio (Scaffold anidado)
+- **9c20f99** (2026-06-14): Movimientos estilo Fintonic: iconos circulares pastel por categoría, importes navy/verde y chevron
+- **04acfde** (2026-06-14): Sistema de diseño Fintonic (tema Material 3: navy + coral) y soporte de escritorio Linux
+- **9b6a7b1** (2026-06-14): Renombrar app visible a Fireflytonic (Android/iOS/título)
+- **a70ac09** (2026-06-14): Base inicial a partir de waterfly-iii (MIT) — preparado para rediseño de UI inspirado en Fintonic

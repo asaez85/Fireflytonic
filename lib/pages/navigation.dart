@@ -10,6 +10,7 @@ import 'package:waterflyiii/pages/accounts.dart';
 import 'package:waterflyiii/pages/categories.dart';
 import 'package:waterflyiii/pages/home.dart';
 import 'package:waterflyiii/pages/settings.dart';
+import 'package:waterflyiii/pages/settings/importer.dart';
 import 'package:waterflyiii/settings.dart';
 
 final Logger log = Logger("Pages.Navigation");
@@ -118,6 +119,12 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
         const Icon(Icons.assignment_outlined),
         const Icon(Icons.assignment),
       ),
+      const NavDestination(
+        "Importación bancaria",
+        SettingsImporter(),
+        Icon(Icons.cloud_sync_outlined),
+        Icon(Icons.cloud_sync),
+      ),
       NavDestination(
         S.of(context).generalSettings,
         const SettingsPage(),
@@ -137,9 +144,6 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
   }
 
   void navOnDestinationSelected(BuildContext context, int index) {
-    if (screenIndex == index) {
-      return;
-    }
     if (navDestinations[index].pageHandler is SettingsPage) {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -149,7 +153,16 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
           ),
         ),
       );
+    } else if (navDestinations[index].pageHandler is SettingsImporter) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) => const SettingsImporter(),
+        ),
+      );
     } else {
+      if (screenIndex == index) {
+        return;
+      }
       context.read<NavPageElements>().appBarActions = null;
       context.read<NavPageElements>().appBarBottom = null;
       context.read<NavPageElements>().fab = null;
