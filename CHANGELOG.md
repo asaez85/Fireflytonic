@@ -2,6 +2,10 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.1] - 2026-10-14
+### Mejoras
+- **Importación bancaria en menú lateral**: Se mueve el acceso a la importación bancaria desde la pantalla de Ajustes directamente al menú lateral principal (drawer/rail) para un acceso más rápido y visible.
+
 ## [3.0.7] - 2026-10-14
 ### Novedades y Mejoras
 - **Lanzamiento oficial en nuevo repositorio**: Configuración del pipeline de release y firma con claves de producción en el repositorio público Fireflytonic.
