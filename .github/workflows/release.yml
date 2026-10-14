@@ -231,6 +231,21 @@ jobs:
           prerelease: ${{ steps.prepare.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
 
+      - name: Actualizar version.json en el repositorio
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/beta'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TARGET_BRANCH="${{ steps.versioning.outputs.channel == 'beta' && 'beta' || 'main' }}"
+          git fetch origin $TARGET_BRANCH:$TARGET_BRANCH || true
+          git checkout $TARGET_BRANCH
+          cp version.json .
+          git add version.json
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(release): actualizar version.json para v${{ steps.versioning.outputs.version }} [skip ci]"
+            git push origin $TARGET_BRANCH
+          fi
+
       - name: Desplegar en servidor de updates (Opcional/Personal)
         if: (startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/beta') && env.VPS_HOST != '' && env.VPS_SSH_KEY != ''
         env:
