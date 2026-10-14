@@ -240,9 +240,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           TARGET_BRANCH="${{ steps.versioning.outputs.channel == 'beta' && 'beta' || 'main' }}"
+          cp version.json "${{ runner.temp }}/version_to_sync.json"
           git fetch origin $TARGET_BRANCH:$TARGET_BRANCH || true
           git checkout $TARGET_BRANCH
-          cp version.json .
+          cp "${{ runner.temp }}/version_to_sync.json" version.json
           git add version.json
           if ! git diff --staged --quiet; then
             git commit -m "chore(release): actualizar version.json para v${{ steps.versioning.outputs.version }} [skip ci]"
