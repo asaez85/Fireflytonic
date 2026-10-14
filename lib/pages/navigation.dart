@@ -12,6 +12,7 @@ import 'package:waterflyiii/pages/home.dart';
 import 'package:waterflyiii/pages/settings.dart';
 import 'package:waterflyiii/pages/settings/importer.dart';
 import 'package:waterflyiii/settings.dart';
+import 'package:waterflyiii/widgets/logo.dart';
 
 final Logger log = Logger("Pages.Navigation");
 
@@ -217,11 +218,7 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
                       padding: const .fromLTRB(28, 16, 28, 16),
                       child: Row(
                         children: <Widget>[
-                          Icon(
-                            Icons.local_bar,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 22,
-                          ),
+                          const AppLogo(size: 24),
                           const SizedBox(width: 10),
                           Text(
                             'Fireflytonic',
