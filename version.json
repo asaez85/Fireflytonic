@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.2 (build 62)",
-  "versionCode": 623,
+  "version": "3.0.8-beta.2 (build 10)",
+  "versionCode": 103,
   "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.2/fireflytonic-beta-arm64-v8a.apk",
   "changelog": "### Mejoras\n- **Logo de Fireflytonic en menú lateral**: Se sustituye el icono genérico de la copa por el logotipo oficial de Fireflytonic junto al nombre de la app en la cabecera del menú lateral."
 }
