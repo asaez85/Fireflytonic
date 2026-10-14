@@ -2,6 +2,10 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.2] - 2026-10-14
+### Mejoras
+- **Logo de Fireflytonic en menú lateral**: Se sustituye el icono genérico de la copa por el logotipo oficial de Fireflytonic junto al nombre de la app en la cabecera del menú lateral.
+
 ## [3.0.8-beta.1] - 2026-10-14
 ### Mejoras
 - **Importación bancaria en menú lateral**: Se mueve el acceso a la importación bancaria desde la pantalla de Ajustes directamente al menú lateral principal (drawer/rail) para un acceso más rápido y visible.
