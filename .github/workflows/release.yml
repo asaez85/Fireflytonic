@@ -160,6 +160,9 @@ jobs:
           cp $(find build/app/outputs/flutter-apk/ -name "*armeabi-v7a*release.apk" | head -n 1) "${PREFIX}-armeabi-v7a.apk"
           cp $(find build/app/outputs/flutter-apk/ -name "*x86_64*release.apk" | head -n 1) "${PREFIX}-x86_64.apk"
 
+          export UPDATE_URL_BASE
+          export GITHUB_REPOSITORY="${{ github.repository }}"
+
           python3 - << 'EOF'
           import json, os, re
 
