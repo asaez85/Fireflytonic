@@ -1,0 +1,6 @@
+{
+  "version": "3.0.7 (build 8)",
+  "versionCode": 83,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.7/fireflytonic-arm64-v8a.apk",
+  "changelog": "### Novedades y Mejoras\n- **Lanzamiento oficial en nuevo repositorio**: Configuración del pipeline de release y firma con claves de producción en el repositorio público Fireflytonic.\n- **Sincronización de versiones y URLs**: Alineación de enlaces de documentación, comprobación de actualizaciones y constantes de versión en la app."
+}
