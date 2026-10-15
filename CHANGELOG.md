@@ -2,6 +2,10 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.4] - 2026-10-15
+### Mejoras
+- **Visibilidad de importes en menú lateral**: Se traslada el botón del ojo para ocultar o mostrar los importes de la barra superior al menú lateral (cabecera del drawer junto al logotipo de Fireflytonic y panel lateral en pantallas medianas/grandes), despejando la barra superior.
+
 ## [3.0.8-beta.3] - 2026-10-14
 ### Novedades y Mejoras
 - **Acción para quitar filtros**: En la pantalla de búsqueda y filtros, se añade la acción rápida "Quitar filtros" (con acceso directo en la barra superior, píldora destacada en la fila de filtros y botón en la vista vacía) para restablecer todos los criterios de búsqueda con un solo toque.

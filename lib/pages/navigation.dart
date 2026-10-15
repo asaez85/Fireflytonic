@@ -203,7 +203,7 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
         return Scaffold(
           appBar: AppBar(
             title: context.select((NavPageElements n) => n.appBarTitle),
-            actions: <Widget>[...?customActions, hideAmountsButton],
+            actions: customActions,
           ),
           drawer: context.watch<LayoutProvider>().currentSize >= .medium
               ? null
@@ -215,7 +215,7 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
                   },
                   children: <Widget>[
                     Padding(
-                      padding: const .fromLTRB(28, 16, 28, 16),
+                      padding: const .fromLTRB(28, 16, 16, 16),
                       child: Row(
                         children: <Widget>[
                           const AppLogo(size: 24),
@@ -225,6 +225,8 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
                             style: Theme.of(context).textTheme.titleMedium!
                                 .copyWith(fontWeight: FontWeight.w700),
                           ),
+                          const Spacer(),
+                          hideAmountsButton,
                         ],
                       ),
                     ),
@@ -297,24 +299,33 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
                     );
                   }).toList(),
                   trailingAtBottom: true,
-                  trailing: GestureDetector(
-                    onTap: () async {
-                      final FireflyService ff = context.read<FireflyService>();
-                      final bool? ok = await showDialog<bool>(
-                        context: context,
-                        builder: (BuildContext context) =>
-                            const LogoutConfirmDialog(),
-                      );
-                      if (!(ok ?? false)) {
-                        return;
-                      }
+                  trailing: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      hideAmountsButton,
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          final FireflyService ff = context
+                              .read<FireflyService>();
+                          final bool? ok = await showDialog<bool>(
+                            context: context,
+                            builder: (BuildContext context) =>
+                                const LogoutConfirmDialog(),
+                          );
+                          if (!(ok ?? false)) {
+                            return;
+                          }
 
-                      await ff.signOut();
-                    },
-                    child: Text(
-                      S.of(context).formButtonLogout,
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
+                          await ff.signOut();
+                        },
+                        child: Text(
+                          S.of(context).formButtonLogout,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
               Expanded(
