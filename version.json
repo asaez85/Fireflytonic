@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.4 (build 12)",
-  "versionCode": 123,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.4/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Mejoras\n- **Visibilidad de importes en menú lateral**: Se traslada el botón del ojo para ocultar o mostrar los importes de la barra superior al menú lateral (cabecera del drawer junto al logotipo de Fireflytonic y panel lateral en pantallas medianas/grandes), despejando la barra superior."
+  "version": "3.0.8-beta.5 (build 65)",
+  "versionCode": 653,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.5/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Rediseño y Mejoras\n- **Rediseño completo de la pantalla de Cuentas**: Resumen de patrimonio neto (activos y pasivos), selector segmentado por tipos, buscador integrado por nombre/IBAN, logos de entidades bancarias (BankLogoBadge), nuevo diálogo para crear y editar cuentas, y navegación optimizada a movimientos."
 }

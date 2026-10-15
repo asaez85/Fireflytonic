@@ -1,11 +1,14 @@
 import 'package:chopper/chopper.dart' show Response;
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:waterflyiii/auth.dart';
 import 'package:waterflyiii/extensions.dart';
+import 'package:waterflyiii/generated/l10n/app_localizations.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
+import 'package:waterflyiii/pages/categories/addedit.dart';
 import 'package:waterflyiii/pages/home/analysis_period.dart';
 import 'package:waterflyiii/pages/home/transactions.dart';
 import 'package:waterflyiii/pages/home/transactions/filter.dart';
@@ -29,6 +32,7 @@ class CategoryDetailPage extends StatefulWidget {
     this.initialSelected,
     this.initialOffset = 0,
     this.isIncome = false,
+    this.category,
   });
   final String categoryName;
   final AnalysisPeriod period;
@@ -36,6 +40,7 @@ class CategoryDetailPage extends StatefulWidget {
   final int? initialSelected;
   final int initialOffset;
   final bool isIncome;
+  final CategoryRead? category;
 
   @override
   State<CategoryDetailPage> createState() => _CategoryDetailPageState();
@@ -158,12 +163,21 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
 
   TransactionFilters _filter() {
     final PeriodBucket b = _buckets[_selected];
+    final bool isNoCat =
+        widget.categoryName == 'L10NNONE' || widget.category?.id == '-1';
     return TransactionFilters(
-      category: CategoryRead.fromJson(<String, dynamic>{
-        'type': 'categories',
-        'id': '0',
-        'attributes': <String, dynamic>{'name': widget.categoryName},
-      }),
+      category: isNoCat
+          ? CategoryRead(
+              id: '-1',
+              type: 'categories',
+              attributes: CategoryProperties(name: S.of(context).catNone),
+            )
+          : (widget.category ??
+                CategoryRead.fromJson(<String, dynamic>{
+                  'type': 'categories',
+                  'id': '0',
+                  'attributes': <String, dynamic>{'name': widget.categoryName},
+                })),
       start: b.start,
       end: b.end,
     );
@@ -171,10 +185,12 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final Color tint = FtColors.categoryColor(
-      widget.categoryName,
-      context: context,
-    );
+    final bool isNoCat =
+        widget.categoryName == 'L10NNONE' || widget.category?.id == '-1';
+    final String displayName = isNoCat
+        ? S.of(context).catNone
+        : widget.categoryName;
+    final Color tint = FtColors.categoryColor(displayName, context: context);
     final CurrencyRead currency = context
         .read<FireflyService>()
         .defaultCurrency;
@@ -183,6 +199,38 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
       appBar: AppBar(
         titleSpacing: 0,
         actions: <Widget>[
+          if (!isNoCat)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: S.of(context).categoryTitleEdit,
+              onPressed: () async {
+                CategoryRead? cat = widget.category;
+                if (cat == null) {
+                  try {
+                    final Response<CategoryArray> resp = await context
+                        .read<FireflyService>()
+                        .api
+                        .v1CategoriesGet(limit: 100);
+                    if (resp.isSuccessful && resp.body != null) {
+                      cat = resp.body!.data.firstWhereOrNull(
+                        (CategoryRead c) =>
+                            c.attributes.name == widget.categoryName,
+                      );
+                    }
+                  } catch (_) {}
+                }
+                if (!context.mounted) return;
+                final NavigatorState nav = Navigator.of(context);
+                final bool? ok = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) =>
+                      CategoryAddEditDialog(category: cat),
+                );
+                if (mounted && (ok ?? false)) {
+                  nav.pop(true);
+                }
+              },
+            ),
           IconButton(
             icon: Icon(
               settings.hideAmounts
@@ -198,7 +246,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         title: Row(
           children: <Widget>[
             FtCategoryIconWidget(
-              icon: FtCategoryIcon.forName(widget.categoryName),
+              icon: FtCategoryIcon.forName(displayName),
               color: tint,
               size: 18,
               padding: 9,
@@ -209,7 +257,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    widget.categoryName,
+                    displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
