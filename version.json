@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.4 (build 12)",
-  "versionCode": 123,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.4/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Mejoras\n- **Visibilidad de importes en menú lateral**: Se traslada el botón del ojo para ocultar o mostrar los importes de la barra superior al menú lateral (cabecera del drawer junto al logotipo de Fireflytonic y panel lateral en pantallas medianas/grandes), despejando la barra superior."
+  "version": "3.0.8 (build 65)",
+  "versionCode": 653,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8/fireflytonic-arm64-v8a.apk",
+  "changelog": "### Novedades y Mejoras\n- **Exportación de movimientos a CSV**: Nueva pantalla y servicio para exportar movimientos filtrados por rango de fechas y cuentas/tarjetas a archivo CSV con formato español y codificación UTF-8 con BOM.\n- **Acción para quitar filtros**: En la pantalla de búsqueda y filtros, se añade la acción rápida \"Quitar filtros\" (con acceso directo en la barra superior, píldora destacada en la fila de filtros y botón en la vista vacía) para restablecer todos los criterios de búsqueda con un solo toque.\n- **Visibilidad de importes en menú lateral**: Se traslada el botón del ojo para ocultar o mostrar los importes de la barra superior al menú lateral (cabecera del drawer junto al logotipo de Fireflytonic y panel lateral en pantallas medianas/grandes), despejando la barra superior.\n- **Importación bancaria en menú lateral**: Se mueve el acceso a la importación bancaria desde la pantalla de Ajustes directamente al menú lateral principal (drawer/rail) para un acceso más rápido y visible.\n- **Logo de Fireflytonic en menú lateral**: Se sustituye el icono genérico de la copa por el logotipo oficial de Fireflytonic junto al nombre de la app en la cabecera del menú lateral."
 }
