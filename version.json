@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.5 (build 65)",
-  "versionCode": 653,
+  "version": "3.0.8-beta.5 (build 14)",
+  "versionCode": 143,
   "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.5/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Rediseño y Mejoras\n- **Rediseño completo de la pantalla de Cuentas**: Resumen de patrimonio neto (activos y pasivos), selector segmentado por tipos, buscador integrado por nombre/IBAN, logos de entidades bancarias (BankLogoBadge), nuevo diálogo para crear y editar cuentas, y navegación optimizada a movimientos."
+  "changelog": "### Rediseño y Mejoras\n- **Rediseño completo de la pantalla de Cuentas**:\n  - **Resumen patrimonial interactivo**: Visualización destacada en tarjeta superior de Activos Totales, Deuda/Pasivos acumulados y Patrimonio Neto calculado en tiempo real con selector de cuentas activas/inactivas.\n  - **Filtrado segmentado**: Navegación rápida por categorías de cuenta mediante SegmentedButton (Todas, Activos, Pasivos, Otras) y opción de mostrar u ocultar cuentas inactivas.\n  - **Buscador en tiempo real**: Filtro instantáneo de cuentas por nombre, entidad bancaria, número de cuenta, notas o IBAN.\n  - **Identidad visual con BankLogoBadge**: Detección inteligente de bancos (BBVA, Santander, CaixaBank, ING, Openbank, Revolut, Sabadell, Bankinter, Wise, N26, etc.) con colores corporativos e iconos de tarjeta o billetera.\n  - **Tarjetas de cuenta estilo Fintonic**: Saldo en cifras tabulares y colores semánticos (verde/coral), rol de cuenta, IBAN abreviado, TAE para pasivos y menú rápido de acciones (ver movimientos, editar o eliminar).\n  - **Nuevo diálogo de creación y edición**: Formulario modal completo para añadir o modificar cuentas con selección de tipo, rol, IBAN, saldo inicial, intereses y notas.\n  - **Interfaz despejada**: Se elimina la barra de pestañas saturada del AppBar, integrando buscador y alta en la barra superior y botón flotante (FAB)."
 }
