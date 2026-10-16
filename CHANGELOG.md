@@ -2,6 +2,14 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.6] - 2026-10-16
+### Rediseño y Mejoras
+- **Soporte y rediseño completo de Movimientos Divididos (Split Transactions)**:
+  - **Lista de movimientos y búsqueda**: Indicador visual mediante badge `call_split` en transacciones divididas. Cálculo agregado del importe total y desglose dinámico de múltiples categorías en lugar de mostrar únicamente la primera parte.
+  - **Detalle de movimiento**: Desglose estructurado por tarjetas para cada sub-movimiento (con importe, descripción individual, notas, etiquetas e icono/selector de categoría interactivo) y cálculo de importe acumulado.
+  - **Recategorización individual por split**: Capacidad de cambiar la categoría de una sola parte del movimiento dividido sin sobreescribir las demás.
+  - **Creación y edición de splits**: Acción "Dividir" reparada y funcional desde el detalle y la edición simple. Formulario de edición con soporte directo para añadir partes y conservar descripciones personalizadas por split compatibles con la validación de Firefly III.
+
 ## [3.0.8-beta.5] - 2026-10-15
 ### Rediseño y Mejoras
 - **Rediseño completo de la pantalla de Cuentas**:

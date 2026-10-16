@@ -52,7 +52,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     );
   }
 
-  Future<void> _updateCategory(String newCategoryName) async {
+  Future<void> _updateCategory(String newCategoryName, {int? splitIndex}) async {
     setState(() {
       _isUpdating = true;
     });
@@ -66,11 +66,15 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
         final TransactionSplit oldSplit =
             _transaction.attributes.transactions[i];
 
+        final String cat = (splitIndex == null || splitIndex == i)
+            ? newCategoryName
+            : (oldSplit.categoryName ?? "");
+
         final TransactionSplitUpdate txSs = TransactionSplitUpdate(
           amount: oldSplit.amount,
           billId: oldSplit.billId ?? "0",
           budgetName: oldSplit.budgetName ?? "",
-          categoryName: newCategoryName,
+          categoryName: cat,
           date: oldSplit.date,
           description: oldSplit.description,
           destinationName: oldSplit.destinationName ?? "",
@@ -82,7 +86,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
           order: i,
           sourceName: oldSplit.sourceName ?? "",
           tags: oldSplit.tags ?? <String>[],
-          transactionJournalId: oldSplit.transactionJournalId,
+          transactionJournalId: oldSplit.transactionJournalId ?? "0",
           type: oldSplit.type,
           reconciled: oldSplit.reconciled ?? false,
         );
@@ -147,6 +151,162 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     }
   }
 
+  Widget _buildSplitDetailCard(
+    BuildContext context,
+    TransactionSplit split,
+    int index,
+    CurrencyRead currency,
+    bool isIncome,
+  ) {
+    final double splitAmount = double.tryParse(split.amount) ?? 0.0;
+    final String catName = split.categoryName ?? "";
+    final bool hasCat = catName.isNotEmpty;
+    final Color catColor = hasCat
+        ? FtColors.categoryColor(catName, context: context)
+        : split.type.colorOf(context);
+    final IconData catIcon =
+        hasCat ? FtCategoryIcon.forName(catName) : split.type.icon;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  split.description.isNotEmpty
+                      ? split.description
+                      : "Parte ${index + 1}",
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                (isIncome ? "+" : "-") +
+                    currency.fmt(splitAmount, context: context),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Category selector/chip
+          InkWell(
+            onTap: _isUpdating
+                ? null
+                : () async {
+                    final String? newCategory = await Navigator.push<String>(
+                      context,
+                      MaterialPageRoute<String>(
+                        builder: (BuildContext context) => CategorySelectPage(
+                          selectedCategoryName: catName,
+                        ),
+                      ),
+                    );
+                    if (newCategory != null && newCategory != catName) {
+                      await _updateCategory(newCategory, splitIndex: index);
+                    }
+                  },
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: <Widget>[
+                  FtCategoryIconWidget(
+                    icon: catIcon,
+                    color: catColor,
+                    padding: 6,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      hasCat ? catName : S.of(context).generalUnknown,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (split.budgetName != null && split.budgetName!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.pie_chart_outline,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  split.budgetName!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                ),
+              ],
+            ),
+          ],
+          if (split.notes != null && split.notes!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Text(
+              split.notes!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+          if (split.tags != null && split.tags!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: split.tags!
+                  .map(
+                    (String tag) => Chip(
+                      label: Text(tag, style: const TextStyle(fontSize: 11)),
+                      padding: EdgeInsets.zero,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHigh,
+                      side: BorderSide.none,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<TransactionSplit> splits = _transaction.attributes.transactions;
@@ -156,6 +316,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
         body: const Center(child: Text("Error: No transaction data")),
       );
     }
+    final bool isSplit = splits.length > 1;
     final TransactionSplit t = splits.first;
 
     // Determine type & colors
@@ -164,8 +325,15 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
         ? FtColors.incomeOf(context)
         : Theme.of(context).colorScheme.onSurface;
 
-    // Amount
-    final double amount = double.tryParse(t.amount) ?? 0.0;
+    // Amount: if split, compute total amount across splits
+    final double totalAmount = splits.fold(
+      0.0,
+      (double prev, TransactionSplit s) =>
+          prev + (double.tryParse(s.amount) ?? 0.0),
+    );
+    final double displayAmount =
+        isSplit ? totalAmount : (double.tryParse(t.amount) ?? 0.0);
+
     final CurrencyRead currency = CurrencyRead(
       id: t.currencyId ?? "0",
       type: "currencies",
@@ -182,15 +350,32 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     final DateTime date = tzHandler.sTime(t.date).toLocal();
     final String dateString = DateFormat.yMMMMEEEEd().format(date);
 
-    // Category
+    // Title
+    final String title = isSplit
+        ? ((_transaction.attributes.groupTitle?.isNotEmpty ?? false)
+            ? _transaction.attributes.groupTitle!
+            : t.description)
+        : t.description;
+
+    // Accounts
+    final String sourceAccount =
+        splits.every((TransactionSplit s) => s.sourceName == t.sourceName)
+            ? (t.sourceName ?? "")
+            : S.of(context).generalMultiple;
+    final String destinationAccount = splits.every(
+            (TransactionSplit s) => s.destinationName == t.destinationName)
+        ? (t.destinationName ?? "")
+        : S.of(context).generalMultiple;
+    final String accountName = isIncome ? destinationAccount : sourceAccount;
+
+    // Category for single split
     final String category = t.categoryName ?? "";
     final bool hasCategory = category.isNotEmpty;
     final Color catColor = hasCategory
         ? FtColors.categoryColor(category, context: context)
         : t.type.colorOf(context);
-    final IconData catIcon = hasCategory
-        ? FtCategoryIcon.forName(category)
-        : t.type.icon;
+    final IconData catIcon =
+        hasCategory ? FtCategoryIcon.forName(category) : t.type.icon;
 
     Widget bodyContent = Column(
       children: <Widget>[
@@ -206,7 +391,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                 // Amount
                 Text(
                   (isIncome ? "+" : "-") +
-                      currency.fmt(amount, context: context),
+                      currency.fmt(displayAmount, context: context),
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     color: amountColor,
                     fontWeight: FontWeight.w600,
@@ -219,13 +404,50 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
 
                 // Title
                 Text(
-                  t.description,
+                  title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+
+                // Split indicator badge
+                if (isSplit) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.call_split,
+                          size: 14,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Movimiento dividido (${splits.length} partes)",
+                          style:
+                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
 
                 // Date
                 Text(
@@ -256,9 +478,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        isIncome
-                            ? (t.destinationName ?? "")
-                            : (t.sourceName ?? ""),
+                        accountName,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -267,90 +487,115 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
-                const Divider(height: 1),
-
-                // Category
-                InkWell(
-                  onTap: _isUpdating
-                      ? null
-                      : () async {
-                          final String? newCategory =
-                              await Navigator.push<String>(
-                                context,
-                                MaterialPageRoute<String>(
-                                  builder: (BuildContext context) =>
-                                      CategorySelectPage(
-                                        selectedCategoryName: category,
-                                      ),
-                                ),
-                              );
-                          if (newCategory != null && newCategory != category) {
-                            await _updateCategory(newCategory);
-                          }
-                        },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Row(
-                      children: <Widget>[
-                        FtCategoryIconWidget(
-                          icon: catIcon,
-                          color: catColor,
-                          padding: 8,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            hasCategory
-                                ? category
-                                : S.of(context).generalUnknown,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const Divider(height: 1),
-
-                // Notes & Tags
-                if ((t.notes != null && t.notes!.isNotEmpty) ||
-                    (t.tags != null && t.tags!.isNotEmpty)) ...<Widget>[
+                if (!isSplit) ...<Widget>[
                   const SizedBox(height: 24),
-                  if (t.notes != null && t.notes!.isNotEmpty) ...<Widget>[
-                    Text(
-                      t.notes!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  const Divider(height: 1),
+
+                  // Category
+                  InkWell(
+                    onTap: _isUpdating
+                        ? null
+                        : () async {
+                            final String? newCategory =
+                                await Navigator.push<String>(
+                              context,
+                              MaterialPageRoute<String>(
+                                builder: (BuildContext context) =>
+                                    CategorySelectPage(
+                                  selectedCategoryName: category,
+                                ),
+                              ),
+                            );
+                            if (newCategory != null &&
+                                newCategory != category) {
+                              await _updateCategory(newCategory);
+                            }
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Row(
+                        children: <Widget>[
+                          FtCategoryIconWidget(
+                            icon: catIcon,
+                            color: catColor,
+                            padding: 8,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              hasCategory
+                                  ? category
+                                  : S.of(context).generalUnknown,
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                  const Divider(height: 1),
+
+                  // Notes & Tags
+                  if ((t.notes != null && t.notes!.isNotEmpty) ||
+                      (t.tags != null && t.tags!.isNotEmpty)) ...<Widget>[
+                    const SizedBox(height: 24),
+                    if (t.notes != null && t.notes!.isNotEmpty) ...<Widget>[
+                      Text(
+                        t.notes!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (t.tags != null && t.tags!.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: t.tags!
+                            .map(
+                              (String tag) => Chip(
+                                label: Text(tag),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHigh,
+                                side: BorderSide.none,
+                              ),
+                            )
+                            .toList(),
+                      ),
                   ],
-                  if (t.tags != null && t.tags!.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: t.tags!
-                          .map(
-                            (String tag) => Chip(
-                              label: Text(tag),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHigh,
-                              side: BorderSide.none,
-                            ),
-                          )
-                          .toList(),
+                ] else ...<Widget>[
+                  const SizedBox(height: 24),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Desglose del movimiento",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (int i = 0; i < splits.length; i++) ...<Widget>[
+                    _buildSplitDetailCard(
+                      context,
+                      splits[i],
+                      i,
+                      currency,
+                      isIncome,
                     ),
+                    const SizedBox(height: 12),
+                  ],
                 ],
               ],
             ),
@@ -371,25 +616,58 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
           child: SafeArea(
             child: Row(
               children: <Widget>[
+                if (!isSplit) ...<Widget>[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isUpdating
+                          ? null
+                          : () async {
+                              final String? newCategory =
+                                  await Navigator.push<String>(
+                                context,
+                                MaterialPageRoute<String>(
+                                  builder: (BuildContext context) =>
+                                      CategorySelectPage(
+                                    selectedCategoryName: category,
+                                  ),
+                                ),
+                              );
+                              if (newCategory != null &&
+                                  newCategory != category) {
+                                await _updateCategory(newCategory);
+                              }
+                            },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: const Text("Recategorizar"),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
-                  child: OutlinedButton(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.call_split, size: 18),
                     onPressed: _isUpdating
                         ? null
-                        : () async {
-                            final String? newCategory =
-                                await Navigator.push<String>(
-                                  context,
-                                  MaterialPageRoute<String>(
-                                    builder: (BuildContext context) =>
-                                        CategorySelectPage(
-                                          selectedCategoryName: category,
-                                        ),
-                                  ),
-                                );
-                            if (newCategory != null &&
-                                newCategory != category) {
-                              await _updateCategory(newCategory);
-                            }
+                        : () {
+                            Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute<bool>(
+                                builder: (BuildContext context) =>
+                                    TransactionPage(
+                                  transaction: _transaction,
+                                  split: true,
+                                ),
+                              ),
+                            ).then((bool? modified) {
+                              if (modified ?? false) {
+                                _reloadTransaction();
+                              }
+                            });
                           },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -397,20 +675,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                         borderRadius: BorderRadius.circular(24),
                       ),
                     ),
-                    child: const Text("Recategorizar"),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: const Text("Dividir"),
+                    label: Text(isSplit ? "Editar desglose" : "Dividir"),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -418,7 +683,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                   onPressed: _isUpdating
                       ? null
                       : () {
-                          Navigator.push(
+                          Navigator.push<bool>(
                             context,
                             MaterialPageRoute<bool>(
                               builder: (BuildContext context) =>

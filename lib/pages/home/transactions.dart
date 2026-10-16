@@ -1543,7 +1543,25 @@ class HomeTransactionsState extends State<HomeTransactions>
                 children: <Widget>[
                   // Front part
                   Expanded(
-                    child: Text(title, maxLines: 1, overflow: .ellipsis),
+                    child: Row(
+                      children: <Widget>[
+                        if (transactions.length > 1) ...<Widget>[
+                          Icon(
+                            Icons.call_split,
+                            size: 14,
+                            color: FtColors.blueOf(context),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: .ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 8),
                   // Trailing part

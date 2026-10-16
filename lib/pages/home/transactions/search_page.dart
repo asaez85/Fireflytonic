@@ -702,14 +702,22 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
 
             // Movements in this date
             ...txList.map((TransactionRead item) {
-              final TransactionSplit split = item.attributes.transactions.first;
+              final List<TransactionSplit> splits = item.attributes.transactions;
+              final TransactionSplit split = splits.first;
+              final bool isSplit = splits.length > 1;
 
               final String title =
                   item.attributes.groupTitle?.isNotEmpty ?? false
                   ? item.attributes.groupTitle!
                   : split.description;
 
-              final String categoryName = split.categoryName ?? "";
+              final Set<String> categories = splits
+                  .map((TransactionSplit s) => s.categoryName ?? "")
+                  .where((String c) => c.isNotEmpty)
+                  .toSet();
+              final String categoryName = categories.length > 1
+                  ? "${categories.length} categorías"
+                  : (categories.isNotEmpty ? categories.first : "");
               final bool hasCategory = categoryName.isNotEmpty;
 
               final Color catColor = hasCategory
@@ -719,7 +727,13 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                   ? FtCategoryIcon.forName(categoryName)
                   : split.type.icon;
 
-              final double amount = double.tryParse(split.amount) ?? 0.0;
+              final double amount = isSplit
+                  ? splits.fold(
+                      0.0,
+                      (double prev, TransactionSplit s) =>
+                          prev + (double.tryParse(s.amount) ?? 0.0),
+                    )
+                  : (double.tryParse(split.amount) ?? 0.0);
               final bool isIncome =
                   split.type == TransactionTypeProperty.deposit;
 
@@ -783,15 +797,29 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(
-                                title,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: isDark ? Colors.white : FtColors.navy,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: <Widget>[
+                                  if (isSplit) ...<Widget>[
+                                    Icon(
+                                      Icons.call_split,
+                                      size: 14,
+                                      color: FtColors.blueOf(context),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  Expanded(
+                                    child: Text(
+                                      title,
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                        color: isDark ? Colors.white : FtColors.navy,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 3),
                               hasCategory
