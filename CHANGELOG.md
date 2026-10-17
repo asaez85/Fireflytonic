@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.3] - 2026-10-17
+
+### Fixed
+- **Cálculo y gráfico de Saldo en pantalla de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Corrección en `_fetchBalance()` eliminando el descarte indebido por `ds.type != 'asset'` (la API de Firefly III devuelve `type: "line"` para las series temporales del endpoint `/chart/account/overview`), permitiendo renderizar correctamente la serie temporal.
+  - Clasificación y mapeo robusto de pasivos en `_fetchNetWorth()` mediante consulta de cuentas de pasivo registradas.
+
+---
+
 ## [3.2.0-beta.2] - 2026-10-17
 
 ### Fixed

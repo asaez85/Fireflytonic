@@ -21,27 +21,22 @@ import 'package:waterflyiii/widgets/ft_progress_bar.dart';
 
 final Logger log = Logger('Pages.Home.Evolution');
 
-enum EvolutionViewMode {
-  netWorth,
-  balance,
-  cashFlow,
-  categories,
-}
+enum EvolutionViewMode { netWorth, balance, cashFlow, categories }
 
 extension EvolutionViewModeExt on EvolutionViewMode {
   String get label => switch (this) {
-        EvolutionViewMode.netWorth => 'Patrimonio',
-        EvolutionViewMode.balance => 'Saldo',
-        EvolutionViewMode.cashFlow => 'Flujo',
-        EvolutionViewMode.categories => 'Categorías',
-      };
+    EvolutionViewMode.netWorth => 'Patrimonio',
+    EvolutionViewMode.balance => 'Saldo',
+    EvolutionViewMode.cashFlow => 'Flujo',
+    EvolutionViewMode.categories => 'Categorías',
+  };
 
   IconData get icon => switch (this) {
-        EvolutionViewMode.netWorth => Icons.account_balance_outlined,
-        EvolutionViewMode.balance => Icons.wallet_outlined,
-        EvolutionViewMode.cashFlow => Icons.swap_vert_rounded,
-        EvolutionViewMode.categories => Icons.pie_chart_outline_rounded,
-      };
+    EvolutionViewMode.netWorth => Icons.account_balance_outlined,
+    EvolutionViewMode.balance => Icons.wallet_outlined,
+    EvolutionViewMode.cashFlow => Icons.swap_vert_rounded,
+    EvolutionViewMode.categories => Icons.pie_chart_outline_rounded,
+  };
 }
 
 enum EvolutionPeriodPreset {
@@ -55,13 +50,13 @@ enum EvolutionPeriodPreset {
 
 extension EvolutionPeriodPresetExt on EvolutionPeriodPreset {
   String get label => switch (this) {
-        EvolutionPeriodPreset.oneMonth => '1M',
-        EvolutionPeriodPreset.threeMonths => '3M',
-        EvolutionPeriodPreset.sixMonths => '6M',
-        EvolutionPeriodPreset.oneYear => '1A',
-        EvolutionPeriodPreset.all => 'Todo',
-        EvolutionPeriodPreset.custom => '📅',
-      };
+    EvolutionPeriodPreset.oneMonth => '1M',
+    EvolutionPeriodPreset.threeMonths => '3M',
+    EvolutionPeriodPreset.sixMonths => '6M',
+    EvolutionPeriodPreset.oneYear => '1A',
+    EvolutionPeriodPreset.all => 'Todo',
+    EvolutionPeriodPreset.custom => '📅',
+  };
 }
 
 class ChartDataPoint {
@@ -160,13 +155,15 @@ class _HomeEvolutionState extends State<HomeEvolution>
   Future<void> _loadFilterOptions() async {
     try {
       final FireflyIii api = context.read<FireflyService>().api;
-      final Response<AccountArray> respAcc =
-          await api.v1AccountsGet(type: .assetAccount);
+      final Response<AccountArray> respAcc = await api.v1AccountsGet(
+        type: .assetAccount,
+      );
       if (respAcc.isSuccessful && respAcc.body != null) {
         _availableAccounts = respAcc.body!.data;
       }
-      final Response<CategoryArray> respCat =
-          await api.v1CategoriesGet(limit: 100);
+      final Response<CategoryArray> respCat = await api.v1CategoriesGet(
+        limit: 100,
+      );
       if (respCat.isSuccessful && respCat.body != null) {
         _availableCategories = respCat.body!.data;
       }
@@ -250,12 +247,22 @@ class _HomeEvolutionState extends State<HomeEvolution>
     final Response<ChartLine> resp = await api.v1ChartAccountOverviewGet(
       start: startStr,
       end: endStr,
-      period: _preset == EvolutionPeriodPreset.oneMonth
-          ? .value_1d
-          : .value_1w,
+      period: _preset == EvolutionPeriodPreset.oneMonth ? .value_1d : .value_1w,
       preselected: .all,
     );
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
+
+    final Set<String> liabilityNames = <String>{};
+    try {
+      final Response<AccountArray> respLiab = await api.v1AccountsGet(
+        type: .liabilities,
+      );
+      if (respLiab.isSuccessful && respLiab.body != null) {
+        for (final AccountRead acc in respLiab.body!.data) {
+          liabilityNames.add(acc.attributes.name);
+        }
+      }
+    } catch (_) {}
 
     final List<ChartDataSet> datasets = resp.body ?? <ChartDataSet>[];
     final Map<DateTime, double> assetsByDate = <DateTime, double>{};
@@ -267,7 +274,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     for (final ChartDataSet ds in datasets) {
       final String label = ds.label ?? '';
-      final bool isLiability = ds.type == 'liability';
+      final bool isLiability =
+          ds.type == 'liability' || liabilityNames.contains(label);
       final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
           ? (ds.entries as Map<String, dynamic>)
           : <String, dynamic>{};
@@ -323,8 +331,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
     final double startVal = points.first.value;
     final double currentVal = points.last.value;
     final double diff = currentVal - startVal;
-    final double pct =
-        startVal.abs() > 0 ? (diff / startVal.abs()) * 100 : 0.0;
+    final double pct = startVal.abs() > 0 ? (diff / startVal.abs()) * 100 : 0.0;
 
     return _EvolutionData(
       points: points,
@@ -347,17 +354,15 @@ class _HomeEvolutionState extends State<HomeEvolution>
   ) async {
     final Set<String> selectedNames = _selectedAccountIds.isNotEmpty
         ? _availableAccounts
-            .where((AccountRead a) => _selectedAccountIds.contains(a.id))
-            .map((AccountRead a) => a.attributes.name)
-            .toSet()
+              .where((AccountRead a) => _selectedAccountIds.contains(a.id))
+              .map((AccountRead a) => a.attributes.name)
+              .toSet()
         : const <String>{};
 
     final Response<ChartLine> resp = await api.v1ChartAccountOverviewGet(
       start: startStr,
       end: endStr,
-      period: _preset == EvolutionPeriodPreset.oneMonth
-          ? .value_1d
-          : .value_1w,
+      period: _preset == EvolutionPeriodPreset.oneMonth ? .value_1d : .value_1w,
       preselected: .assets,
     );
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
@@ -367,7 +372,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
     final Map<String, double> breakdown = <String, double>{};
 
     for (final ChartDataSet ds in datasets) {
-      if (ds.type != null && ds.type != 'asset') continue;
+      // Firefly III API devuelve type: "line" para todas las series en este endpoint,
+      // o type: null / "asset". No filtrar por ds.type == 'asset'.
       final String label = ds.label ?? '';
       if (selectedNames.isNotEmpty && !selectedNames.contains(label)) {
         continue;
@@ -411,8 +417,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
     final double startVal = points.first.value;
     final double currentVal = points.last.value;
     final double diff = currentVal - startVal;
-    final double pct =
-        startVal.abs() > 0 ? (diff / startVal.abs()) * 100 : 0.0;
+    final double pct = startVal.abs() > 0 ? (diff / startVal.abs()) * 100 : 0.0;
 
     return _EvolutionData(
       points: points,
@@ -475,8 +480,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
     }
 
     final double netTotal = totalIncome - totalExpense;
-    final double savingsRate =
-        totalIncome > 0 ? (netTotal / totalIncome) * 100 : 0;
+    final double savingsRate = totalIncome > 0
+        ? (netTotal / totalIncome) * 100
+        : 0;
 
     return _EvolutionData(
       points: points,
@@ -506,7 +512,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
     final Map<String, double> catMap = <String, double>{};
 
     for (final InsightGroupEntry e in rawCats) {
-      final String name = e.name?.isNotEmpty ?? false ? e.name! : 'Sin categoría';
+      final String name = e.name?.isNotEmpty ?? false
+          ? e.name!
+          : 'Sin categoría';
       if (_selectedCategoryNames.isNotEmpty &&
           !_selectedCategoryNames.contains(name)) {
         continue;
@@ -609,8 +617,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
                           runSpacing: 4,
                           children: _availableCategories.map((CategoryRead c) {
                             final String name = c.attributes.name;
-                            final bool isSel =
-                                _selectedCategoryNames.contains(name);
+                            final bool isSel = _selectedCategoryNames.contains(
+                              name,
+                            );
                             return FilterChip(
                               label: Text(name),
                               selected: isSel,
@@ -654,7 +663,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
       context: context,
       firstDate: DateTime(2015),
       lastDate: DateTime.now(),
-      initialDateRange: _customRange ??
+      initialDateRange:
+          _customRange ??
           DateTimeRange(
             start: DateTime.now().subtract(const Duration(days: 90)),
             end: DateTime.now(),
@@ -672,8 +682,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final CurrencyRead currency =
-        context.read<FireflyService>().defaultCurrency;
+    final CurrencyRead currency = context
+        .read<FireflyService>()
+        .defaultCurrency;
     final SettingsProvider settings = context.watch<SettingsProvider>();
 
     return Scaffold(
@@ -721,7 +732,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
                 ),
                 IconButton(
                   icon: Badge(
-                    isLabelVisible: _selectedAccountIds.isNotEmpty ||
+                    isLabelVisible:
+                        _selectedAccountIds.isNotEmpty ||
                         _selectedCategoryNames.isNotEmpty,
                     child: const Icon(Icons.filter_list_rounded),
                   ),
@@ -762,58 +774,64 @@ class _HomeEvolutionState extends State<HomeEvolution>
             // Bloque de datos y gráfico
             FutureBuilder<_EvolutionData>(
               future: _future,
-              builder: (
-                BuildContext context,
-                AsyncSnapshot<_EvolutionData> snapshot,
-              ) {
-                if (snapshot.connectionState != ConnectionState.done &&
-                    _cachedData == null) {
-                  return const SizedBox(
-                    height: 350,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
+              builder:
+                  (
+                    BuildContext context,
+                    AsyncSnapshot<_EvolutionData> snapshot,
+                  ) {
+                    if (snapshot.connectionState != ConnectionState.done &&
+                        _cachedData == null) {
+                      return const SizedBox(
+                        height: 350,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-                if (snapshot.hasError) {
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          'Error al cargar métricas de evolución:\n${snapshot.error}',
-                          textAlign: TextAlign.center,
+                    if (snapshot.hasError) {
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(
+                            child: Text(
+                              'Error al cargar métricas de evolución:\n${snapshot.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                }
+                      );
+                    }
 
-                if (snapshot.hasData) {
-                  _cachedData = snapshot.data;
-                }
+                    if (snapshot.hasData) {
+                      _cachedData = snapshot.data;
+                    }
 
-                final _EvolutionData data = _cachedData!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // Tarjeta KPI principal
-                    _buildKpiCard(context, data, currency, settings),
-                    const SizedBox(height: 16),
+                    final _EvolutionData data = _cachedData!;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // Tarjeta KPI principal
+                        _buildKpiCard(context, data, currency, settings),
+                        const SizedBox(height: 16),
 
-                    // Gráfico Principal SfCartesianChart
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 16, 12, 12),
-                        child: _buildChart(context, data, currency),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                        // Gráfico Principal SfCartesianChart
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 16, 12, 12),
+                            child: _buildChart(context, data, currency),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
-                    // Desglose contextual inferior
-                    _buildBottomBreakdown(context, data, currency, settings),
-                  ],
-                );
-              },
+                        // Desglose contextual inferior
+                        _buildBottomBreakdown(
+                          context,
+                          data,
+                          currency,
+                          settings,
+                        ),
+                      ],
+                    );
+                  },
             ),
           ],
         ),
@@ -850,8 +868,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
             Text(
               mainTitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 6),
             Row(
@@ -863,11 +881,11 @@ class _HomeEvolutionState extends State<HomeEvolution>
                       ? '••••'
                       : currency.fmt(data.currentTotal, context: context),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontFeatures: const <FontFeature>[
-                          FontFeature.tabularFigures(),
-                        ],
-                      ),
+                    fontWeight: FontWeight.bold,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
                 ),
                 const Spacer(),
                 if (_mode != EvolutionViewMode.categories) ...<Widget>[
@@ -882,12 +900,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
                   Text(
                     '${isPositive ? '+' : ''}${currency.fmt(diff, decimalDigits: 0, context: context)} (${data.percentChange.toStringAsFixed(1)}%)',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: diffColor,
-                          fontWeight: FontWeight.bold,
-                          fontFeatures: const <FontFeature>[
-                            FontFeature.tabularFigures(),
-                          ],
-                        ),
+                      color: diffColor,
+                      fontWeight: FontWeight.bold,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -909,9 +927,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
                             ? '••••'
                             : currency.fmt(data.assetsTotal, context: context),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: FtColors.incomeFor(isDark: isDark),
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: FtColors.incomeFor(isDark: isDark),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -930,9 +948,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
                                 context: context,
                               ),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: FtColors.coralFor(isDark: isDark),
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: FtColors.coralFor(isDark: isDark),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -947,8 +965,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
                   Text(
                     'Tasa de ahorro: ${data.savingsRate.toStringAsFixed(1)}%',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     'Ingresos: ${currency.fmt(data.totalIncome, decimalDigits: 0, context: context)}',
@@ -983,7 +1001,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
           child: Center(child: Text('Sin datos en este periodo')),
         );
       }
-      final List<_CategoryEvolutionItem> top6 = data.categories.take(6).toList();
+      final List<_CategoryEvolutionItem> top6 = data.categories
+          .take(6)
+          .toList();
       return SizedBox(
         height: 260,
         child: SfCircularChart(
@@ -1102,8 +1122,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
                 child: Text(
                   'Ranking de gastos por categoría',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(height: 1),
@@ -1111,14 +1131,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
                 return ListTile(
                   leading: FtCategoryIconWidget(
                     icon: FtCategoryIcon.forName(cat.name),
-                    color:
-                        FtColors.categoryColor(cat.name, context: context),
+                    color: FtColors.categoryColor(cat.name, context: context),
                   ),
                   title: Text(cat.name),
                   subtitle: FtProgressBar(
                     progress: (cat.percentage / 100).clamp(0.0, 1.0),
-                    color:
-                        FtColors.categoryColor(cat.name, context: context),
+                    color: FtColors.categoryColor(cat.name, context: context),
                     height: 5,
                   ),
                   trailing: Column(
@@ -1157,8 +1175,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
                 child: Text(
                   'Desglose por cuentas',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(height: 1),
