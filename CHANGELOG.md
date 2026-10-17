@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.4] - 2026-10-17
+
+### Fixed
+- **Filtro de cuentas en desglose de Evolución (`lib/pages/home/evolution.dart`)**:
+  - En el desglose por cuentas de Saldo y Patrimonio únicamente se listan las cuentas activas o con movimientos dentro del periodo analizado, excluyendo cuentas inactivas sin variación de saldo.
+  - El selector modal de filtrado por cuentas ahora muestra exclusivamente cuentas activas.
+
+---
+
 ## [3.2.0-beta.3] - 2026-10-17
 
 ### Fixed

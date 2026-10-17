@@ -159,7 +159,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
         type: .assetAccount,
       );
       if (respAcc.isSuccessful && respAcc.body != null) {
-        _availableAccounts = respAcc.body!.data;
+        _availableAccounts = respAcc.body!.data
+            .where((AccountRead a) => a.attributes.active ?? true)
+            .toList();
       }
       final Response<CategoryArray> respCat = await api.v1CategoriesGet(
         limit: 100,
@@ -239,30 +241,121 @@ class _HomeEvolutionState extends State<HomeEvolution>
     }
   }
 
+  bool _datasetHasVariation(Map<String, dynamic> entries) {
+    if (entries.length < 2) return false;
+    double? first;
+    for (final dynamic val in entries.values) {
+      final double v = double.tryParse(val.toString()) ?? 0;
+      first ??= v;
+      if ((v - first).abs() > 0.0001) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _shouldIncludeInBreakdown(
+    String accountName,
+    Map<String, AccountRead> accountsMap,
+    Map<String, dynamic> entries,
+  ) {
+    if (accountsMap.isEmpty) {
+      return true;
+    }
+    final AccountRead? acc = accountsMap[accountName];
+    if (acc == null) {
+      return _datasetHasVariation(entries);
+    }
+    final bool isActive = acc.attributes.active ?? true;
+    if (isActive) {
+      return true;
+    }
+    final double diff =
+        double.tryParse(acc.attributes.balanceDifference ?? '') ?? 0.0;
+    if (diff.abs() > 0.0001) {
+      return true;
+    }
+    return _datasetHasVariation(entries);
+  }
+
+  Future<Map<String, AccountRead>> _fetchAccountsMap(
+    FireflyIii api,
+    String startStr,
+    String endStr,
+  ) async {
+    final Map<String, AccountRead> map = <String, AccountRead>{};
+    try {
+      int page = 1;
+      while (true) {
+        final Response<AccountArray> resp = await api.v1AccountsGet(
+          type: AccountTypeFilter.all,
+          start: startStr,
+          end: endStr,
+          limit: 100,
+          page: page,
+        );
+        if (resp.isSuccessful && resp.body != null) {
+          for (final AccountRead acc in resp.body!.data) {
+            final String t = acc.attributes.type.value?.toLowerCase() ?? '';
+            if (t != 'revenue' && t != 'expense') {
+              map[acc.attributes.name] = acc;
+            }
+          }
+          final int totalPages = resp.body!.meta.pagination?.totalPages ?? 1;
+          if (page >= totalPages || resp.body!.data.isEmpty) {
+            break;
+          }
+          page++;
+        } else {
+          break;
+        }
+      }
+    } catch (e) {
+      log.warning('Error fetching accounts map for evolution breakdown: $e');
+    }
+    return map;
+  }
+
   Future<_EvolutionData> _fetchNetWorth(
     FireflyIii api,
     String startStr,
     String endStr,
   ) async {
-    final Response<ChartLine> resp = await api.v1ChartAccountOverviewGet(
-      start: startStr,
-      end: endStr,
-      period: _preset == EvolutionPeriodPreset.oneMonth ? .value_1d : .value_1w,
-      preselected: .all,
-    );
+    final (
+      Response<ChartLine> resp,
+      Map<String, AccountRead> accountsMap,
+    ) = await (
+      api.v1ChartAccountOverviewGet(
+        start: startStr,
+        end: endStr,
+        period: _preset == EvolutionPeriodPreset.oneMonth
+            ? .value_1d
+            : .value_1w,
+        preselected: .all,
+      ),
+      _fetchAccountsMap(api, startStr, endStr),
+    ).wait;
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
 
     final Set<String> liabilityNames = <String>{};
-    try {
-      final Response<AccountArray> respLiab = await api.v1AccountsGet(
-        type: .liabilities,
-      );
-      if (respLiab.isSuccessful && respLiab.body != null) {
-        for (final AccountRead acc in respLiab.body!.data) {
-          liabilityNames.add(acc.attributes.name);
-        }
+    for (final AccountRead acc in accountsMap.values) {
+      final String t = acc.attributes.type.value?.toLowerCase() ?? '';
+      if (t.contains('liab') || t == 'loan' || t == 'debt' || t == 'mortgage') {
+        liabilityNames.add(acc.attributes.name);
       }
-    } catch (_) {}
+    }
+    if (liabilityNames.isEmpty) {
+      try {
+        final Response<AccountArray> respLiab = await api.v1AccountsGet(
+          type: .liabilities,
+        );
+        if (respLiab.isSuccessful && respLiab.body != null) {
+          for (final AccountRead acc in respLiab.body!.data) {
+            liabilityNames.add(acc.attributes.name);
+          }
+        }
+      } catch (_) {}
+    }
 
     final List<ChartDataSet> datasets = resp.body ?? <ChartDataSet>[];
     final Map<DateTime, double> assetsByDate = <DateTime, double>{};
@@ -293,7 +386,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
           assetsByDate[date] = (assetsByDate[date] ?? 0) + v;
         }
       });
-      latestBreakdown[label] = isLiability ? -lastVal : lastVal;
+      if (_shouldIncludeInBreakdown(label, accountsMap, entries)) {
+        latestBreakdown[label] = isLiability ? -lastVal : lastVal;
+      }
       if (isLiability) {
         latestLiabilities += lastVal;
       } else {
@@ -359,12 +454,20 @@ class _HomeEvolutionState extends State<HomeEvolution>
               .toSet()
         : const <String>{};
 
-    final Response<ChartLine> resp = await api.v1ChartAccountOverviewGet(
-      start: startStr,
-      end: endStr,
-      period: _preset == EvolutionPeriodPreset.oneMonth ? .value_1d : .value_1w,
-      preselected: .assets,
-    );
+    final (
+      Response<ChartLine> resp,
+      Map<String, AccountRead> accountsMap,
+    ) = await (
+      api.v1ChartAccountOverviewGet(
+        start: startStr,
+        end: endStr,
+        period: _preset == EvolutionPeriodPreset.oneMonth
+            ? .value_1d
+            : .value_1w,
+        preselected: .assets,
+      ),
+      _fetchAccountsMap(api, startStr, endStr),
+    ).wait;
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
 
     final List<ChartDataSet> datasets = resp.body ?? <ChartDataSet>[];
@@ -389,7 +492,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
         totalByDate[date] = (totalByDate[date] ?? 0) + v;
         lastVal = v;
       });
-      breakdown[label] = lastVal;
+      if (_shouldIncludeInBreakdown(label, accountsMap, entries)) {
+        breakdown[label] = lastVal;
+      }
     }
 
     final List<DateTime> sortedDates = totalByDate.keys.toList()..sort();
