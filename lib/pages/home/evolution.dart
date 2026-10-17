@@ -319,27 +319,22 @@ class _HomeEvolutionState extends State<HomeEvolution>
     }
     final Map<String, AccountRead> map = <String, AccountRead>{};
     try {
-      int page = 1;
-      while (true) {
-        final Response<AccountArray> resp = await api.v1AccountsGet(
-          type: AccountTypeFilter.all,
-          limit: 100,
-          page: page,
-        );
+      final (
+        Response<AccountArray> respAsset,
+        Response<AccountArray> respLiab,
+      ) = await (
+        api.v1AccountsGet(type: AccountTypeFilter.assetAccount, limit: 100),
+        api.v1AccountsGet(type: AccountTypeFilter.liabilities, limit: 100),
+      ).wait;
+
+      for (final Response<AccountArray> resp in <Response<AccountArray>>[
+        respAsset,
+        respLiab,
+      ]) {
         if (resp.isSuccessful && resp.body != null) {
           for (final AccountRead acc in resp.body!.data) {
-            final String t = acc.attributes.type.value?.toLowerCase() ?? '';
-            if (t != 'revenue' && t != 'expense') {
-              map[acc.attributes.name] = acc;
-            }
+            map[acc.attributes.name] = acc;
           }
-          final int totalPages = resp.body!.meta.pagination?.totalPages ?? 1;
-          if (page >= totalPages || resp.body!.data.isEmpty) {
-            break;
-          }
-          page++;
-        } else {
-          break;
         }
       }
       _accountsCache = map;
@@ -347,7 +342,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
           .where(
             (AccountRead a) =>
                 (a.attributes.active ?? true) &&
-                a.attributes.type.value?.toLowerCase() == 'asset',
+                (a.attributes.type == ShortAccountTypeProperty.asset ||
+                    a.attributes.type == ShortAccountTypeProperty.liability ||
+                    a.attributes.type == ShortAccountTypeProperty.liabilities),
           )
           .toList();
     } catch (e) {
@@ -417,7 +414,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
       entries.forEach((String dStr, dynamic val) {
         final DateTime? date = DateTime.tryParse(dStr);
         if (date == null) return;
-        final double v = double.tryParse(val.toString()) ?? 0;
+        final double rawV = double.tryParse(val.toString()) ?? 0;
+        final double v = isLiability ? rawV.abs() : rawV;
         lastVal = v;
 
         if (isLiability) {
@@ -1300,9 +1298,14 @@ class _HomeEvolutionState extends State<HomeEvolution>
                                 '${selItem.percentage.toStringAsFixed(1)}%',
                                 style: Theme.of(context).textTheme.labelSmall
                                     ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.outline,
+                                      color: isDark
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
+                                      fontWeight: FontWeight.w600,
                                     ),
                               ),
                             ],
@@ -1356,6 +1359,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
                       : FtColors.categoryColor(item.name, context: context),
                   innerRadius: '68%',
                   radius: '82%',
+                  animationDuration: 0,
                   explode: true,
                   explodeIndex: _selectedCategoryIndex,
                   explodeOffset: '6%',
@@ -1469,10 +1473,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
                           '${item.percentage.toStringAsFixed(0)}%',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Theme.of(context).colorScheme.outline,
+                            color: isDark
+                                ? Theme.of(context).colorScheme.onSurfaceVariant
+                                : Theme.of(context).colorScheme.outline,
                             fontWeight: isSelected
                                 ? FontWeight.bold
-                                : FontWeight.normal,
+                                : FontWeight.w600,
                           ),
                         ),
                       ],
@@ -1549,7 +1555,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
           lineType: TrackballLineType.vertical,
         ),
         series: <CartesianSeries<ChartDataPoint, DateTime>>[
-          SplineAreaSeries<ChartDataPoint, DateTime>(
+          AreaSeries<ChartDataPoint, DateTime>(
             dataSource: data.points,
             xValueMapper: (ChartDataPoint p, _) => p.date,
             yValueMapper: (ChartDataPoint p, _) => p.value,
@@ -1654,7 +1660,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
                       ),
                       Text(
                         '${cat.percentage.toStringAsFixed(1)}%',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : null,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),

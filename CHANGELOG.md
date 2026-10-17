@@ -2,6 +2,23 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.7] - 2026-10-17
+
+### Fixed
+- **Cálculo de Patrimonio Neto (`lib/pages/home/evolution.dart`)**:
+  - Corrección en el cálculo del patrimonio neto donde los pasivos (*liabilities*) se sumaban en vez de restarse de los activos.
+  - Tratamiento del valor absoluto en balances de pasivos para asegurar deducción exacta frente al activo.
+- **Contraste de etiquetas y porcentajes en modo oscuro (`lib/pages/home/evolution.dart`)**:
+  - Uso de `onSurfaceVariant` con peso `FontWeight.w600` en chips y desglose para asegurar alta legibilidad sobre fondos oscuros.
+  - Data labels exteriores con color tipográfico adaptable de alto contraste (`onSurface`).
+
+### Changed
+- **Optimización de carga y renderizado (`lib/pages/home/evolution.dart`)**:
+  - Paginación secuencial eliminada en `_fetchAccountsMap`: ahora descarga en paralelo `assetAccount` y `liabilities` con límite 100.
+  - Sustitución de `SplineAreaSeries` por `AreaSeries` y desactivación de animación de re-renderizado en `explode` para eliminar el *stuttering* de dibujado.
+
+---
+
 ## [3.2.0-beta.6] - 2026-10-17
 
 ### Added
