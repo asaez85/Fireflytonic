@@ -110,6 +110,25 @@ class SettingsPageState extends State<SettingsPage>
         ),
         const Divider(),
         ListTile(
+          title: const Text("Periodo del gráfico de patrimonio"),
+          subtitle: Text(
+            context.select((SettingsProvider s) => s.homePatrimonyPeriod.label),
+          ),
+          leading: const CircleAvatar(child: Icon(Icons.show_chart)),
+          onTap: () {
+            showDialog<HomePatrimonyPeriod>(
+              context: context,
+              builder: (BuildContext context) =>
+                  const HomePatrimonyPeriodDialog(),
+            ).then((HomePatrimonyPeriod? period) {
+              if (period != null) {
+                settings.setHomePatrimonyPeriod(period);
+              }
+            });
+          },
+        ),
+        const Divider(),
+        ListTile(
           title: Text(S.of(context).settingsServerConnection),
           subtitle: Text(
             context.select((FireflyService f) {
@@ -486,6 +505,40 @@ class ThemeDialog extends StatelessWidget {
                         .of(context)
                         .settingsThemeValue(theme.toString().split('.').last),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class HomePatrimonyPeriodDialog extends StatelessWidget {
+  const HomePatrimonyPeriodDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    return SimpleDialog(
+      title: const Text("Periodo del gráfico"),
+      children: <Widget>[
+        RadioGroup<HomePatrimonyPeriod>(
+          groupValue: settings.homePatrimonyPeriod,
+          onChanged: (HomePatrimonyPeriod? period) {
+            Navigator.pop(context, period);
+          },
+          child: Column(
+            children: <Widget>[
+              ...HomePatrimonyPeriod.values.map(
+                (HomePatrimonyPeriod p) =>
+                    RadioListTile<HomePatrimonyPeriod>.adaptive(
+                  value: p,
+                  title: Text(p.label),
+                  subtitle: p == HomePatrimonyPeriod.oneYear
+                      ? const Text("Por defecto")
+                      : null,
                 ),
               ),
             ],

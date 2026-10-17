@@ -110,6 +110,8 @@ class _HomeSummaryState extends State<HomeSummary>
   late Future<_SummaryData> _future;
   _SummaryData? _initialData;
 
+  HomePatrimonyPeriod? _currentPeriod;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -125,8 +127,23 @@ class _HomeSummaryState extends State<HomeSummary>
     _future = _fetch();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final HomePatrimonyPeriod period =
+        context.watch<SettingsProvider>().homePatrimonyPeriod;
+    if (_currentPeriod != null && _currentPeriod != period) {
+      _currentPeriod = period;
+      _refresh();
+    } else {
+      _currentPeriod = period;
+    }
+  }
+
   Future<_SummaryData> _fetch() async {
     final FireflyIii api = context.read<FireflyService>().api;
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    final HomePatrimonyPeriod period = settings.homePatrimonyPeriod;
     final CurrencyRead currency = context
         .read<FireflyService>()
         .defaultCurrency;
@@ -139,7 +156,16 @@ class _HomeSummaryState extends State<HomeSummary>
     final String chartStart = DateFormat(
       'yyyy-MM-dd',
       'en_US',
-    ).format(now.subtract(const Duration(days: 30)));
+    ).format(period.getStartDate(now));
+
+    final V1ChartAccountOverviewGetPeriod apiPeriod = switch (period) {
+      HomePatrimonyPeriod.oneMonth => V1ChartAccountOverviewGetPeriod.value_1d,
+      HomePatrimonyPeriod.threeMonths =>
+        V1ChartAccountOverviewGetPeriod.value_1d,
+      HomePatrimonyPeriod.sixMonths => V1ChartAccountOverviewGetPeriod.value_1w,
+      HomePatrimonyPeriod.oneYear => V1ChartAccountOverviewGetPeriod.value_1w,
+      HomePatrimonyPeriod.allTime => V1ChartAccountOverviewGetPeriod.value_1m,
+    };
 
     try {
       final (
@@ -154,7 +180,7 @@ class _HomeSummaryState extends State<HomeSummary>
         api.v1ChartAccountOverviewGet(
           start: chartStart,
           end: end,
-          period: V1ChartAccountOverviewGetPeriod.value_1d,
+          period: apiPeriod,
         ),
       ).wait;
 
@@ -418,11 +444,85 @@ class _PatrimonyCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    "Patrimonio total",
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        "Patrimonio total",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
+                      ),
+                      Consumer<SettingsProvider>(
+                        builder: (
+                          BuildContext context,
+                          SettingsProvider settings,
+                          _,
+                        ) {
+                          return PopupMenuButton<HomePatrimonyPeriod>(
+                            initialValue: settings.homePatrimonyPeriod,
+                            tooltip: 'Cambiar periodo del gráfico',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onSelected: (HomePatrimonyPeriod period) {
+                              settings.setHomePatrimonyPeriod(period);
+                            },
+                            itemBuilder: (BuildContext context) =>
+                                HomePatrimonyPeriod.values
+                                    .map(
+                                      (HomePatrimonyPeriod p) =>
+                                          PopupMenuItem<HomePatrimonyPeriod>(
+                                        value: p,
+                                        child: Row(
+                                          children: <Widget>[
+                                            if (p ==
+                                                settings.homePatrimonyPeriod)
+                                              const Icon(
+                                                Icons.check,
+                                                size: 18,
+                                              )
+                                            else
+                                              const SizedBox(width: 18),
+                                            const SizedBox(width: 8),
+                                            Text(p.label),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text(
+                                    settings.homePatrimonyPeriod.shortLabel,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.white70,
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -442,6 +542,20 @@ class _PatrimonyCard extends StatelessWidget {
                         "Ingresos",
                         income,
                         FtColors.incomeLight,
+                        onTap: () {
+                          final DateTime now = DateTime.now();
+                          final DateTime start =
+                              DateTime(now.year, now.month, 1);
+                          final DateTime end =
+                              DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+                          final HomeState? home =
+                              context.findAncestorStateOfType<HomeState>();
+                          home?.openTransactionsForMonthType(
+                            segment: 2, // Depósitos (Ingresos)
+                            start: start,
+                            end: end,
+                          );
+                        },
                       ),
                       const SizedBox(width: 12),
                       _stat(
@@ -450,6 +564,20 @@ class _PatrimonyCard extends StatelessWidget {
                         "Gastos",
                         expense,
                         FtColors.coralLight,
+                        onTap: () {
+                          final DateTime now = DateTime.now();
+                          final DateTime start =
+                              DateTime(now.year, now.month, 1);
+                          final DateTime end =
+                              DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+                          final HomeState? home =
+                              context.findAncestorStateOfType<HomeState>();
+                          home?.openTransactionsForMonthType(
+                            segment: 1, // Retiradas (Gastos)
+                            start: start,
+                            end: end,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -467,49 +595,59 @@ class _PatrimonyCard extends StatelessWidget {
     IconData icon,
     String label,
     double amount,
-    Color color,
-  ) {
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     final CurrencyRead currency = context
         .read<FireflyService>()
         .defaultCurrency;
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(FtTheme.radiusSmall),
-        ),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: color.withValues(alpha: 0.22),
-              foregroundColor: color,
-              child: Icon(icon, size: 18),
+          splashColor: Colors.white.withValues(alpha: 0.15),
+          highlightColor: Colors.white.withValues(alpha: 0.08),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(FtTheme.radiusSmall),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: <Widget>[
-                Text(
-                  label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall!.copyWith(color: Colors.white70),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: color.withValues(alpha: 0.22),
+                  foregroundColor: color,
+                  child: Icon(icon, size: 18),
                 ),
-                Text(
-                  currency.fmt(amount, context: context),
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures(),
-                    ],
-                  ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      label,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall!.copyWith(color: Colors.white70),
+                    ),
+                    Text(
+                      currency.fmt(amount, context: context),
+                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

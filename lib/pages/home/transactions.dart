@@ -38,9 +38,14 @@ class TransactionSum {
 }
 
 class HomeTransactions extends StatefulWidget {
-  const HomeTransactions({super.key, this.filters});
+  const HomeTransactions({
+    super.key,
+    this.filters,
+    this.initialSegment,
+  });
 
   final TransactionFilters? filters;
+  final int? initialSegment;
 
   @override
   State<HomeTransactions> createState() => HomeTransactionsState();
@@ -130,6 +135,31 @@ class HomeTransactionsState extends State<HomeTransactions>
     _txSum = TransactionSum();
     _txSumUsed.clear();
     _runningBalancesByTransactionId.clear();
+    _lastCalculatedBalance = null;
+    _lastCalculatedBalanceByAccount.clear();
+    _summaryFuture = _fetchSummary();
+    if (mounted) {
+      setState(() {
+        _pagingState = _resetPaging();
+      });
+    }
+  }
+
+  void setTypeFilter({
+    required int segment,
+    DateTime? start,
+    DateTime? end,
+  }) {
+    _filters.reset();
+    _filters.start = start;
+    _filters.end = end;
+    _filters.updateFilters();
+    _rowsWithDate.clear();
+    _lastDate = null;
+    _txSum = TransactionSum();
+    _txSumUsed.clear();
+    _runningBalancesByTransactionId.clear();
+    _segment = segment;
     _lastCalculatedBalance = null;
     _lastCalculatedBalanceByAccount.clear();
     _summaryFuture = _fetchSummary();
@@ -370,6 +400,10 @@ class HomeTransactionsState extends State<HomeTransactions>
     _pagingState = PagingState<int, TransactionRead>();
     _tagsHidden.value = context.read<SettingsProvider>().hideTags;
 
+    if (widget.initialSegment != null) {
+      _segment = widget.initialSegment!;
+    }
+
     if (widget.filters != null) {
       _filters.account = widget.filters!.account;
       _filters.text = widget.filters!.text;
@@ -441,6 +475,15 @@ class HomeTransactionsState extends State<HomeTransactions>
         final BudgetRead pending = homeState!.pendingBudgetFilter!;
         homeState.pendingBudgetFilter = null;
         setBudgetFilter(pending);
+      } else if (homeState?.pendingTypeFilter != null) {
+        final ({int segment, DateTime start, DateTime end}) pending =
+            homeState!.pendingTypeFilter!;
+        homeState.pendingTypeFilter = null;
+        setTypeFilter(
+          segment: pending.segment,
+          start: pending.start,
+          end: pending.end,
+        );
       }
     });
 
@@ -1178,6 +1221,12 @@ class HomeTransactionsState extends State<HomeTransactions>
       if (_filters.category != null) {
         activeFilterNames.add(
           'Categoría: ${_filters.category!.attributes.name}',
+        );
+      }
+      if (_filters.start != null || _filters.end != null) {
+        final DateTime s = _filters.start ?? DateTime.now();
+        activeFilterNames.add(
+          DateFormat('MMMM yyyy', 'es_ES').format(s),
         );
       }
       if (activeFilterNames.isNotEmpty) {

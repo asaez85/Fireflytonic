@@ -49,6 +49,7 @@ class HomePageState extends State<HomePage>
       GlobalKey<HomeTransactionsState>();
   AccountRead? pendingAccountFilter;
   BudgetRead? pendingBudgetFilter;
+  ({int segment, DateTime start, DateTime end})? pendingTypeFilter;
 
   static const List<String> _sectionTitles = <String>[
     "Inicio",
@@ -116,6 +117,23 @@ class HomePageState extends State<HomePage>
       _transactionsKey.currentState!.setBudgetFilter(budget);
     } else {
       pendingBudgetFilter = budget;
+    }
+    _onSelectTab(1);
+  }
+
+  void openTransactionsForMonthType({
+    required int segment,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    if (_transactionsKey.currentState != null) {
+      _transactionsKey.currentState!.setTypeFilter(
+        segment: segment,
+        start: start,
+        end: end,
+      );
+    } else {
+      pendingTypeFilter = (segment: segment, start: start, end: end);
     }
     _onSelectTab(1);
   }
