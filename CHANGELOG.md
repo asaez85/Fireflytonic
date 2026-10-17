@@ -2,6 +2,17 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.8] - 2026-10-17
+### Mejoras y Correcciones
+- **Icono de categoría en movimientos divididos (splits)**:
+  - En la lista de transacciones y búsquedas, si todas las divisiones de un movimiento pertenecen a la misma categoría, se muestra el icono y color específicos de dicha categoría en lugar del icono genérico.
+- **Desbloqueo biométrico y facial directo**:
+  - Reconocimiento facial sin requerir pulsar confirmación en pantalla (`sensitiveTransaction: false`).
+  - Soporte de PIN o patrón del dispositivo como respaldo en caso de fallo biométrico (`biometricOnly: false`).
+  - Localización al español de los diálogos y mensajes de autenticación biométrica en Android.
+- **Pantalla de bloqueo con fondo difuminado (Blur / Frosted Glass)**:
+  - Superposición con desenfoque gaussiano (`BackdropFilter`) sobre la interfaz activa mientras la sesión no esté autenticada, protegiendo los datos financieros en pantalla.
+
 ## [3.0.8-beta.7] - 2026-10-17
 ### Seguridad y Mejoras
 - **Desbloqueo biométrico y facial directo**:
