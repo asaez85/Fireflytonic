@@ -90,7 +90,8 @@ class _SummaryData {
         <_Account>[],
     income: (json['income'] as num?)?.toDouble() ?? 0.0,
     expense: (json['expense'] as num?)?.toDouble() ?? 0.0,
-    history: (json['history'] as List<dynamic>?)
+    history:
+        (json['history'] as List<dynamic>?)
             ?.map((dynamic e) => (e as num).toDouble())
             .toList() ??
         const <double>[],
@@ -130,8 +131,9 @@ class _HomeSummaryState extends State<HomeSummary>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final HomePatrimonyPeriod period =
-        context.watch<SettingsProvider>().homePatrimonyPeriod;
+    final HomePatrimonyPeriod period = context
+        .watch<SettingsProvider>()
+        .homePatrimonyPeriod;
     if (_currentPeriod != null && _currentPeriod != period) {
       _currentPeriod = period;
       _refresh();
@@ -226,8 +228,9 @@ class _HomeSummaryState extends State<HomeSummary>
         }
       }
       final List<String> sortedDates = dailyTotals.keys.toList()..sort();
-      final List<double> history =
-          sortedDates.map((String k) => dailyTotals[k]!).toList();
+      final List<double> history = sortedDates
+          .map((String k) => dailyTotals[k]!)
+          .toList();
 
       double sum(Iterable<InsightTotalEntry>? e) {
         double s = 0;
@@ -454,73 +457,77 @@ class _PatrimonyCard extends StatelessWidget {
                         ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
                       ),
                       Consumer<SettingsProvider>(
-                        builder: (
-                          BuildContext context,
-                          SettingsProvider settings,
-                          _,
-                        ) {
-                          return PopupMenuButton<HomePatrimonyPeriod>(
-                            initialValue: settings.homePatrimonyPeriod,
-                            tooltip: 'Cambiar periodo del gráfico',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onSelected: (HomePatrimonyPeriod period) {
-                              settings.setHomePatrimonyPeriod(period);
-                            },
-                            itemBuilder: (BuildContext context) =>
-                                HomePatrimonyPeriod.values
-                                    .map(
-                                      (HomePatrimonyPeriod p) =>
-                                          PopupMenuItem<HomePatrimonyPeriod>(
-                                        value: p,
-                                        child: Row(
-                                          children: <Widget>[
-                                            if (p ==
-                                                settings.homePatrimonyPeriod)
-                                              const Icon(
-                                                Icons.check,
-                                                size: 18,
-                                              )
-                                            else
-                                              const SizedBox(width: 18),
-                                            const SizedBox(width: 8),
-                                            Text(p.label),
-                                          ],
+                        builder:
+                            (
+                              BuildContext context,
+                              SettingsProvider settings,
+                              _,
+                            ) {
+                              return PopupMenuButton<HomePatrimonyPeriod>(
+                                initialValue: settings.homePatrimonyPeriod,
+                                tooltip: 'Cambiar periodo del gráfico',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onSelected: (HomePatrimonyPeriod period) {
+                                  settings.setHomePatrimonyPeriod(period);
+                                },
+                                itemBuilder: (BuildContext context) =>
+                                    HomePatrimonyPeriod.values
+                                        .map(
+                                          (HomePatrimonyPeriod p) =>
+                                              PopupMenuItem<
+                                                HomePatrimonyPeriod
+                                              >(
+                                                value: p,
+                                                child: Row(
+                                                  children: <Widget>[
+                                                    if (p ==
+                                                        settings
+                                                            .homePatrimonyPeriod)
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 18,
+                                                      )
+                                                    else
+                                                      const SizedBox(width: 18),
+                                                    const SizedBox(width: 8),
+                                                    Text(p.label),
+                                                  ],
+                                                ),
+                                              ),
+                                        )
+                                        .toList(),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Text(
+                                        settings.homePatrimonyPeriod.shortLabel,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                    )
-                                    .toList(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    settings.homePatrimonyPeriod.shortLabel,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                      const SizedBox(width: 2),
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: Colors.white70,
+                                        size: 16,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 2),
-                                  const Icon(
-                                    Icons.arrow_drop_down,
-                                    color: Colors.white70,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                ),
+                              );
+                            },
                       ),
                     ],
                   ),
@@ -530,7 +537,9 @@ class _PatrimonyCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineLarge!.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -544,12 +553,21 @@ class _PatrimonyCard extends StatelessWidget {
                         FtColors.incomeLight,
                         onTap: () {
                           final DateTime now = DateTime.now();
-                          final DateTime start =
-                              DateTime(now.year, now.month, 1);
-                          final DateTime end =
-                              DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-                          final HomePageState? home =
-                              context.findAncestorStateOfType<HomePageState>();
+                          final DateTime start = DateTime(
+                            now.year,
+                            now.month,
+                            1,
+                          );
+                          final DateTime end = DateTime(
+                            now.year,
+                            now.month + 1,
+                            0,
+                            23,
+                            59,
+                            59,
+                          );
+                          final HomePageState? home = context
+                              .findAncestorStateOfType<HomePageState>();
                           home?.openTransactionsForMonthType(
                             segment: 2, // Depósitos (Ingresos)
                             start: start,
@@ -566,12 +584,21 @@ class _PatrimonyCard extends StatelessWidget {
                         FtColors.coralLight,
                         onTap: () {
                           final DateTime now = DateTime.now();
-                          final DateTime start =
-                              DateTime(now.year, now.month, 1);
-                          final DateTime end =
-                              DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-                          final HomePageState? home =
-                              context.findAncestorStateOfType<HomePageState>();
+                          final DateTime start = DateTime(
+                            now.year,
+                            now.month,
+                            1,
+                          );
+                          final DateTime end = DateTime(
+                            now.year,
+                            now.month + 1,
+                            0,
+                            23,
+                            59,
+                            59,
+                          );
+                          final HomePageState? home = context
+                              .findAncestorStateOfType<HomePageState>();
                           home?.openTransactionsForMonthType(
                             segment: 1, // Retiradas (Gastos)
                             start: start,
@@ -670,7 +697,9 @@ class _SparklineBackgroundPainter extends CustomPainter {
     double minY = values.reduce((double a, double b) => a < b ? a : b);
     double maxY = values.reduce((double a, double b) => a > b ? a : b);
     final double diff = maxY - minY;
-    final double padding = diff == 0 ? (minY == 0 ? 10.0 : minY.abs() * 0.1) : diff * 0.15;
+    final double padding = diff == 0
+        ? (minY == 0 ? 10.0 : minY.abs() * 0.1)
+        : diff * 0.15;
     minY -= padding;
     maxY += padding;
     final double rangeY = maxY - minY;
@@ -706,14 +735,17 @@ class _SparklineBackgroundPainter extends CustomPainter {
     fillPath.close();
 
     final Paint fillPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: <Color>[
-          FtColors.incomeLight.withValues(alpha: 0.18),
-          FtColors.incomeLight.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromLTWH(0, topMargin, size.width, size.height - topMargin))
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[
+              FtColors.incomeLight.withValues(alpha: 0.18),
+              FtColors.incomeLight.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromLTWH(0, topMargin, size.width, size.height - topMargin),
+          )
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(fillPath, fillPaint);

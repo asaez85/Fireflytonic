@@ -84,13 +84,7 @@ enum TransactionDateFilter {
   all,
 }
 
-enum HomePatrimonyPeriod {
-  oneMonth,
-  threeMonths,
-  sixMonths,
-  oneYear,
-  allTime,
-}
+enum HomePatrimonyPeriod { oneMonth, threeMonths, sixMonths, oneYear, allTime }
 
 extension HomePatrimonyPeriodExt on HomePatrimonyPeriod {
   String get label => switch (this) {
@@ -277,7 +271,9 @@ class SettingsProvider with ChangeNotifier {
     notifyListeners();
     final SharedPreferencesAsync prefs = SharedPreferencesAsync();
     await prefs.setInt(settingHomePatrimonyPeriod, period.index);
-    log.finest(() => "notify SettingsProvider->setHomePatrimonyPeriod($period)");
+    log.finest(
+      () => "notify SettingsProvider->setHomePatrimonyPeriod($period)",
+    );
   }
 
   Future<void> migrateLegacy(SharedPreferencesAsync prefs) async {
@@ -492,7 +488,8 @@ class SettingsProvider with ChangeNotifier {
     final int? patrimonyPeriodIndex = await prefs.getInt(
       settingHomePatrimonyPeriod,
     );
-    _homePatrimonyPeriod = (patrimonyPeriodIndex == null ||
+    _homePatrimonyPeriod =
+        (patrimonyPeriodIndex == null ||
             patrimonyPeriodIndex < 0 ||
             patrimonyPeriodIndex >= HomePatrimonyPeriod.values.length)
         ? HomePatrimonyPeriod.oneYear

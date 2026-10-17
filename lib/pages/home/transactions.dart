@@ -38,11 +38,7 @@ class TransactionSum {
 }
 
 class HomeTransactions extends StatefulWidget {
-  const HomeTransactions({
-    super.key,
-    this.filters,
-    this.initialSegment,
-  });
+  const HomeTransactions({super.key, this.filters, this.initialSegment});
 
   final TransactionFilters? filters;
   final int? initialSegment;
@@ -145,11 +141,7 @@ class HomeTransactionsState extends State<HomeTransactions>
     }
   }
 
-  void setTypeFilter({
-    required int segment,
-    DateTime? start,
-    DateTime? end,
-  }) {
+  void setTypeFilter({required int segment, DateTime? start, DateTime? end}) {
     _filters.reset();
     _filters.start = start;
     _filters.end = end;
@@ -1225,9 +1217,7 @@ class HomeTransactionsState extends State<HomeTransactions>
       }
       if (_filters.start != null || _filters.end != null) {
         final DateTime s = _filters.start ?? DateTime.now();
-        activeFilterNames.add(
-          DateFormat('MMMM yyyy', 'es_ES').format(s),
-        );
+        activeFilterNames.add(DateFormat('MMMM yyyy', 'es_ES').format(s));
       }
       if (activeFilterNames.isNotEmpty) {
         filterTitle = activeFilterNames.join(' · ');

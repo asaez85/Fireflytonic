@@ -11,6 +11,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:version/version.dart';
+import 'package:waterflyiii/app.dart';
 
 final Logger log = Logger("AppUpdater");
 
@@ -361,9 +362,12 @@ class AppUpdater {
       },
     );
 
-    if ((shouldUpdate ?? false) && context.mounted) {
+    final BuildContext installContext = context.mounted
+        ? context
+        : (navigatorKey.currentContext ?? context);
+    if ((shouldUpdate ?? false) && installContext.mounted) {
       await instance.downloadAndInstall(
-        context: context,
+        context: installContext,
         updateInfo: updateInfo,
       );
     }

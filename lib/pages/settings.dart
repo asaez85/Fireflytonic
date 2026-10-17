@@ -14,7 +14,7 @@ import 'package:material_color_utilities/material_color_utilities.dart'
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_actions/quick_actions.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:waterflyiii/app.dart';
 import 'package:waterflyiii/auth.dart';
 import 'package:waterflyiii/extensions.dart';
 import 'package:waterflyiii/generated/l10n/app_localizations.dart';
@@ -48,6 +48,7 @@ class SettingsPageState extends State<SettingsPage>
       padding: const .symmetric(horizontal: 24),
       primary: false,
       children: <Widget>[
+        const _SettingsSectionHeader(title: "Apariencia y gráficos"),
         ListTile(
           title: Text(S.of(context).settingsLanguage),
           subtitle: Text(S.of(context).localeName),
@@ -108,11 +109,10 @@ class SettingsPageState extends State<SettingsPage>
             );
           },
         ),
-        const Divider(),
         ListTile(
-          title: const Text("Periodo del gráfico de patrimonio"),
+          title: const Text("Periodo por defecto de los gráficos"),
           subtitle: Text(
-            context.select((SettingsProvider s) => s.homePatrimonyPeriod.label),
+            "${context.select((SettingsProvider s) => s.homePatrimonyPeriod.label)} • Patrimonio y Evolución",
           ),
           leading: const CircleAvatar(child: Icon(Icons.show_chart)),
           onTap: () {
@@ -128,6 +128,7 @@ class SettingsPageState extends State<SettingsPage>
           },
         ),
         const Divider(),
+        const _SettingsSectionHeader(title: "Servidor y seguridad"),
         ListTile(
           title: Text(S.of(context).settingsServerConnection),
           subtitle: Text(
@@ -154,7 +155,6 @@ class SettingsPageState extends State<SettingsPage>
         ),
         SwitchListTile.adaptive(
           title: Text(S.of(context).settingsUseServerTimezone),
-          subtitle: Text(S.of(context).settingsUseServerTimezoneHelp),
           value: context.select((SettingsProvider s) => s.useServerTime),
           secondary: CircleAvatar(
             child: Icon(
@@ -232,8 +232,9 @@ class SettingsPageState extends State<SettingsPage>
             settings.lock = value;
           },
         ),
-        const Divider(),
-        if (!kIsWeb && Platform.isAndroid)
+        if (!kIsWeb && Platform.isAndroid) ...<Widget>[
+          const Divider(),
+          const _SettingsSectionHeader(title: "Notificaciones"),
           FutureBuilder<NotificationListenerStatus>(
             future: nlStatus(),
             builder:
@@ -290,22 +291,9 @@ class SettingsPageState extends State<SettingsPage>
                   );
                 },
           ),
-        if (!kIsWeb && Platform.isAndroid) const Divider(),
-        ListTile(
-          title: Text(S.of(context).settingsFAQ),
-          subtitle: Text(S.of(context).settingsFAQHelp),
-          leading: const CircleAvatar(child: Icon(Icons.question_answer)),
-          onTap: () async {
-            final Uri uri = Uri.parse(
-              "https://github.com/asaez85/Fireflytonic/blob/main/FAQ.md",
-            );
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri);
-            } else {
-              throw Exception("Could not open URL");
-            }
-          },
-        ),
+        ],
+        const Divider(),
+        const _SettingsSectionHeader(title: "Acerca de"),
         FutureBuilder<PackageInfo>(
           future: PackageInfo.fromPlatform(),
           builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
@@ -326,116 +314,34 @@ class SettingsPageState extends State<SettingsPage>
             );
           },
         ),
-        if (!kIsWeb && Platform.isAndroid) ...<Widget>[
-          const Divider(),
+        if (!kIsWeb && Platform.isAndroid)
           FutureBuilder<UpdateChannel>(
             future: AppUpdater.getUpdateChannel(),
-            builder: (BuildContext _, AsyncSnapshot<UpdateChannel> snapshot) {
-              final UpdateChannel currentChannel =
-                  snapshot.data ?? UpdateChannel.stable;
-              return ListTile(
-                title: const Text("Canal de actualizaciones"),
-                subtitle: Text(
-                  "${currentChannel.label} — ${currentChannel.description}",
-                ),
-                leading: const CircleAvatar(
-                  child: Icon(Icons.alt_route_rounded),
-                ),
-                onTap: () async {
-                  final ScaffoldMessengerState messenger = ScaffoldMessenger.of(
-                    context,
-                  );
-                  final UpdateChannel? selected =
-                      await showDialog<UpdateChannel>(
-                        context: context,
-                        builder: (BuildContext dialogContext) => SimpleDialog(
-                          title: const Text("Canal de actualizaciones"),
-                          children: <Widget>[
-                            RadioListTile<UpdateChannel>.adaptive(
-                              value: UpdateChannel.stable,
-                              groupValue: currentChannel,
-                              title: const Text("Estable"),
-                              subtitle: const Text(
-                                "Versiones oficiales y probadas",
-                              ),
-                              onChanged: (UpdateChannel? val) {
-                                Navigator.pop(dialogContext, val);
-                              },
-                            ),
-                            RadioListTile<UpdateChannel>.adaptive(
-                              value: UpdateChannel.beta,
-                              groupValue: currentChannel,
-                              title: const Text("Beta"),
-                              subtitle: const Text(
-                                "Versiones preliminares con novedades",
-                              ),
-                              onChanged: (UpdateChannel? val) {
-                                Navigator.pop(dialogContext, val);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                  if (selected != null && selected != currentChannel) {
-                    await AppUpdater.setUpdateChannel(selected);
-                    if (!mounted) return;
-                    setState(() {});
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text("Canal cambiado a: ${selected.label}"),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-              );
-            },
-          ),
-          ListTile(
-            title: const Text("Buscar actualizaciones"),
-            subtitle: const Text(
-              "Comprobar e instalar nueva versión de Fireflytonic",
-            ),
-            leading: const CircleAvatar(
-              child: Icon(Icons.system_update_rounded),
-            ),
-            onTap: () async {
-              final ScaffoldMessengerState messenger = ScaffoldMessenger.of(
-                context,
-              );
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text("Comprobando actualizaciones..."),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              try {
-                final AppUpdateInfo? update = await AppUpdater.instance
-                    .checkForUpdate(isManual: true);
-                if (!context.mounted) return;
-                if (update != null) {
-                  await AppUpdater.showUpdateDialog(
-                    context: context,
-                    updateInfo: update,
-                  );
-                } else {
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text("Ya tienes la última versión instalada."),
+            builder:
+                (BuildContext context, AsyncSnapshot<UpdateChannel> snapshot) {
+                  final UpdateChannel currentChannel =
+                      snapshot.data ?? UpdateChannel.stable;
+                  return ListTile(
+                    title: const Text("Actualizaciones"),
+                    subtitle: Text(
+                      "Canal ${currentChannel.label} • Buscar nueva versión",
                     ),
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.system_update_rounded),
+                    ),
+                    onTap: () async {
+                      await showDialog<void>(
+                        context: context,
+                        builder: (BuildContext dialogContext) =>
+                            UpdateSettingsDialog(
+                              currentChannel: currentChannel,
+                            ),
+                      );
+                      if (mounted) setState(() {});
+                    },
                   );
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text("Error al buscar actualizaciones: $e"),
-                  ),
-                );
-              }
-            },
+                },
           ),
-        ],
       ],
     );
   }
@@ -522,8 +428,15 @@ class HomePatrimonyPeriodDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final SettingsProvider settings = context.read<SettingsProvider>();
     return SimpleDialog(
-      title: const Text("Periodo del gráfico"),
+      title: const Text("Periodo por defecto de los gráficos"),
       children: <Widget>[
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+          child: Text(
+            "Selecciona el periodo inicial que se aplicará a los gráficos de patrimonio y a la pantalla de Evolución.",
+            style: TextStyle(fontSize: 13),
+          ),
+        ),
         RadioGroup<HomePatrimonyPeriod>(
           groupValue: settings.homePatrimonyPeriod,
           onChanged: (HomePatrimonyPeriod? period) {
@@ -534,17 +447,167 @@ class HomePatrimonyPeriodDialog extends StatelessWidget {
               ...HomePatrimonyPeriod.values.map(
                 (HomePatrimonyPeriod p) =>
                     RadioListTile<HomePatrimonyPeriod>.adaptive(
-                  value: p,
-                  title: Text(p.label),
-                  subtitle: p == HomePatrimonyPeriod.oneYear
-                      ? const Text("Por defecto")
-                      : null,
-                ),
+                      value: p,
+                      title: Text(p.label),
+                      subtitle: p == HomePatrimonyPeriod.oneYear
+                          ? const Text("Recomendado (1 año)")
+                          : null,
+                    ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class UpdateSettingsDialog extends StatefulWidget {
+  const UpdateSettingsDialog({super.key, required this.currentChannel});
+
+  final UpdateChannel currentChannel;
+
+  @override
+  State<UpdateSettingsDialog> createState() => _UpdateSettingsDialogState();
+}
+
+class _UpdateSettingsDialogState extends State<UpdateSettingsDialog> {
+  late UpdateChannel _selectedChannel;
+  bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedChannel = widget.currentChannel;
+  }
+
+  Future<void> _checkUpdates() async {
+    setState(() => _checking = true);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final NavigatorState navigator = Navigator.of(context);
+    try {
+      final AppUpdateInfo? update = await AppUpdater.instance.checkForUpdate(
+        isManual: true,
+      );
+      if (!mounted) return;
+      setState(() => _checking = false);
+      if (update != null) {
+        navigator.pop();
+        final BuildContext? targetContext = navigatorKey.currentContext;
+        if (targetContext != null && targetContext.mounted) {
+          await AppUpdater.showUpdateDialog(
+            context: targetContext,
+            updateInfo: update,
+          );
+        }
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text("Ya tienes la última versión instalada."),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _checking = false);
+      messenger.showSnackBar(
+        SnackBar(content: Text("Error al buscar actualizaciones: $e")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Actualizaciones"),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              "Canal de distribución",
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            RadioListTile<UpdateChannel>.adaptive(
+              value: UpdateChannel.stable,
+              groupValue: _selectedChannel,
+              title: const Text("Estable"),
+              subtitle: const Text("Versiones oficiales y probadas"),
+              contentPadding: EdgeInsets.zero,
+              onChanged: (UpdateChannel? val) async {
+                if (val != null && val != _selectedChannel) {
+                  setState(() => _selectedChannel = val);
+                  await AppUpdater.setUpdateChannel(val);
+                }
+              },
+            ),
+            RadioListTile<UpdateChannel>.adaptive(
+              value: UpdateChannel.beta,
+              groupValue: _selectedChannel,
+              title: const Text("Beta"),
+              subtitle: const Text("Versiones preliminares con novedades"),
+              contentPadding: EdgeInsets.zero,
+              onChanged: (UpdateChannel? val) async {
+                if (val != null && val != _selectedChannel) {
+                  setState(() => _selectedChannel = val);
+                  await AppUpdater.setUpdateChannel(val);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                icon: _checking
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator.adaptive(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.refresh_rounded),
+                label: Text(
+                  _checking ? "Comprobando..." : "Buscar actualizaciones ahora",
+                ),
+                onPressed: _checking ? null : _checkUpdates,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(MaterialLocalizations.of(context).closeButtonLabel),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsSectionHeader extends StatelessWidget {
+  const _SettingsSectionHeader({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 6, left: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 }

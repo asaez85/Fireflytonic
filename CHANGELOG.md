@@ -1,6 +1,165 @@
 # Changelog
 
-Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
+Todas las novedades notables de Fireflytonic se documentan en este archivo.
+
+## [3.2.0] - 2026-10-17
+
+### Novedades y Análisis Financiero
+- **Nueva pantalla de Evolución y Análisis (`lib/pages/home/evolution.dart`)**:
+  - **4 modos de visualización financiera**:
+    - **Patrimonio Neto**: Curva evolutiva del patrimonio neto (activos descontando pasivos reales de forma continua) con granularidad adaptativa y gráficos suaves.
+    - **Saldo Agregado**: Saldo total y acumulado real de las cuentas bancarias a lo largo del tiempo.
+    - **Flujo de Efectivo**: Comparativa visual mensual de ingresos frente a gastos con tasa de ahorro calculada.
+    - **Distribución por Categorías**: Gráfico interactivo estilo dona con selector bidireccional y desglose detallado de gastos.
+  - **Gráficos interactivos de alta fluidez**:
+    - Curvas `SplineAreaSeries` con interpolación suave (`SplineType.monotonic`) y degradados elegantes.
+    - Gráfico circular (`SfCircularChart`) con etiquetas exteriores anticolisión, líneas conectoras y leyenda tipo chips compacta (`Wrap`) que evita scroll innecesario.
+    - Indicador central táctil con importe y porcentaje al seleccionar sectores del gráfico.
+    - Eliminado el *stuttering* de dibujado y transiciones de frames optimizadas.
+  - **Selector temporal estilo Fintonic**:
+    - Rango temporal rápido (1M, 3M, 6M, 1A, Todo) y selector de fechas personalizado con calendario modal.
+  - **Filtros avanzados**:
+    - Filtrado modal por cuentas de activo activas y por categorías específicas.
+  - **Tarjetas de KPIs y desglose**:
+    - Resumen superior con variación absoluta y porcentual del periodo, tasa de ahorro y ranking inferior de gastos con barras de progreso `FtProgressBar`.
+    - Respeto total al modo de ocultar importes (`SettingsProvider.hideAmounts`) y compatibilidad plena con temas claro y oscuro de alto contraste.
+
+### Navegación y Usabilidad
+- **Reorganización de la barra inferior (`lib/pages/home.dart`)**:
+  - Incorporada la nueva pestaña de **Evolución** (`Icons.insights_outlined` / `Icons.insights`) directamente en la navegación principal.
+- **Acceso a Huchas en menú lateral (`lib/pages/piggybanks.dart`)**:
+  - Trasladado el acceso a metas de ahorro y huchas al menú lateral principal (drawer) para una interfaz más despejada y coherente.
+
+### Configuración y Experiencia de Usuario
+- **Estructuración temática de Ajustes (`lib/pages/settings.dart`)**:
+  - Reorganizada la pantalla de Configuración en bloques limpios: *Apariencia y gráficos*, *Servidor y seguridad*, *Notificaciones* y *Acerca de*.
+  - Eliminado el enlace redundante a FAQ para simplificar la navegación.
+- **Unificación de periodo por defecto para gráficos**:
+  - La opción de periodo por defecto de gráficos sincroniza tanto el gráfico de patrimonio de inicio como el rango inicial de Evolución.
+- **Centro de Actualizaciones y gestión de versiones (`lib/updater.dart`)**:
+  - Nuevo diálogo modal de Actualizaciones que permite alternar cómodamente entre el canal Estable y Beta y verificar actualizaciones.
+  - Preservación del contexto raíz de navegación al descargar e instalar APKs desde los ajustes.
+- **Claridad de textos y limpieza visual**:
+  - Simplificada la opción de bloqueo de pantalla a «Requerir autenticación».
+  - Eliminado el subtítulo explicativo redundante en la opción «Usar la zona horaria del servidor».
+
+---
+
+## [3.2.0-beta.9] - 2026-10-17
+
+### Changed
+- **Ajustes de interfaz y textos (`lib/pages/settings.dart`, `lib/l10n/app_es.arb`)**:
+  - Eliminado subtítulo redundante en «Usar la zona horaria del servidor» para una interfaz más limpia y compacta.
+  - Simplificada la descripción de bloqueo de pantalla a «Requerir autenticación» (eliminada la coletilla «al iniciar la aplicación»).
+
+---
+
+## [3.2.0-beta.8] - 2026-10-17
+
+### Fixed
+- **Botón de descarga de actualización (`lib/updater.dart`, `lib/pages/settings.dart`)**:
+  - Resuelto el fallo al pulsar «Actualizar ahora» tras buscar versión desde el diálogo de ajustes: ahora se preserva el `BuildContext` raíz de la aplicación (`navigatorKey.currentContext`) para abrir el diálogo de descarga de APK sin cancelarse por el cierre del diálogo de ajustes.
+- **Ajuste visual en Selector de Modo de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Corrección de truncamiento en textos «Patrimonio» y «Categorías»: aplicado padding compacto, tamaño de fuente optimizado a 11sp y desactivado el corte elíptico en pantallas estrechas.
+- **Legibilidad en centro del gráfico circular (`lib/pages/home/evolution.dart`)**:
+  - El texto de conteo de categorías («N categorías») ahora utiliza `onSurfaceVariant` con `FontWeight.w600` en modo oscuro, garantizando total nitidez y contraste.
+- **Suavidad de curvas y stuttering en gráficos (`lib/pages/home/evolution.dart`)**:
+  - Gráficos de Patrimonio Neto y Saldo restaurados a curvas redondeadas y suaves mediante `SplineAreaSeries` con interpolación `SplineType.monotonic` (sin vértices puntiagudos artificiales).
+  - Eliminado el *stuttering* y caídas de frames al navegar y seleccionar filtros configurando `animationDuration: 0` en el motor de renderizado de Syncfusion.
+
+---
+
+## [3.2.0-beta.7] - 2026-10-17
+
+### Fixed
+- **Cálculo de Patrimonio Neto (`lib/pages/home/evolution.dart`)**:
+  - Corrección en el cálculo del patrimonio neto donde los pasivos (*liabilities*) se sumaban en vez de restarse de los activos.
+  - Tratamiento del valor absoluto en balances de pasivos para asegurar deducción exacta frente al activo.
+- **Contraste de etiquetas y porcentajes en modo oscuro (`lib/pages/home/evolution.dart`)**:
+  - Uso de `onSurfaceVariant` con peso `FontWeight.w600` en chips y desglose para asegurar alta legibilidad sobre fondos oscuros.
+  - Data labels exteriores con color tipográfico adaptable de alto contraste (`onSurface`).
+
+### Changed
+- **Optimización de carga y renderizado (`lib/pages/home/evolution.dart`)**:
+  - Paginación secuencial eliminada en `_fetchAccountsMap`: ahora descarga en paralelo `assetAccount` y `liabilities` con límite 100.
+  - Sustitución de `SplineAreaSeries` por `AreaSeries` y desactivación de animación de re-renderizado en `explode` para eliminar el *stuttering* de dibujado.
+
+---
+
+## [3.2.0-beta.6] - 2026-10-17
+
+### Added
+- **Gráfico circular interactivo y leyenda optimizada en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Nueva leyenda responsiva tipo chips con `Wrap` que elimina el scroll incómodo sobre el gráfico, mostrando Top 5 + «Otros» de forma compacta.
+  - Etiquetas de datos exteriores legibles con líneas conectoras suaves y resolución anticolisión (`shift`).
+  - Interactividad y selección bidireccional entre sectores, leyenda chips, anotación central con detalle del importe/porcentaje y el ranking inferior de gastos.
+- **Optimización de rendimiento y aceleración de carga (`lib/pages/home/evolution.dart`)**:
+  - Paralelización con `Future.wait` de las peticiones mensuales a la API en Flujo y Saldo, reduciendo sustancialmente los tiempos de espera en periodos amplios.
+  - Caché de cuentas e inicialización diferida (*lazy loading*) de filtros.
+
+---
+
+## [3.2.0-beta.5] - 2026-10-17
+
+### Added
+- **Unificación de periodo por defecto para gráficos (`lib/pages/settings.dart`, `lib/pages/home/evolution.dart`)**:
+  - La opción de configuración «Periodo por defecto de los gráficos» ahora aplica tanto a los gráficos de patrimonio de la pantalla principal como al rango temporal inicial de la pantalla de Evolución.
+  - Sincronización reactiva del periodo en Evolución cuando cambia en los ajustes.
+  - Agrupación compacta de las opciones de actualización en un diálogo modal (`Actualizaciones`) para cambiar de canal (Estable/Beta) y buscar nuevas versiones.
+  - Reorganización de la pantalla de Configuración en secciones temáticas (*Apariencia y gráficos*, *Servidor y seguridad*, *Notificaciones*, *Acerca de*).
+
+### Removed
+- **FAQ en Configuración**:
+  - Eliminado el acceso directo a FAQ de la pantalla de ajustes para simplificar y limpiar la interfaz.
+
+---
+
+## [3.2.0-beta.4] - 2026-10-17
+
+### Fixed
+- **Filtro de cuentas en desglose de Evolución (`lib/pages/home/evolution.dart`)**:
+  - En el desglose por cuentas de Saldo y Patrimonio únicamente se listan las cuentas activas o con movimientos dentro del periodo analizado, excluyendo cuentas inactivas sin variación de saldo.
+  - El selector modal de filtrado por cuentas ahora muestra exclusivamente cuentas activas.
+
+---
+
+## [3.2.0-beta.3] - 2026-10-17
+
+### Fixed
+- **Cálculo y gráfico de Saldo en pantalla de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Corrección en `_fetchBalance()` eliminando el descarte indebido por `ds.type != 'asset'` (la API de Firefly III devuelve `type: "line"` para las series temporales del endpoint `/chart/account/overview`), permitiendo renderizar correctamente la serie temporal.
+  - Clasificación y mapeo robusto de pasivos en `_fetchNetWorth()` mediante consulta de cuentas de pasivo registradas.
+
+---
+
+## [3.2.0-beta.2] - 2026-10-17
+
+### Fixed
+- **Cálculo de Saldo Agregado y desglose en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Uso del endpoint `/chart/account/overview` con filtro de cuentas de activo para calcular el saldo acumulado real y continuo en lugar del flujo diario (`earned`/`spent`).
+  - Desglose inferior con el nombre real de cada cuenta bancaria/activo y su saldo correspondiente.
+  - Ajuste de tamaño y desbordamiento en el selector de modos para evitar el salto de línea en "Categorías".
+
+---
+
+## [3.2.0-beta.1] - 2026-10-17
+
+### Added
+- **Nueva pantalla de Evolución y Análisis (`lib/pages/home/evolution.dart`)**:
+  - 4 modos de análisis interactivo: Patrimonio Neto, Saldo Agregado, Flujo de Efectivo (Ingresos vs Gastos) y Distribución por Categorías.
+  - Gráficos interactivos con Syncfusion (`SfCartesianChart` con curvas suaves `SplineAreaSeries` y `TrackballBehavior`, barras de flujo mensual y gráfico dona `SfCircularChart` para categorías).
+  - Selector de periodo temporal estilo Fintonic: 1M, 3M, 6M, 1A, Todo y selector de rango de fechas personalizado con `showDateRangePicker`.
+  - Filtros avanzados por cuentas de activo y categorías específicas mediante hoja modal (`FilterBottomSheet`).
+  - Tarjetas de KPIs con variación absoluta y porcentual, desglose de activos vs pasivos, tasa de ahorro y ranking de gastos con `FtProgressBar`.
+  - Respeto total al modo de ocultar saldos (`SettingsProvider.hideAmounts`) y temas claro/oscuro.
+- **Acceso a Huchas desde el menú lateral (`lib/pages/piggybanks.dart`)**:
+  - Nueva entrada en el menú lateral para acceder a la gestión y metas de ahorro.
+
+### Changed
+- **Reorganización de la navegación inferior (`lib/pages/home.dart`)**:
+  - Se sustituye el acceso inferior de Huchas por la nueva pestaña de **Evolución** (`Icons.insights_outlined` / `Icons.insights`).
+
+---
 
 ## [3.1.0] - 2026-10-17
 ### Novedades y Usabilidad
