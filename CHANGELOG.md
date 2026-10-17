@@ -2,6 +2,12 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.9] - 2026-10-17
+### Interfaz y Visualización
+- **Gráfica de evolución del patrimonio en pantalla de inicio**:
+  - En la tarjeta superior de "Patrimonio total", se dibuja una gráfica de fondo (*sparkline* curva con degradado translúcido) mostrando la evolución diaria del patrimonio durante los últimos 30 días.
+  - Obtención asíncrona optimizada concurrente junto al balance mensual y soporte en caché para carga instantánea.
+
 ## [3.0.8-beta.8] - 2026-10-17
 ### Mejoras y Correcciones
 - **Icono de categoría en movimientos divididos (splits)**:
