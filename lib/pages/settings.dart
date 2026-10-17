@@ -14,6 +14,7 @@ import 'package:material_color_utilities/material_color_utilities.dart'
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_actions/quick_actions.dart';
+import 'package:waterflyiii/app.dart';
 import 'package:waterflyiii/auth.dart';
 import 'package:waterflyiii/extensions.dart';
 import 'package:waterflyiii/generated/l10n/app_localizations.dart';
@@ -493,7 +494,13 @@ class _UpdateSettingsDialogState extends State<UpdateSettingsDialog> {
       setState(() => _checking = false);
       if (update != null) {
         navigator.pop();
-        await AppUpdater.showUpdateDialog(context: context, updateInfo: update);
+        final BuildContext? targetContext = navigatorKey.currentContext;
+        if (targetContext != null && targetContext.mounted) {
+          await AppUpdater.showUpdateDialog(
+            context: targetContext,
+            updateInfo: update,
+          );
+        }
       } else {
         messenger.showSnackBar(
           const SnackBar(

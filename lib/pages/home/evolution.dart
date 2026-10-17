@@ -9,7 +9,6 @@ import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
-import 'package:waterflyiii/animations.dart';
 import 'package:waterflyiii/auth.dart';
 import 'package:waterflyiii/extensions.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
@@ -900,6 +899,13 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
             // Selector de Modo (Patrimonio, Saldo, Flujo, Categorías)
             SegmentedButton<EvolutionViewMode>(
+              style: const ButtonStyle(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(
+                  EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
               segments: EvolutionViewMode.values
                   .map(
                     (EvolutionViewMode m) => ButtonSegment<EvolutionViewMode>(
@@ -907,10 +913,11 @@ class _HomeEvolutionState extends State<HomeEvolution>
                       label: Text(
                         m.label,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.visible,
+                        softWrap: false,
+                        style: const TextStyle(fontSize: 11),
                       ),
-                      icon: Icon(m.icon, size: 16),
+                      tooltip: m.label,
                     ),
                   )
                   .toList(),
@@ -1339,9 +1346,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
                               '${chartCategories.length} categorías',
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline,
+                                    color: isDark
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant
+                                        : Theme.of(context).colorScheme.outline,
+                                    fontWeight: FontWeight.w600,
                                   ),
                             ),
                           ],
@@ -1511,6 +1521,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
               dataSource: data.points,
               xValueMapper: (ChartDataPoint p, _) => p.label ?? '',
               yValueMapper: (ChartDataPoint p, _) => p.value,
+              animationDuration: 0,
               color: FtColors.incomeFor(isDark: isDark),
             ),
             ColumnSeries<ChartDataPoint, String>(
@@ -1518,6 +1529,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
               dataSource: data.points,
               xValueMapper: (ChartDataPoint p, _) => p.label ?? '',
               yValueMapper: (ChartDataPoint p, _) => p.secondaryValue ?? 0,
+              animationDuration: 0,
               color: FtColors.coralFor(isDark: isDark),
             ),
           ],
@@ -1555,14 +1567,15 @@ class _HomeEvolutionState extends State<HomeEvolution>
           lineType: TrackballLineType.vertical,
         ),
         series: <CartesianSeries<ChartDataPoint, DateTime>>[
-          AreaSeries<ChartDataPoint, DateTime>(
+          SplineAreaSeries<ChartDataPoint, DateTime>(
             dataSource: data.points,
             xValueMapper: (ChartDataPoint p, _) => p.date,
             yValueMapper: (ChartDataPoint p, _) => p.value,
+            splineType: SplineType.monotonic,
             color: primaryLineColor.withValues(alpha: 0.18),
             borderColor: primaryLineColor,
             borderWidth: 2.5,
-            animationDuration: animDurationEmphasized.inMilliseconds.toDouble(),
+            animationDuration: 0,
           ),
         ],
       ),

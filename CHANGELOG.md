@@ -2,6 +2,21 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.8] - 2026-10-17
+
+### Fixed
+- **Botón de descarga de actualización (`lib/updater.dart`, `lib/pages/settings.dart`)**:
+  - Resuelto el fallo al pulsar «Actualizar ahora» tras buscar versión desde el diálogo de ajustes: ahora se preserva el `BuildContext` raíz de la aplicación (`navigatorKey.currentContext`) para abrir el diálogo de descarga de APK sin cancelarse por el cierre del diálogo de ajustes.
+- **Ajuste visual en Selector de Modo de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Corrección de truncamiento en textos «Patrimonio» y «Categorías»: aplicado padding compacto, tamaño de fuente optimizado a 11sp y desactivado el corte elíptico en pantallas estrechas.
+- **Legibilidad en centro del gráfico circular (`lib/pages/home/evolution.dart`)**:
+  - El texto de conteo de categorías («N categorías») ahora utiliza `onSurfaceVariant` con `FontWeight.w600` en modo oscuro, garantizando total nitidez y contraste.
+- **Suavidad de curvas y stuttering en gráficos (`lib/pages/home/evolution.dart`)**:
+  - Gráficos de Patrimonio Neto y Saldo restaurados a curvas redondeadas y suaves mediante `SplineAreaSeries` con interpolación `SplineType.monotonic` (sin vértices puntiagudos artificiales).
+  - Eliminado el *stuttering* y caídas de frames al navegar y seleccionar filtros configurando `animationDuration: 0` en el motor de renderizado de Syncfusion.
+
+---
+
 ## [3.2.0-beta.7] - 2026-10-17
 
 ### Fixed
