@@ -2,6 +2,19 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.6] - 2026-10-17
+
+### Added
+- **Gráfico circular interactivo y leyenda optimizada en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Nueva leyenda responsiva tipo chips con `Wrap` que elimina el scroll incómodo sobre el gráfico, mostrando Top 5 + «Otros» de forma compacta.
+  - Etiquetas de datos exteriores legibles con líneas conectoras suaves y resolución anticolisión (`shift`).
+  - Interactividad y selección bidireccional entre sectores, leyenda chips, anotación central con detalle del importe/porcentaje y el ranking inferior de gastos.
+- **Optimización de rendimiento y aceleración de carga (`lib/pages/home/evolution.dart`)**:
+  - Paralelización con `Future.wait` de las peticiones mensuales a la API en Flujo y Saldo, reduciendo sustancialmente los tiempos de espera en periodos amplios.
+  - Caché de cuentas e inicialización diferida (*lazy loading*) de filtros.
+
+---
+
 ## [3.2.0-beta.5] - 2026-10-17
 
 ### Added

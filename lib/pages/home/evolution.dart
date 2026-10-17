@@ -158,18 +158,16 @@ class _HomeEvolutionState extends State<HomeEvolution>
   final Set<String> _selectedCategoryNames = <String>{};
   List<AccountRead> _availableAccounts = <AccountRead>[];
   List<CategoryRead> _availableCategories = <CategoryRead>[];
+  Map<String, AccountRead>? _accountsCache;
+
+  // Interacción en gráfico de categorías
+  int? _selectedCategoryIndex;
 
   late Future<_EvolutionData> _future;
   _EvolutionData? _cachedData;
 
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFilterOptions();
-  }
 
   @override
   void didChangeDependencies() {
@@ -186,29 +184,27 @@ class _HomeEvolutionState extends State<HomeEvolution>
       _currentHomePeriod = defaultPeriod;
       _preset = EvolutionPeriodPresetExt.fromHomePeriod(defaultPeriod);
       _cachedData = null;
+      _selectedCategoryIndex = null;
       _future = _fetchEvolution();
     }
   }
 
-  Future<void> _loadFilterOptions() async {
-    try {
-      final FireflyIii api = context.read<FireflyService>().api;
-      final Response<AccountArray> respAcc = await api.v1AccountsGet(
-        type: .assetAccount,
-      );
-      if (respAcc.isSuccessful && respAcc.body != null) {
-        _availableAccounts = respAcc.body!.data
-            .where((AccountRead a) => a.attributes.active ?? true)
-            .toList();
+  Future<void> _ensureFilterOptions() async {
+    final FireflyIii api = context.read<FireflyService>().api;
+    if (_availableAccounts.isEmpty) {
+      await _fetchAccountsMap(api);
+    }
+    if (_availableCategories.isEmpty) {
+      try {
+        final Response<CategoryArray> respCat = await api.v1CategoriesGet(
+          limit: 100,
+        );
+        if (respCat.isSuccessful && respCat.body != null) {
+          _availableCategories = respCat.body!.data;
+        }
+      } catch (e) {
+        log.warning('Error loading category filter options: $e');
       }
-      final Response<CategoryArray> respCat = await api.v1CategoriesGet(
-        limit: 100,
-      );
-      if (respCat.isSuccessful && respCat.body != null) {
-        _availableCategories = respCat.body!.data;
-      }
-    } catch (e) {
-      log.warning('Error loading filter options: $e');
     }
   }
 
@@ -254,8 +250,14 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
   String _fmt(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 
-  Future<void> _refresh() async {
+  Future<void> _refresh({bool forceReloadAccounts = false}) async {
     setState(() {
+      if (forceReloadAccounts) {
+        _accountsCache = null;
+        _availableAccounts.clear();
+        _availableCategories.clear();
+      }
+      _selectedCategoryIndex = null;
       _cachedData = null;
       _future = _fetchEvolution();
     });
@@ -308,27 +310,19 @@ class _HomeEvolutionState extends State<HomeEvolution>
     if (isActive) {
       return true;
     }
-    final double diff =
-        double.tryParse(acc.attributes.balanceDifference ?? '') ?? 0.0;
-    if (diff.abs() > 0.0001) {
-      return true;
-    }
     return _datasetHasVariation(entries);
   }
 
-  Future<Map<String, AccountRead>> _fetchAccountsMap(
-    FireflyIii api,
-    String startStr,
-    String endStr,
-  ) async {
+  Future<Map<String, AccountRead>> _fetchAccountsMap(FireflyIii api) async {
+    if (_accountsCache != null) {
+      return _accountsCache!;
+    }
     final Map<String, AccountRead> map = <String, AccountRead>{};
     try {
       int page = 1;
       while (true) {
         final Response<AccountArray> resp = await api.v1AccountsGet(
           type: AccountTypeFilter.all,
-          start: startStr,
-          end: endStr,
           limit: 100,
           page: page,
         );
@@ -348,6 +342,14 @@ class _HomeEvolutionState extends State<HomeEvolution>
           break;
         }
       }
+      _accountsCache = map;
+      _availableAccounts = map.values
+          .where(
+            (AccountRead a) =>
+                (a.attributes.active ?? true) &&
+                a.attributes.type.value?.toLowerCase() == 'asset',
+          )
+          .toList();
     } catch (e) {
       log.warning('Error fetching accounts map for evolution breakdown: $e');
     }
@@ -371,7 +373,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
             : .value_1w,
         preselected: .all,
       ),
-      _fetchAccountsMap(api, startStr, endStr),
+      _fetchAccountsMap(api),
     ).wait;
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
 
@@ -504,7 +506,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
             : .value_1w,
         preselected: .assets,
       ),
-      _fetchAccountsMap(api, startStr, endStr),
+      _fetchAccountsMap(api),
     ).wait;
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
 
@@ -587,37 +589,46 @@ class _HomeEvolutionState extends State<HomeEvolution>
       count: monthsCount + 1,
     );
 
+    final List<({PeriodBucket bucket, double income, double expense})>
+    results = await Future.wait(
+      buckets.map((PeriodBucket b) async {
+        final (
+          Response<InsightTotal> respInc,
+          Response<InsightTotal> respExp,
+        ) = await (
+          api.v1InsightIncomeTotalGet(start: _fmt(b.start), end: _fmt(b.end)),
+          api.v1InsightExpenseTotalGet(start: _fmt(b.start), end: _fmt(b.end)),
+        ).wait;
+
+        double inc = 0;
+        for (final InsightTotalEntry e
+            in respInc.body ?? <InsightTotalEntry>[]) {
+          inc += (e.differenceFloat ?? 0).abs();
+        }
+        double exp = 0;
+        for (final InsightTotalEntry e
+            in respExp.body ?? <InsightTotalEntry>[]) {
+          exp += (e.differenceFloat ?? 0).abs();
+        }
+        return (bucket: b, income: inc, expense: exp);
+      }),
+    );
+
     double totalIncome = 0;
     double totalExpense = 0;
     final List<ChartDataPoint> points = <ChartDataPoint>[];
 
-    for (final PeriodBucket b in buckets) {
-      final (
-        Response<InsightTotal> respInc,
-        Response<InsightTotal> respExp,
-      ) = await (
-        api.v1InsightIncomeTotalGet(start: _fmt(b.start), end: _fmt(b.end)),
-        api.v1InsightExpenseTotalGet(start: _fmt(b.start), end: _fmt(b.end)),
-      ).wait;
-
-      double inc = 0;
-      for (final InsightTotalEntry e in respInc.body ?? <InsightTotalEntry>[]) {
-        inc += (e.differenceFloat ?? 0).abs();
-      }
-      double exp = 0;
-      for (final InsightTotalEntry e in respExp.body ?? <InsightTotalEntry>[]) {
-        exp += (e.differenceFloat ?? 0).abs();
-      }
-
-      totalIncome += inc;
-      totalExpense += exp;
+    for (final ({PeriodBucket bucket, double income, double expense}) item
+        in results) {
+      totalIncome += item.income;
+      totalExpense += item.expense;
 
       points.add(
         ChartDataPoint(
-          date: b.start,
-          value: inc,
-          secondaryValue: exp,
-          label: b.shortLabel,
+          date: item.bucket.start,
+          value: item.income,
+          secondaryValue: item.expense,
+          label: item.bucket.shortLabel,
         ),
       );
     }
@@ -688,6 +699,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
   }
 
   Future<void> _openFiltersSheet() async {
+    await _ensureFilterOptions();
+    if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -960,7 +973,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
                         Card(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(8, 16, 12, 12),
-                            child: _buildChart(context, data, currency),
+                            child: _buildChart(
+                              context,
+                              data,
+                              currency,
+                              settings,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -1124,10 +1142,35 @@ class _HomeEvolutionState extends State<HomeEvolution>
     );
   }
 
+  List<_CategoryEvolutionItem> _computeChartCategories(
+    List<_CategoryEvolutionItem> categories,
+    double totalSpend,
+  ) {
+    if (categories.length <= 6) {
+      return categories;
+    }
+    final List<_CategoryEvolutionItem> top5 = categories.take(5).toList();
+    final double otherAmount = categories
+        .skip(5)
+        .fold(0.0, (double sum, _CategoryEvolutionItem c) => sum + c.amount);
+    final double otherPct = totalSpend > 0
+        ? (otherAmount / totalSpend) * 100
+        : 0.0;
+    return <_CategoryEvolutionItem>[
+      ...top5,
+      _CategoryEvolutionItem(
+        name: 'Otros',
+        amount: otherAmount,
+        percentage: otherPct,
+      ),
+    ];
+  }
+
   Widget _buildChart(
     BuildContext context,
     _EvolutionData data,
     CurrencyRead currency,
+    SettingsProvider settings,
   ) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color primaryLineColor = switch (_mode) {
@@ -1144,29 +1187,302 @@ class _HomeEvolutionState extends State<HomeEvolution>
           child: Center(child: Text('Sin datos en este periodo')),
         );
       }
-      final List<_CategoryEvolutionItem> top6 = data.categories
-          .take(6)
-          .toList();
-      return SizedBox(
-        height: 260,
-        child: SfCircularChart(
-          legend: const Legend(
-            isVisible: true,
-            position: LegendPosition.bottom,
-            overflowMode: LegendItemOverflowMode.wrap,
-          ),
-          series: <CircularSeries<_CategoryEvolutionItem, String>>[
-            DoughnutSeries<_CategoryEvolutionItem, String>(
-              dataSource: top6,
-              xValueMapper: (_CategoryEvolutionItem item, _) => item.name,
-              yValueMapper: (_CategoryEvolutionItem item, _) => item.amount,
-              pointColorMapper: (_CategoryEvolutionItem item, _) =>
-                  FtColors.categoryColor(item.name, context: context),
-              innerRadius: '65%',
-              dataLabelSettings: const DataLabelSettings(isVisible: true),
+      final List<_CategoryEvolutionItem> chartCategories =
+          _computeChartCategories(data.categories, data.currentTotal);
+
+      final _CategoryEvolutionItem? selItem =
+          (_selectedCategoryIndex != null &&
+              _selectedCategoryIndex! < chartCategories.length)
+          ? chartCategories[_selectedCategoryIndex!]
+          : null;
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox(
+            height: 250,
+            child: SfCircularChart(
+              margin: EdgeInsets.zero,
+              legend: const Legend(isVisible: false),
+              tooltipBehavior: TooltipBehavior(
+                enable: true,
+                builder:
+                    (
+                      dynamic data,
+                      dynamic point,
+                      dynamic series,
+                      int pointIndex,
+                      int seriesIndex,
+                    ) {
+                      if (pointIndex >= chartCategories.length) {
+                        return const SizedBox.shrink();
+                      }
+                      final _CategoryEvolutionItem item =
+                          chartCategories[pointIndex];
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: const <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              settings.hideAmounts
+                                  ? '••••'
+                                  : '${currency.fmt(item.amount, context: context)} (${item.percentage.toStringAsFixed(1)}%)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: FtColors.coralFor(isDark: isDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+              ),
+              annotations: <CircularChartAnnotation>[
+                CircularChartAnnotation(
+                  widget: selItem != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Text(
+                                selItem.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                settings.hideAmounts
+                                    ? '••••'
+                                    : currency.fmt(
+                                        selItem.amount,
+                                        context: context,
+                                      ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: FtColors.coralFor(isDark: isDark),
+                                    ),
+                              ),
+                              Text(
+                                '${selItem.percentage.toStringAsFixed(1)}%',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              'Gasto total',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              settings.hideAmounts
+                                  ? '••••'
+                                  : currency.fmt(
+                                      data.currentTotal,
+                                      decimalDigits: 0,
+                                      context: context,
+                                    ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '${chartCategories.length} categorías',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                  ),
+                            ),
+                          ],
+                        ),
+                ),
+              ],
+              series: <CircularSeries<_CategoryEvolutionItem, String>>[
+                DoughnutSeries<_CategoryEvolutionItem, String>(
+                  dataSource: chartCategories,
+                  xValueMapper: (_CategoryEvolutionItem item, _) => item.name,
+                  yValueMapper: (_CategoryEvolutionItem item, _) => item.amount,
+                  pointColorMapper: (_CategoryEvolutionItem item, _) =>
+                      item.name == 'Otros'
+                      ? Theme.of(context).colorScheme.outlineVariant
+                      : FtColors.categoryColor(item.name, context: context),
+                  innerRadius: '68%',
+                  radius: '82%',
+                  explode: true,
+                  explodeIndex: _selectedCategoryIndex,
+                  explodeOffset: '6%',
+                  onPointTap: (ChartPointDetails details) {
+                    if (details.pointIndex != null) {
+                      setState(() {
+                        if (_selectedCategoryIndex == details.pointIndex) {
+                          _selectedCategoryIndex = null;
+                        } else {
+                          _selectedCategoryIndex = details.pointIndex;
+                        }
+                      });
+                    }
+                  },
+                  dataLabelMapper: (_CategoryEvolutionItem item, _) {
+                    if (settings.hideAmounts) return '••••';
+                    if (item.percentage < 5) return '';
+                    return currency.fmt(
+                      item.amount,
+                      decimalDigits: 0,
+                      context: context,
+                    );
+                  },
+                  dataLabelSettings: DataLabelSettings(
+                    isVisible: true,
+                    labelPosition: ChartDataLabelPosition.outside,
+                    connectorLineSettings: ConnectorLineSettings(
+                      type: ConnectorType.curve,
+                      length: '10%',
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    labelIntersectAction: LabelIntersectAction.shift,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
+              children: chartCategories.mapIndexed((
+                int idx,
+                _CategoryEvolutionItem item,
+              ) {
+                final bool isSelected = _selectedCategoryIndex == idx;
+                final Color catColor = item.name == 'Otros'
+                    ? Theme.of(context).colorScheme.outlineVariant
+                    : FtColors.categoryColor(item.name, context: context);
+
+                return InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    setState(() {
+                      if (_selectedCategoryIndex == idx) {
+                        _selectedCategoryIndex = null;
+                      } else {
+                        _selectedCategoryIndex = idx;
+                      }
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? catColor.withValues(alpha: 0.18)
+                          : Theme.of(context).colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? catColor : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: catColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          item.name,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? catColor
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${item.percentage.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context).colorScheme.outline,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       );
     }
 
@@ -1254,6 +1570,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
     SettingsProvider settings,
   ) {
     if (_mode == EvolutionViewMode.categories) {
+      final List<_CategoryEvolutionItem> chartCategories =
+          _computeChartCategories(data.categories, data.currentTotal);
       return Card(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1271,15 +1589,57 @@ class _HomeEvolutionState extends State<HomeEvolution>
               ),
               const Divider(height: 1),
               ...data.categories.map((_CategoryEvolutionItem cat) {
+                final int chartIdx = chartCategories.indexWhere(
+                  (_CategoryEvolutionItem c) => c.name == cat.name,
+                );
+                final bool isSelected =
+                    _selectedCategoryIndex != null &&
+                    _selectedCategoryIndex! < chartCategories.length &&
+                    (chartCategories[_selectedCategoryIndex!].name ==
+                            cat.name ||
+                        (chartCategories[_selectedCategoryIndex!].name ==
+                                'Otros' &&
+                            chartIdx == -1));
+                final Color catColor = FtColors.categoryColor(
+                  cat.name,
+                  context: context,
+                );
+
                 return ListTile(
+                  selected: isSelected,
+                  selectedTileColor: catColor.withValues(alpha: 0.12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      final int targetIdx = chartIdx != -1
+                          ? chartIdx
+                          : chartCategories.indexWhere(
+                              (_CategoryEvolutionItem c) => c.name == 'Otros',
+                            );
+                      if (targetIdx != -1) {
+                        if (_selectedCategoryIndex == targetIdx) {
+                          _selectedCategoryIndex = null;
+                        } else {
+                          _selectedCategoryIndex = targetIdx;
+                        }
+                      }
+                    });
+                  },
                   leading: FtCategoryIconWidget(
                     icon: FtCategoryIcon.forName(cat.name),
-                    color: FtColors.categoryColor(cat.name, context: context),
+                    color: catColor,
                   ),
-                  title: Text(cat.name),
+                  title: Text(
+                    cat.name,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : null,
+                    ),
+                  ),
                   subtitle: FtProgressBar(
                     progress: (cat.percentage / 100).clamp(0.0, 1.0),
-                    color: FtColors.categoryColor(cat.name, context: context),
+                    color: catColor,
                     height: 5,
                   ),
                   trailing: Column(
