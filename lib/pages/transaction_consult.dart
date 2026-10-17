@@ -52,7 +52,10 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     );
   }
 
-  Future<void> _updateCategory(String newCategoryName, {int? splitIndex}) async {
+  Future<void> _updateCategory(
+    String newCategoryName, {
+    int? splitIndex,
+  }) async {
     setState(() {
       _isUpdating = true;
     });
@@ -164,15 +167,15 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     final Color catColor = hasCat
         ? FtColors.categoryColor(catName, context: context)
         : split.type.colorOf(context);
-    final IconData catIcon =
-        hasCat ? FtCategoryIcon.forName(catName) : split.type.icon;
+    final IconData catIcon = hasCat
+        ? FtCategoryIcon.forName(catName)
+        : split.type.icon;
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.4),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
@@ -190,9 +193,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                   split.description.isNotEmpty
                       ? split.description
                       : "Parte ${index + 1}",
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               const SizedBox(width: 8),
@@ -200,11 +203,11 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                 (isIncome ? "+" : "-") +
                     currency.fmt(splitAmount, context: context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFeatures: const <FontFeature>[
-                        FontFeature.tabularFigures(),
-                      ],
-                    ),
+                  fontWeight: FontWeight.bold,
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -217,9 +220,8 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                     final String? newCategory = await Navigator.push<String>(
                       context,
                       MaterialPageRoute<String>(
-                        builder: (BuildContext context) => CategorySelectPage(
-                          selectedCategoryName: catName,
-                        ),
+                        builder: (BuildContext context) =>
+                            CategorySelectPage(selectedCategoryName: catName),
                       ),
                     );
                     if (newCategory != null && newCategory != catName) {
@@ -242,8 +244,8 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                     child: Text(
                       hasCat ? catName : S.of(context).generalUnknown,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
                   Icon(
@@ -255,7 +257,8 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
               ),
             ),
           ),
-          if (split.budgetName != null && split.budgetName!.isNotEmpty) ...<Widget>[
+          if (split.budgetName != null &&
+              split.budgetName!.isNotEmpty) ...<Widget>[
             const SizedBox(height: 8),
             Row(
               children: <Widget>[
@@ -268,8 +271,8 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                 Text(
                   split.budgetName!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
               ],
             ),
@@ -279,8 +282,8 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
             Text(
               split.notes!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
           if (split.tags != null && split.tags!.isNotEmpty) ...<Widget>[
@@ -294,8 +297,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                       label: Text(tag, style: const TextStyle(fontSize: 11)),
                       padding: EdgeInsets.zero,
                       labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainerHigh,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHigh,
                       side: BorderSide.none,
                     ),
                   )
@@ -331,8 +335,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
       (double prev, TransactionSplit s) =>
           prev + (double.tryParse(s.amount) ?? 0.0),
     );
-    final double displayAmount =
-        isSplit ? totalAmount : (double.tryParse(t.amount) ?? 0.0);
+    final double displayAmount = isSplit
+        ? totalAmount
+        : (double.tryParse(t.amount) ?? 0.0);
 
     final CurrencyRead currency = CurrencyRead(
       id: t.currencyId ?? "0",
@@ -353,17 +358,19 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     // Title
     final String title = isSplit
         ? ((_transaction.attributes.groupTitle?.isNotEmpty ?? false)
-            ? _transaction.attributes.groupTitle!
-            : t.description)
+              ? _transaction.attributes.groupTitle!
+              : t.description)
         : t.description;
 
     // Accounts
     final String sourceAccount =
         splits.every((TransactionSplit s) => s.sourceName == t.sourceName)
-            ? (t.sourceName ?? "")
-            : S.of(context).generalMultiple;
-    final String destinationAccount = splits.every(
-            (TransactionSplit s) => s.destinationName == t.destinationName)
+        ? (t.sourceName ?? "")
+        : S.of(context).generalMultiple;
+    final String destinationAccount =
+        splits.every(
+          (TransactionSplit s) => s.destinationName == t.destinationName,
+        )
         ? (t.destinationName ?? "")
         : S.of(context).generalMultiple;
     final String accountName = isIncome ? destinationAccount : sourceAccount;
@@ -374,8 +381,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     final Color catColor = hasCategory
         ? FtColors.categoryColor(category, context: context)
         : t.type.colorOf(context);
-    final IconData catIcon =
-        hasCategory ? FtCategoryIcon.forName(category) : t.type.icon;
+    final IconData catIcon = hasCategory
+        ? FtCategoryIcon.forName(category)
+        : t.type.icon;
 
     Widget bodyContent = Column(
       children: <Widget>[
@@ -429,19 +437,20 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                         Icon(
                           Icons.call_split,
                           size: 14,
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           "Movimiento dividido (${splits.length} partes)",
-                          style:
-                              Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ],
                     ),
@@ -498,14 +507,14 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                         : () async {
                             final String? newCategory =
                                 await Navigator.push<String>(
-                              context,
-                              MaterialPageRoute<String>(
-                                builder: (BuildContext context) =>
-                                    CategorySelectPage(
-                                  selectedCategoryName: category,
-                                ),
-                              ),
-                            );
+                                  context,
+                                  MaterialPageRoute<String>(
+                                    builder: (BuildContext context) =>
+                                        CategorySelectPage(
+                                          selectedCategoryName: category,
+                                        ),
+                                  ),
+                                );
                             if (newCategory != null &&
                                 newCategory != category) {
                               await _updateCategory(newCategory);
@@ -581,9 +590,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                   Text(
                     "Desglose del movimiento",
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   for (int i = 0; i < splits.length; i++) ...<Widget>[
@@ -624,14 +633,14 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                           : () async {
                               final String? newCategory =
                                   await Navigator.push<String>(
-                                context,
-                                MaterialPageRoute<String>(
-                                  builder: (BuildContext context) =>
-                                      CategorySelectPage(
-                                    selectedCategoryName: category,
-                                  ),
-                                ),
-                              );
+                                    context,
+                                    MaterialPageRoute<String>(
+                                      builder: (BuildContext context) =>
+                                          CategorySelectPage(
+                                            selectedCategoryName: category,
+                                          ),
+                                    ),
+                                  );
                               if (newCategory != null &&
                                   newCategory != category) {
                                 await _updateCategory(newCategory);
@@ -659,9 +668,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                               MaterialPageRoute<bool>(
                                 builder: (BuildContext context) =>
                                     TransactionPage(
-                                  transaction: _transaction,
-                                  split: true,
-                                ),
+                                      transaction: _transaction,
+                                      split: true,
+                                    ),
                               ),
                             ).then((bool? modified) {
                               if (modified ?? false) {

@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.6 (build 15)",
-  "versionCode": 153,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.6/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Rediseño y Mejoras\n- **Soporte y rediseño completo de Movimientos Divididos (Split Transactions)**:\n  - **Lista de movimientos y búsqueda**: Indicador visual mediante badge `call_split` en transacciones divididas. Cálculo agregado del importe total y desglose dinámico de múltiples categorías en lugar de mostrar únicamente la primera parte.\n  - **Detalle de movimiento**: Desglose estructurado por tarjetas para cada sub-movimiento (con importe, descripción individual, notas, etiquetas e icono/selector de categoría interactivo) y cálculo de importe acumulado.\n  - **Recategorización individual por split**: Capacidad de cambiar la categoría de una sola parte del movimiento dividido sin sobreescribir las demás.\n  - **Creación y edición de splits**: Acción \"Dividir\" reparada y funcional desde el detalle y la edición simple. Formulario de edición con soporte directo para añadir partes y conservar descripciones personalizadas por split compatibles con la validación de Firefly III."
+  "version": "3.0.8-beta.7 (build 67)",
+  "versionCode": 673,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.7/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Seguridad y Mejoras\n- **Desbloqueo biométrico y facial**: Desbloqueo facial directo sin botón de confirmación y soporte de PIN/patrón como respaldo.\n- **Fondo difuminado (blur)**: Interfaz de la app difuminada y protegida durante la autenticación de la pantalla de bloqueo.\n- **Localización completa**: Diálogo de biometría en español con textos descriptivos."
 }

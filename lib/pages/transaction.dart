@@ -954,10 +954,10 @@ class _TransactionPageState extends State<TransactionPage>
                       date: _date,
                       description: _split
                           ? (_titleTextControllers[i].text.isNotEmpty
-                              ? _titleTextControllers[i].text
-                              : (_titleTextController.text.isNotEmpty
-                                  ? "${_titleTextController.text} (${i + 1})"
-                                  : "Parte ${i + 1}"))
+                                ? _titleTextControllers[i].text
+                                : (_titleTextController.text.isNotEmpty
+                                      ? "${_titleTextController.text} (${i + 1})"
+                                      : "Parte ${i + 1}"))
                           : _titleTextController.text,
                       destinationName: destinationName,
                       // :HAX: Since nulled fields are not submitted, we set
@@ -970,9 +970,8 @@ class _TransactionPageState extends State<TransactionPage>
                       order: i,
                       sourceName: sourceName,
                       tags: _tags[i].tags,
-                      transactionJournalId: _transactionJournalIDs
-                              .elementAtOrNull(i) ??
-                          "0",
+                      transactionJournalId:
+                          _transactionJournalIDs.elementAtOrNull(i) ?? "0",
                       type: _transactionType,
                       reconciled: _reconciled,
                     );
@@ -996,8 +995,8 @@ class _TransactionPageState extends State<TransactionPage>
                   final TransactionUpdate txUpdate = TransactionUpdate(
                     groupTitle: _split
                         ? (_titleTextController.text.isNotEmpty
-                            ? _titleTextController.text
-                            : "Transacción dividida")
+                              ? _titleTextController.text
+                              : "Transacción dividida")
                         : null,
                     transactions: txS,
                   );

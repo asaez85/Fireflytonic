@@ -1554,11 +1554,7 @@ class HomeTransactionsState extends State<HomeTransactions>
                           const SizedBox(width: 4),
                         ],
                         Expanded(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: .ellipsis,
-                          ),
+                          child: Text(title, maxLines: 1, overflow: .ellipsis),
                         ),
                       ],
                     ),

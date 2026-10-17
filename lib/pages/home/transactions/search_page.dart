@@ -702,7 +702,8 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
 
             // Movements in this date
             ...txList.map((TransactionRead item) {
-              final List<TransactionSplit> splits = item.attributes.transactions;
+              final List<TransactionSplit> splits =
+                  item.attributes.transactions;
               final TransactionSplit split = splits.first;
               final bool isSplit = splits.length > 1;
 
@@ -810,11 +811,14 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                                   Expanded(
                                     child: Text(
                                       title,
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                        color: isDark ? Colors.white : FtColors.navy,
-                                      ),
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 15,
+                                            color: isDark
+                                                ? Colors.white
+                                                : FtColors.navy,
+                                          ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),

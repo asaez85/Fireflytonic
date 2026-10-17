@@ -7,6 +7,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'package:logging/logging.dart';
 import 'package:material_color_utilities/material_color_utilities.dart'
     show CorePalette;
@@ -165,6 +166,9 @@ class SettingsPageState extends State<SettingsPage>
           onChanged: (bool value) async {
             final S l10n = S.of(context);
             final ScaffoldMessengerState msg = ScaffoldMessenger.of(context);
+            final String cancelButtonLabel = MaterialLocalizations.of(
+              context,
+            ).cancelButtonLabel;
             if (value == true) {
               final LocalAuthentication auth = LocalAuthentication();
               final bool canAuth =
@@ -179,6 +183,16 @@ class SettingsPageState extends State<SettingsPage>
               try {
                 authed = await auth.authenticate(
                   localizedReason: l10n.settingsLockscreenInitial,
+                  persistAcrossBackgrounding: true,
+                  sensitiveTransaction: false,
+                  biometricOnly: false,
+                  authMessages: <AuthMessages>[
+                    AndroidAuthMessages(
+                      signInTitle: l10n.settingsLockscreen,
+                      signInHint: l10n.settingsLockscreenInitial,
+                      cancelButton: cancelButtonLabel,
+                    ),
+                  ],
                 );
               } catch (e, stackTrace) {
                 log.severe("auth failed", e, stackTrace);
