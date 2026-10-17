@@ -548,8 +548,8 @@ class _PatrimonyCard extends StatelessWidget {
                               DateTime(now.year, now.month, 1);
                           final DateTime end =
                               DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-                          final HomeState? home =
-                              context.findAncestorStateOfType<HomeState>();
+                          final HomePageState? home =
+                              context.findAncestorStateOfType<HomePageState>();
                           home?.openTransactionsForMonthType(
                             segment: 2, // Depósitos (Ingresos)
                             start: start,
@@ -570,8 +570,8 @@ class _PatrimonyCard extends StatelessWidget {
                               DateTime(now.year, now.month, 1);
                           final DateTime end =
                               DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-                          final HomeState? home =
-                              context.findAncestorStateOfType<HomeState>();
+                          final HomePageState? home =
+                              context.findAncestorStateOfType<HomePageState>();
                           home?.openTransactionsForMonthType(
                             segment: 1, // Retiradas (Gastos)
                             start: start,
