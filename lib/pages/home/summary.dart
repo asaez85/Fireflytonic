@@ -65,10 +65,12 @@ class _SummaryData {
     required this.accounts,
     required this.income,
     required this.expense,
+    this.history = const <double>[],
   });
   final List<_Account> accounts;
   final double income;
   final double expense;
+  final List<double> history;
 
   double get total =>
       accounts.fold(0.0, (double a, _Account c) => a + c.balance);
@@ -77,6 +79,7 @@ class _SummaryData {
     'accounts': accounts.map((_Account a) => a.toJson()).toList(),
     'income': income,
     'expense': expense,
+    'history': history,
   };
 
   factory _SummaryData.fromJson(Map<String, dynamic> json) => _SummaryData(
@@ -87,6 +90,10 @@ class _SummaryData {
         <_Account>[],
     income: (json['income'] as num?)?.toDouble() ?? 0.0,
     expense: (json['expense'] as num?)?.toDouble() ?? 0.0,
+    history: (json['history'] as List<dynamic>?)
+            ?.map((dynamic e) => (e as num).toDouble())
+            .toList() ??
+        const <double>[],
   );
 }
 
@@ -103,6 +110,8 @@ class _HomeSummaryState extends State<HomeSummary>
   late Future<_SummaryData> _future;
   _SummaryData? _initialData;
 
+  HomePatrimonyPeriod? _currentPeriod;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -118,8 +127,23 @@ class _HomeSummaryState extends State<HomeSummary>
     _future = _fetch();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final HomePatrimonyPeriod period =
+        context.watch<SettingsProvider>().homePatrimonyPeriod;
+    if (_currentPeriod != null && _currentPeriod != period) {
+      _currentPeriod = period;
+      _refresh();
+    } else {
+      _currentPeriod = period;
+    }
+  }
+
   Future<_SummaryData> _fetch() async {
     final FireflyIii api = context.read<FireflyService>().api;
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    final HomePatrimonyPeriod period = settings.homePatrimonyPeriod;
     final CurrencyRead currency = context
         .read<FireflyService>()
         .defaultCurrency;
@@ -129,23 +153,45 @@ class _HomeSummaryState extends State<HomeSummary>
       'en_US',
     ).format(DateTime(now.year, now.month, 1));
     final String end = DateFormat('yyyy-MM-dd', 'en_US').format(now);
+    final String chartStart = DateFormat(
+      'yyyy-MM-dd',
+      'en_US',
+    ).format(period.getStartDate(now));
+
+    final V1ChartAccountOverviewGetPeriod apiPeriod = switch (period) {
+      HomePatrimonyPeriod.oneMonth => V1ChartAccountOverviewGetPeriod.value_1d,
+      HomePatrimonyPeriod.threeMonths =>
+        V1ChartAccountOverviewGetPeriod.value_1d,
+      HomePatrimonyPeriod.sixMonths => V1ChartAccountOverviewGetPeriod.value_1w,
+      HomePatrimonyPeriod.oneYear => V1ChartAccountOverviewGetPeriod.value_1w,
+      HomePatrimonyPeriod.allTime => V1ChartAccountOverviewGetPeriod.value_1m,
+    };
 
     try {
       final (
         Response<AccountArray> accountsR,
         Response<InsightTotal> incomeR,
         Response<InsightTotal> expenseR,
+        Response<List<ChartDataSet>> chartR,
       ) = await (
         api.v1AccountsGet(type: AccountTypeFilter.asset),
         api.v1InsightIncomeTotalGet(start: start, end: end),
         api.v1InsightExpenseTotalGet(start: start, end: end),
+        api.v1ChartAccountOverviewGet(
+          start: chartStart,
+          end: end,
+          period: apiPeriod,
+        ),
       ).wait;
 
       final List<_Account> accounts = <_Account>[];
+      final Map<String, bool> includeInNetWorth = <String, bool>{};
       for (final AccountRead a in accountsR.body?.data ?? <AccountRead>[]) {
         if (!(a.attributes.active ?? true)) {
           continue;
         }
+        includeInNetWorth[a.attributes.name] =
+            a.attributes.includeNetWorth ?? true;
         accounts.add(
           _Account(
             id: a.id,
@@ -156,6 +202,32 @@ class _HomeSummaryState extends State<HomeSummary>
           ),
         );
       }
+
+      final Map<String, double> dailyTotals = <String, double>{};
+      final List<ChartDataSet>? chartItems = chartR.body;
+      if (chartItems != null) {
+        for (final ChartDataSet item in chartItems) {
+          if (item.currencyId != null && item.currencyId != currency.id) {
+            continue;
+          }
+          if (item.label != null &&
+              includeInNetWorth.containsKey(item.label) &&
+              includeInNetWorth[item.label] != true) {
+            continue;
+          }
+          if (item.entries is Map<String, dynamic>) {
+            final Map<String, dynamic> entries =
+                item.entries as Map<String, dynamic>;
+            for (final MapEntry<String, dynamic> e in entries.entries) {
+              final double val = double.tryParse(e.value.toString()) ?? 0.0;
+              dailyTotals[e.key] = (dailyTotals[e.key] ?? 0.0) + val;
+            }
+          }
+        }
+      }
+      final List<String> sortedDates = dailyTotals.keys.toList()..sort();
+      final List<double> history =
+          sortedDates.map((String k) => dailyTotals[k]!).toList();
 
       double sum(Iterable<InsightTotalEntry>? e) {
         double s = 0;
@@ -172,6 +244,7 @@ class _HomeSummaryState extends State<HomeSummary>
         accounts: accounts,
         income: sum(incomeR.body),
         expense: sum(expenseR.body),
+        history: history,
       );
 
       unawaited(
@@ -237,6 +310,7 @@ class _HomeSummaryState extends State<HomeSummary>
                 total: data.total,
                 income: data.income,
                 expense: data.expense,
+                history: data.history,
               ),
               const SizedBox(height: 16),
               Padding(
@@ -330,10 +404,12 @@ class _PatrimonyCard extends StatelessWidget {
     required this.total,
     required this.income,
     required this.expense,
+    this.history = const <double>[],
   });
   final double total;
   final double income;
   final double expense;
+  final List<double> history;
 
   @override
   Widget build(BuildContext context) {
@@ -341,6 +417,10 @@ class _PatrimonyCard extends StatelessWidget {
         .read<FireflyService>()
         .defaultCurrency;
     return Card(
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(FtTheme.radius),
+      ),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -351,44 +431,158 @@ class _PatrimonyCard extends StatelessWidget {
             colors: <Color>[FtColors.navy, FtColors.navySoft],
           ),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: <Widget>[
-            Text(
-              "Patrimonio total",
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              currency.fmt(total, context: context),
-              style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+            if (history.length >= 2)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _SparklineBackgroundPainter(values: history),
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: <Widget>[
-                _stat(
-                  context,
-                  Icons.south_west,
-                  "Ingresos",
-                  income,
-                  FtColors.incomeLight,
-                ),
-                const SizedBox(width: 12),
-                _stat(
-                  context,
-                  Icons.north_east,
-                  "Gastos",
-                  expense,
-                  FtColors.coralLight,
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        "Patrimonio total",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
+                      ),
+                      Consumer<SettingsProvider>(
+                        builder: (
+                          BuildContext context,
+                          SettingsProvider settings,
+                          _,
+                        ) {
+                          return PopupMenuButton<HomePatrimonyPeriod>(
+                            initialValue: settings.homePatrimonyPeriod,
+                            tooltip: 'Cambiar periodo del gráfico',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onSelected: (HomePatrimonyPeriod period) {
+                              settings.setHomePatrimonyPeriod(period);
+                            },
+                            itemBuilder: (BuildContext context) =>
+                                HomePatrimonyPeriod.values
+                                    .map(
+                                      (HomePatrimonyPeriod p) =>
+                                          PopupMenuItem<HomePatrimonyPeriod>(
+                                        value: p,
+                                        child: Row(
+                                          children: <Widget>[
+                                            if (p ==
+                                                settings.homePatrimonyPeriod)
+                                              const Icon(
+                                                Icons.check,
+                                                size: 18,
+                                              )
+                                            else
+                                              const SizedBox(width: 18),
+                                            const SizedBox(width: 8),
+                                            Text(p.label),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text(
+                                    settings.homePatrimonyPeriod.shortLabel,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.white70,
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    currency.fmt(total, context: context),
+                    style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: <Widget>[
+                      _stat(
+                        context,
+                        Icons.south_west,
+                        "Ingresos",
+                        income,
+                        FtColors.incomeLight,
+                        onTap: () {
+                          final DateTime now = DateTime.now();
+                          final DateTime start =
+                              DateTime(now.year, now.month, 1);
+                          final DateTime end =
+                              DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+                          final HomePageState? home =
+                              context.findAncestorStateOfType<HomePageState>();
+                          home?.openTransactionsForMonthType(
+                            segment: 2, // Depósitos (Ingresos)
+                            start: start,
+                            end: end,
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _stat(
+                        context,
+                        Icons.north_east,
+                        "Gastos",
+                        expense,
+                        FtColors.coralLight,
+                        onTap: () {
+                          final DateTime now = DateTime.now();
+                          final DateTime start =
+                              DateTime(now.year, now.month, 1);
+                          final DateTime end =
+                              DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+                          final HomePageState? home =
+                              context.findAncestorStateOfType<HomePageState>();
+                          home?.openTransactionsForMonthType(
+                            segment: 1, // Retiradas (Gastos)
+                            start: start,
+                            end: end,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -401,51 +595,153 @@ class _PatrimonyCard extends StatelessWidget {
     IconData icon,
     String label,
     double amount,
-    Color color,
-  ) {
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     final CurrencyRead currency = context
         .read<FireflyService>()
         .defaultCurrency;
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(FtTheme.radiusSmall),
-        ),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: color.withValues(alpha: 0.22),
-              foregroundColor: color,
-              child: Icon(icon, size: 18),
+          splashColor: Colors.white.withValues(alpha: 0.15),
+          highlightColor: Colors.white.withValues(alpha: 0.08),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(FtTheme.radiusSmall),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: <Widget>[
-                Text(
-                  label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall!.copyWith(color: Colors.white70),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: color.withValues(alpha: 0.22),
+                  foregroundColor: color,
+                  child: Icon(icon, size: 18),
                 ),
-                Text(
-                  currency.fmt(amount, context: context),
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures(),
-                    ],
-                  ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      label,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall!.copyWith(color: Colors.white70),
+                    ),
+                    Text(
+                      currency.fmt(amount, context: context),
+                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+}
+
+/// CustomPainter que dibuja una línea suave y un área sombreada de evolución
+/// de fondo en la tarjeta de patrimonio.
+class _SparklineBackgroundPainter extends CustomPainter {
+  const _SparklineBackgroundPainter({required this.values});
+
+  final List<double> values;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.width <= 0 || size.height <= 0) {
+      return;
+    }
+
+    double minY = values.reduce((double a, double b) => a < b ? a : b);
+    double maxY = values.reduce((double a, double b) => a > b ? a : b);
+    final double diff = maxY - minY;
+    final double padding = diff == 0 ? (minY == 0 ? 10.0 : minY.abs() * 0.1) : diff * 0.15;
+    minY -= padding;
+    maxY += padding;
+    final double rangeY = maxY - minY;
+
+    // Queremos que la gráfica ocupe la parte inferior y media de la tarjeta
+    // Dejando espacio superior para que no interfiera visualmente con los textos.
+    final double topMargin = size.height * 0.22;
+    final double bottomMargin = size.height * 0.04;
+    final double availableHeight = size.height - topMargin - bottomMargin;
+
+    final List<Offset> points = <Offset>[];
+    final double stepX = size.width / (values.length - 1);
+    for (int i = 0; i < values.length; i++) {
+      final double x = i * stepX;
+      final double normalizedY = (values[i] - minY) / rangeY;
+      final double y = topMargin + (1.0 - normalizedY) * availableHeight;
+      points.add(Offset(x, y));
+    }
+
+    final Path linePath = Path();
+    linePath.moveTo(points.first.dx, points.first.dy);
+    for (int i = 0; i < points.length - 1; i++) {
+      final Offset p0 = points[i];
+      final Offset p1 = points[i + 1];
+      final double midX = (p0.dx + p1.dx) / 2;
+      linePath.cubicTo(midX, p0.dy, midX, p1.dy, p1.dx, p1.dy);
+    }
+
+    // Relleno de área debajo de la curva con degradado sutil
+    final Path fillPath = Path.from(linePath);
+    fillPath.lineTo(size.width, size.height);
+    fillPath.lineTo(0, size.height);
+    fillPath.close();
+
+    final Paint fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[
+          FtColors.incomeLight.withValues(alpha: 0.18),
+          FtColors.incomeLight.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, topMargin, size.width, size.height - topMargin))
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Trazo de la línea de evolución
+    final Paint strokePaint = Paint()
+      ..color = FtColors.incomeLight.withValues(alpha: 0.45)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(linePath, strokePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklineBackgroundPainter oldDelegate) {
+    if (identical(values, oldDelegate.values)) {
+      return false;
+    }
+    if (values.length != oldDelegate.values.length) {
+      return true;
+    }
+    for (int i = 0; i < values.length; i++) {
+      if (values[i] != oldDelegate.values[i]) {
+        return true;
+      }
+    }
+    return false;
   }
 }

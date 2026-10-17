@@ -7,6 +7,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'package:logging/logging.dart';
 import 'package:material_color_utilities/material_color_utilities.dart'
     show CorePalette;
@@ -109,6 +110,25 @@ class SettingsPageState extends State<SettingsPage>
         ),
         const Divider(),
         ListTile(
+          title: const Text("Periodo del gráfico de patrimonio"),
+          subtitle: Text(
+            context.select((SettingsProvider s) => s.homePatrimonyPeriod.label),
+          ),
+          leading: const CircleAvatar(child: Icon(Icons.show_chart)),
+          onTap: () {
+            showDialog<HomePatrimonyPeriod>(
+              context: context,
+              builder: (BuildContext context) =>
+                  const HomePatrimonyPeriodDialog(),
+            ).then((HomePatrimonyPeriod? period) {
+              if (period != null) {
+                settings.setHomePatrimonyPeriod(period);
+              }
+            });
+          },
+        ),
+        const Divider(),
+        ListTile(
           title: Text(S.of(context).settingsServerConnection),
           subtitle: Text(
             context.select((FireflyService f) {
@@ -165,6 +185,9 @@ class SettingsPageState extends State<SettingsPage>
           onChanged: (bool value) async {
             final S l10n = S.of(context);
             final ScaffoldMessengerState msg = ScaffoldMessenger.of(context);
+            final String cancelButtonLabel = MaterialLocalizations.of(
+              context,
+            ).cancelButtonLabel;
             if (value == true) {
               final LocalAuthentication auth = LocalAuthentication();
               final bool canAuth =
@@ -179,6 +202,16 @@ class SettingsPageState extends State<SettingsPage>
               try {
                 authed = await auth.authenticate(
                   localizedReason: l10n.settingsLockscreenInitial,
+                  persistAcrossBackgrounding: true,
+                  sensitiveTransaction: false,
+                  biometricOnly: false,
+                  authMessages: <AuthMessages>[
+                    AndroidAuthMessages(
+                      signInTitle: l10n.settingsLockscreen,
+                      signInHint: l10n.settingsLockscreenInitial,
+                      cancelButton: cancelButtonLabel,
+                    ),
+                  ],
                 );
               } catch (e, stackTrace) {
                 log.severe("auth failed", e, stackTrace);
@@ -472,6 +505,40 @@ class ThemeDialog extends StatelessWidget {
                         .of(context)
                         .settingsThemeValue(theme.toString().split('.').last),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class HomePatrimonyPeriodDialog extends StatelessWidget {
+  const HomePatrimonyPeriodDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    return SimpleDialog(
+      title: const Text("Periodo del gráfico"),
+      children: <Widget>[
+        RadioGroup<HomePatrimonyPeriod>(
+          groupValue: settings.homePatrimonyPeriod,
+          onChanged: (HomePatrimonyPeriod? period) {
+            Navigator.pop(context, period);
+          },
+          child: Column(
+            children: <Widget>[
+              ...HomePatrimonyPeriod.values.map(
+                (HomePatrimonyPeriod p) =>
+                    RadioListTile<HomePatrimonyPeriod>.adaptive(
+                  value: p,
+                  title: Text(p.label),
+                  subtitle: p == HomePatrimonyPeriod.oneYear
+                      ? const Text("Por defecto")
+                      : null,
                 ),
               ),
             ],

@@ -5,82 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:waterflyiii/auth.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/theme.dart';
+import 'package:waterflyiii/widgets/bank_logo_badge.dart';
 
-class BankLogoBadge extends StatelessWidget {
-  final String accountName;
-  final String? iban;
-  final ShortAccountTypeProperty? type;
-
-  const BankLogoBadge({
-    super.key,
-    required this.accountName,
-    this.iban,
-    this.type,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final String text =
-        "${accountName.toLowerCase()} ${iban?.toLowerCase() ?? ''}";
-
-    Color bgColor = const Color(0xFF16294A);
-    String label = "";
-    IconData? icon;
-
-    if (text.contains("bbva")) {
-      bgColor = const Color(0xFF004481);
-      label = "BBVA";
-    } else if (text.contains("santander")) {
-      bgColor = const Color(0xFFEC0000);
-      label = "SAN";
-    } else if (text.contains("caixa") || text.contains("imagin")) {
-      bgColor = const Color(0xFF00A9E0);
-      label = "Caixa";
-    } else if (text.contains("ing")) {
-      bgColor = const Color(0xFFFF6200);
-      label = "ING";
-    } else if (text.contains("sabadell")) {
-      bgColor = const Color(0xFF007BC7);
-      label = "BS";
-    } else if (text.contains("openbank")) {
-      bgColor = const Color(0xFF1E1E1E);
-      label = "Open";
-    } else if (text.contains("revolut")) {
-      bgColor = const Color(0xFF191C1F);
-      label = "R";
-    } else if (text.contains("bankinter")) {
-      bgColor = const Color(0xFFFF6600);
-      label = "Bk";
-    } else if (type == ShortAccountTypeProperty.liability) {
-      bgColor = const Color(0xFF4A154B);
-      icon = Icons.credit_card;
-    } else {
-      bgColor = const Color(0xFF1E2C45);
-      icon = Icons.account_balance;
-    }
-
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      alignment: Alignment.center,
-      child: label.isNotEmpty
-          ? Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-                letterSpacing: 0.5,
-              ),
-            )
-          : Icon(icon, color: Colors.white, size: 22),
-    );
-  }
-}
+export 'package:waterflyiii/widgets/bank_logo_badge.dart';
 
 class AccountsFilterSheet extends StatefulWidget {
   final List<AccountRead> initialSelected;

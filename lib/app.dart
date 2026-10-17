@@ -235,40 +235,45 @@ class _WaterflyAppState extends State<WaterflyApp> {
       return const SplashPage();
     }
 
-    // 2. Show LockPage if security is enabled and user isn't authenticated
-    if (settings.lock && !settings.isSessionAuthed) {
-      log.finest(
-        () =>
-            "_getHome: showing lockpage (authed: ${settings.isSessionAuthed})",
-      );
-      return LockPage(onSuccess: settings.sessionAuthed);
-    }
-
+    // 2. Show LockPage overlay if security is enabled and user isn't authenticated
+    final Widget content;
     // 3. Handle Login/Errors
     if (firefly.storageSignInException != null) {
       log.finest(() => "_getHome: showing splash (storageSignInException)");
-      return const SplashPage();
-    }
-
-    if (!firefly.signedIn) {
+      content = const SplashPage();
+    } else if (!firefly.signedIn) {
       log.finest(() => "_getHome: showing login");
-      return const LoginPage();
-    }
-
-    // 4. Handle Deep Links
-    if (_notificationPayload != null ||
+      content = const LoginPage();
+    } else if (_notificationPayload != null ||
         _quickAction == "action_transaction_add" ||
         (_filesSharedToApp?.isNotEmpty ?? false)) {
+      // 4. Handle Deep Links
       log.finest(() => "_getHome: showing transaction");
-      return TransactionPage(
+      content = TransactionPage(
         notification: _notificationPayload,
         files: _filesSharedToApp,
       );
+    } else {
+      // 5. Default to Home
+      log.finest(() => "_getHome: showing navpage");
+      content = const NavPage();
     }
 
-    // 5. Default to Home
-    log.finest(() => "_getHome: showing navpage");
-    return const NavPage();
+    if (settings.lock && !settings.isSessionAuthed) {
+      log.finest(
+        () =>
+            "_getHome: showing lockpage overlay (authed: ${settings.isSessionAuthed})",
+      );
+      return Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          content,
+          LockPage(onSuccess: settings.sessionAuthed),
+        ],
+      );
+    }
+
+    return content;
   }
 
   @override

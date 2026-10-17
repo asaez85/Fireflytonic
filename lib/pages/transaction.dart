@@ -49,6 +49,7 @@ class TransactionPage extends StatefulWidget {
     this.notification,
     this.files,
     this.clone = false,
+    this.split = false,
     this.accountId,
   });
 
@@ -56,6 +57,7 @@ class TransactionPage extends StatefulWidget {
   final NotificationTransaction? notification;
   final List<SharedFile>? files;
   final bool clone;
+  final bool split;
   final String? accountId;
 
   @override
@@ -344,7 +346,12 @@ class _TransactionPageState extends State<TransactionPage>
         _initiallyReconciled = true;
       }
 
-      _split = (_localAmounts.length > 1);
+      _split = (_localAmounts.length > 1) || widget.split;
+      if (widget.split && _localAmounts.length == 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          splitTransactionAdd();
+        });
+      }
     } else {
       // New transaction
       _titleFocusNode.requestFocus();
@@ -946,7 +953,11 @@ class _TransactionPageState extends State<TransactionPage>
                       categoryName: _categoryTextControllers[i].text,
                       date: _date,
                       description: _split
-                          ? _titleTextControllers[i].text
+                          ? (_titleTextControllers[i].text.isNotEmpty
+                                ? _titleTextControllers[i].text
+                                : (_titleTextController.text.isNotEmpty
+                                      ? "${_titleTextController.text} (${i + 1})"
+                                      : "Parte ${i + 1}"))
                           : _titleTextController.text,
                       destinationName: destinationName,
                       // :HAX: Since nulled fields are not submitted, we set
@@ -959,8 +970,8 @@ class _TransactionPageState extends State<TransactionPage>
                       order: i,
                       sourceName: sourceName,
                       tags: _tags[i].tags,
-                      transactionJournalId: _transactionJournalIDs
-                          .elementAtOrNull(i),
+                      transactionJournalId:
+                          _transactionJournalIDs.elementAtOrNull(i) ?? "0",
                       type: _transactionType,
                       reconciled: _reconciled,
                     );
@@ -982,7 +993,11 @@ class _TransactionPageState extends State<TransactionPage>
                     }
                   }
                   final TransactionUpdate txUpdate = TransactionUpdate(
-                    groupTitle: _split ? _titleTextController.text : null,
+                    groupTitle: _split
+                        ? (_titleTextController.text.isNotEmpty
+                              ? _titleTextController.text
+                              : "Transacción dividida")
+                        : null,
                     transactions: txS,
                   );
                   // Delete old splits
@@ -1295,8 +1310,8 @@ class _TransactionPageState extends State<TransactionPage>
   List<Widget> _transactionDetailBuilder(BuildContext context) {
     log.fine(() => "transactionDetailBuilder()");
 
-    // For editing existing transactions, use simplified Fintonic layout
-    if (!_newTX) {
+    // For editing existing transactions, use simplified Fintonic layout when not split
+    if (!_newTX && !_split) {
       return _transactionEditSimple(context);
     }
 
@@ -1927,6 +1942,29 @@ class _TransactionPageState extends State<TransactionPage>
         ),
       );
     }
+
+    // Option to split transaction
+    childs.add(const SizedBox(height: 24));
+    childs.add(
+      OutlinedButton.icon(
+        icon: const Icon(Icons.call_split),
+        label: Text(S.of(context).transactionSplitAdd),
+        onPressed: _savingInProgress
+            ? null
+            : () {
+                setState(() {
+                  _split = true;
+                  splitTransactionAdd();
+                });
+              },
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
 
     return childs;
   }

@@ -84,6 +84,40 @@ enum TransactionDateFilter {
   all,
 }
 
+enum HomePatrimonyPeriod {
+  oneMonth,
+  threeMonths,
+  sixMonths,
+  oneYear,
+  allTime,
+}
+
+extension HomePatrimonyPeriodExt on HomePatrimonyPeriod {
+  String get label => switch (this) {
+    HomePatrimonyPeriod.oneMonth => '1 mes',
+    HomePatrimonyPeriod.threeMonths => '3 meses',
+    HomePatrimonyPeriod.sixMonths => '6 meses',
+    HomePatrimonyPeriod.oneYear => '1 año',
+    HomePatrimonyPeriod.allTime => 'Todo',
+  };
+
+  String get shortLabel => switch (this) {
+    HomePatrimonyPeriod.oneMonth => '1M',
+    HomePatrimonyPeriod.threeMonths => '3M',
+    HomePatrimonyPeriod.sixMonths => '6M',
+    HomePatrimonyPeriod.oneYear => '1A',
+    HomePatrimonyPeriod.allTime => 'Todo',
+  };
+
+  DateTime getStartDate(DateTime now) => switch (this) {
+    HomePatrimonyPeriod.oneMonth => now.subtract(const Duration(days: 30)),
+    HomePatrimonyPeriod.threeMonths => now.subtract(const Duration(days: 90)),
+    HomePatrimonyPeriod.sixMonths => now.subtract(const Duration(days: 180)),
+    HomePatrimonyPeriod.oneYear => now.subtract(const Duration(days: 365)),
+    HomePatrimonyPeriod.allTime => DateTime(now.year - 5, 1, 1),
+  };
+}
+
 class PastNotification {
   PastNotification(this.appName, this.title, this.body, this.time, this.reason);
 
@@ -180,6 +214,7 @@ class SettingsProvider with ChangeNotifier {
   static const String settingsDashboardOrder = "DASHBOARD_ORDER";
   static const String settingsDashboardHidden = "DASHBOARD_HIDDEN";
   static const String settingTransactionDateFilter = "TX_DATE_FILTER";
+  static const String settingHomePatrimonyPeriod = "HOME_PATRIMONY_PERIOD";
 
   bool get debug => _boolSettings[.debug];
   bool get lock => _boolSettings[.lock];
@@ -232,6 +267,18 @@ class SettingsProvider with ChangeNotifier {
   TransactionDateFilter _transactionDateFilter = .all;
 
   TransactionDateFilter get transactionDateFilter => _transactionDateFilter;
+
+  HomePatrimonyPeriod _homePatrimonyPeriod = HomePatrimonyPeriod.oneYear;
+
+  HomePatrimonyPeriod get homePatrimonyPeriod => _homePatrimonyPeriod;
+
+  Future<void> setHomePatrimonyPeriod(HomePatrimonyPeriod period) async {
+    _homePatrimonyPeriod = period;
+    notifyListeners();
+    final SharedPreferencesAsync prefs = SharedPreferencesAsync();
+    await prefs.setInt(settingHomePatrimonyPeriod, period.index);
+    log.finest(() => "notify SettingsProvider->setHomePatrimonyPeriod($period)");
+  }
 
   Future<void> migrateLegacy(SharedPreferencesAsync prefs) async {
     log.config("trying to migrate old prefs");
@@ -441,6 +488,15 @@ class SettingsProvider with ChangeNotifier {
     _transactionDateFilter = txDateFilterIndex == null
         ? .all
         : .values[txDateFilterIndex];
+
+    final int? patrimonyPeriodIndex = await prefs.getInt(
+      settingHomePatrimonyPeriod,
+    );
+    _homePatrimonyPeriod = (patrimonyPeriodIndex == null ||
+            patrimonyPeriodIndex < 0 ||
+            patrimonyPeriodIndex >= HomePatrimonyPeriod.values.length)
+        ? HomePatrimonyPeriod.oneYear
+        : HomePatrimonyPeriod.values[patrimonyPeriodIndex];
 
     _loaded = _loading = true;
     log.finest(() => "notify SettingsProvider->loadSettings()");

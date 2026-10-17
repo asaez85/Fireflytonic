@@ -2,6 +2,38 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.1.0] - 2026-10-17
+### Novedades y Usabilidad
+- **Periodo del gráfico de patrimonio configurable (sparkline)**:
+  - Selector de rango temporal (1M, 3M, 6M, 1A, Todo) configurable en la tarjeta de patrimonio de inicio y en Ajustes de la aplicación.
+  - Por defecto fijado en 1 año con granularidad adaptativa según el periodo seleccionado y visualización suave en degradado.
+- **Navegación interactiva desde los chips de ingresos y gastos**:
+  - Al pulsar sobre "Gastos" o "Ingresos" en la tarjeta superior, la aplicación navega automáticamente a la pestaña de Movimientos filtrando por el mes actual y por el tipo correspondiente (Gastos o Depósitos).
+
+### Rediseño y Experiencia de Usuario
+- **Rediseño completo de la pantalla de Cuentas**:
+  - **Resumen patrimonial interactivo**: Visualización destacada en tarjeta superior de Activos Totales, Deuda/Pasivos acumulados y Patrimonio Neto en tiempo real con selector de cuentas activas/inactivas.
+  - **Filtrado segmentado**: Navegación rápida por categorías de cuenta mediante SegmentedButton (Todas, Activos, Pasivos, Otras) y opción de mostrar u ocultar cuentas inactivas.
+  - **Buscador en tiempo real**: Filtro instantáneo de cuentas por nombre, entidad bancaria, número de cuenta, notas o IBAN.
+  - **Identidad visual con BankLogoBadge**: Detección inteligente de bancos (BBVA, Santander, CaixaBank, ING, Openbank, Revolut, Sabadell, Bankinter, Wise, N26, etc.) con colores corporativos e iconos de tarjeta o billetera.
+  - **Tarjetas de cuenta estilo Fintonic**: Saldo en cifras tabulares y colores semánticos (verde/coral), rol de cuenta, IBAN abreviado, TAE para pasivos y menú rápido de acciones (ver movimientos, editar o eliminar).
+  - **Nuevo diálogo de creación y edición**: Formulario modal completo para añadir o modificar cuentas con selección de tipo, rol, IBAN, saldo inicial, intereses y notas.
+  - **Interfaz despejada**: Se elimina la barra de pestañas saturada del AppBar, integrando buscador y alta en la barra superior y botón flotante (FAB).
+- **Soporte y rediseño completo de Movimientos Divididos (Split Transactions)**:
+  - **Lista de movimientos y búsqueda**: Indicador visual mediante badge `call_split` en transacciones divididas. Cálculo agregado del importe total y desglose dinámico de múltiples categorías en lugar de mostrar únicamente la primera parte.
+  - **Detalle de movimiento**: Desglose estructurado por tarjetas para cada sub-movimiento (con importe, descripción individual, notas, etiquetas e icono/selector de categoría interactivo) y cálculo de importe acumulado.
+  - **Recategorización individual por split**: Capacidad de cambiar la categoría de una sola parte del movimiento dividido sin sobreescribir las demás.
+  - **Icono de categoría unificado**: Si todas las divisiones comparten la misma categoría, se muestra el icono y color específicos de dicha categoría en lugar del icono genérico.
+  - **Creación y edición de splits**: Acción "Dividir" funcional desde el detalle y la edición simple con soporte directo para añadir partes y conservar descripciones personalizadas.
+
+### Seguridad y Privacidad
+- **Desbloqueo biométrico y facial directo**:
+  - Reconocimiento facial sin requerir pulsar confirmación en pantalla (`sensitiveTransaction: false`).
+  - Soporte de PIN o patrón del dispositivo como respaldo en caso de fallo biométrico (`biometricOnly: false`).
+  - Localización al español de los diálogos y mensajes de autenticación biométrica en Android.
+- **Pantalla de bloqueo con fondo difuminado (Blur / Frosted Glass)**:
+  - Superposición con desenfoque gaussiano (`BackdropFilter`) sobre la interfaz activa mientras la sesión no esté autenticada, protegiendo los datos financieros en pantalla.
+
 ## [3.0.8] - 2026-10-15
 ### Novedades y Mejoras
 - **Exportación de movimientos a CSV**: Nueva pantalla y servicio para exportar movimientos filtrados por rango de fechas y cuentas/tarjetas a archivo CSV con formato español y codificación UTF-8 con BOM.
@@ -9,6 +41,59 @@ Todas las novedades y cambios notables de Fireflytonic se documentan en este arc
 - **Visibilidad de importes en menú lateral**: Se traslada el botón del ojo para ocultar o mostrar los importes de la barra superior al menú lateral (cabecera del drawer junto al logotipo de Fireflytonic y panel lateral en pantallas medianas/grandes), despejando la barra superior.
 - **Importación bancaria en menú lateral**: Se mueve el acceso a la importación bancaria desde la pantalla de Ajustes directamente al menú lateral principal (drawer/rail) para un acceso más rápido y visible.
 - **Logo de Fireflytonic en menú lateral**: Se sustituye el icono genérico de la copa por el logotipo oficial de Fireflytonic junto al nombre de la app en la cabecera del menú lateral.
+
+## [3.0.8-beta.10] - 2026-10-17
+### Novedades y Usabilidad
+- **Periodo del gráfico de patrimonio configurable**:
+  - Selector de rango temporal configurable directamente desde la tarjeta de patrimonio (1M, 3M, 6M, 1A, Todo) y en Ajustes de la aplicación.
+  - Por defecto fijado en 1 año con granularidad adaptativa según el periodo seleccionado.
+- **Navegación interactiva desde los chips de ingresos y gastos**:
+  - Al pulsar sobre "Gastos" o "Ingresos" en la tarjeta superior, la aplicación navega automáticamente a la pestaña de Movimientos filtrando por el mes actual y por el tipo correspondiente (Gastos o Depósitos).
+
+## [3.0.8-beta.9] - 2026-10-17
+### Interfaz y Visualización
+- **Gráfica de evolución del patrimonio en pantalla de inicio**:
+  - En la tarjeta superior de "Patrimonio total", se dibuja una gráfica de fondo (*sparkline* curva con degradado translúcido) mostrando la evolución diaria del patrimonio durante los últimos 30 días.
+  - Obtención asíncrona optimizada concurrente junto al balance mensual y soporte en caché para carga instantánea.
+
+## [3.0.8-beta.8] - 2026-10-17
+### Mejoras y Correcciones
+- **Icono de categoría en movimientos divididos (splits)**:
+  - En la lista de transacciones y búsquedas, si todas las divisiones de un movimiento pertenecen a la misma categoría, se muestra el icono y color específicos de dicha categoría en lugar del icono genérico.
+- **Desbloqueo biométrico y facial directo**:
+  - Reconocimiento facial sin requerir pulsar confirmación en pantalla (`sensitiveTransaction: false`).
+  - Soporte de PIN o patrón del dispositivo como respaldo en caso de fallo biométrico (`biometricOnly: false`).
+  - Localización al español de los diálogos y mensajes de autenticación biométrica en Android.
+- **Pantalla de bloqueo con fondo difuminado (Blur / Frosted Glass)**:
+  - Superposición con desenfoque gaussiano (`BackdropFilter`) sobre la interfaz activa mientras la sesión no esté autenticada, protegiendo los datos financieros en pantalla.
+
+## [3.0.8-beta.7] - 2026-10-17
+### Seguridad y Mejoras
+- **Desbloqueo biométrico y facial directo**:
+  - Reconocimiento facial sin requerir pulsar confirmación en pantalla (`sensitiveTransaction: false`).
+  - Soporte de PIN o patrón del dispositivo como respaldo en caso de fallo biométrico (`biometricOnly: false`).
+  - Localización al español de los diálogos y mensajes de autenticación biométrica en Android.
+- **Pantalla de bloqueo con fondo difuminado (Blur / Frosted Glass)**:
+  - Superposición con desenfoque gaussiano (`BackdropFilter`) sobre la interfaz activa mientras la sesión no esté autenticada, protegiendo los datos financieros en pantalla.
+
+## [3.0.8-beta.6] - 2026-10-16
+### Rediseño y Mejoras
+- **Soporte y rediseño completo de Movimientos Divididos (Split Transactions)**:
+  - **Lista de movimientos y búsqueda**: Indicador visual mediante badge `call_split` en transacciones divididas. Cálculo agregado del importe total y desglose dinámico de múltiples categorías en lugar de mostrar únicamente la primera parte.
+  - **Detalle de movimiento**: Desglose estructurado por tarjetas para cada sub-movimiento (con importe, descripción individual, notas, etiquetas e icono/selector de categoría interactivo) y cálculo de importe acumulado.
+  - **Recategorización individual por split**: Capacidad de cambiar la categoría de una sola parte del movimiento dividido sin sobreescribir las demás.
+  - **Creación y edición de splits**: Acción "Dividir" reparada y funcional desde el detalle y la edición simple. Formulario de edición con soporte directo para añadir partes y conservar descripciones personalizadas por split compatibles con la validación de Firefly III.
+
+## [3.0.8-beta.5] - 2026-10-15
+### Rediseño y Mejoras
+- **Rediseño completo de la pantalla de Cuentas**:
+  - **Resumen patrimonial interactivo**: Visualización destacada en tarjeta superior de Activos Totales, Deuda/Pasivos acumulados y Patrimonio Neto calculado en tiempo real con selector de cuentas activas/inactivas.
+  - **Filtrado segmentado**: Navegación rápida por categorías de cuenta mediante SegmentedButton (Todas, Activos, Pasivos, Otras) y opción de mostrar u ocultar cuentas inactivas.
+  - **Buscador en tiempo real**: Filtro instantáneo de cuentas por nombre, entidad bancaria, número de cuenta, notas o IBAN.
+  - **Identidad visual con BankLogoBadge**: Detección inteligente de bancos (BBVA, Santander, CaixaBank, ING, Openbank, Revolut, Sabadell, Bankinter, Wise, N26, etc.) con colores corporativos e iconos de tarjeta o billetera.
+  - **Tarjetas de cuenta estilo Fintonic**: Saldo en cifras tabulares y colores semánticos (verde/coral), rol de cuenta, IBAN abreviado, TAE para pasivos y menú rápido de acciones (ver movimientos, editar o eliminar).
+  - **Nuevo diálogo de creación y edición**: Formulario modal completo para añadir o modificar cuentas con selección de tipo, rol, IBAN, saldo inicial, intereses y notas.
+  - **Interfaz despejada**: Se elimina la barra de pestañas saturada del AppBar, integrando buscador y alta en la barra superior y botón flotante (FAB).
 
 ## [3.0.8-beta.4] - 2026-10-15
 ### Mejoras
