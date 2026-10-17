@@ -1236,7 +1236,7 @@ class HomeTransactionsState extends State<HomeTransactions>
       return Text(S.of(context).homeTransactionsEmpty);
     }
     String category = "";
-    int categories = 0;
+    final Set<String> categories = <String>{};
     String notes = "";
     bool hasAttachments = false;
     double amount = 0.0;
@@ -1250,7 +1250,7 @@ class HomeTransactionsState extends State<HomeTransactions>
     late bool reconciled;
     for (TransactionSplit trans in transactions) {
       if (trans.categoryName?.isNotEmpty ?? false) {
-        categories++;
+        categories.add(trans.categoryName!);
         if (category.isEmpty) {
           category = trans.categoryName!;
         }
@@ -1298,8 +1298,10 @@ class HomeTransactionsState extends State<HomeTransactions>
         destinationName = S.of(context).generalMultiple;
       }
     }
-    if (categories > 1) {
-      category = S.of(context).homeTransactionsMultipleCategories(categories);
+    if (categories.length > 1) {
+      category = S
+          .of(context)
+          .homeTransactionsMultipleCategories(categories.length);
     }
 
     // Title
