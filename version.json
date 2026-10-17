@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.9 (build 18)",
-  "versionCode": 183,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.9/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Interfaz y Visualización\n- **Gráfica de evolución del patrimonio en pantalla de inicio**:\n  - En la tarjeta superior de \"Patrimonio total\", se dibuja una gráfica de fondo (*sparkline* curva con degradado translúcido) mostrando la evolución diaria del patrimonio durante los últimos 30 días.\n  - Obtención asíncrona optimizada concurrente junto al balance mensual y soporte en caché para carga instantánea."
+  "version": "3.0.8-beta.10 (build 70)",
+  "versionCode": 70,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.10/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Novedades y Usabilidad\n- **Periodo del gráfico de patrimonio configurable**:\n  - Selector de rango temporal configurable directamente desde la tarjeta de patrimonio (1M, 3M, 6M, 1A, Todo) y en Ajustes de la aplicación.\n  - Por defecto fijado en 1 año con granularidad adaptativa según el periodo seleccionado.\n- **Navegación interactiva desde los chips de ingresos y gastos**:\n  - Al pulsar sobre \"Gastos\" o \"Ingresos\" en la tarjeta superior, la aplicación navega automáticamente a la pestaña de Movimientos filtrando por el mes actual y por el tipo correspondiente (Gastos o Depósitos)."
 }

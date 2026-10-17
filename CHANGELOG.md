@@ -2,6 +2,14 @@
 
 Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
 
+## [3.0.8-beta.10] - 2026-10-17
+### Novedades y Usabilidad
+- **Periodo del gráfico de patrimonio configurable**:
+  - Selector de rango temporal configurable directamente desde la tarjeta de patrimonio (1M, 3M, 6M, 1A, Todo) y en Ajustes de la aplicación.
+  - Por defecto fijado en 1 año con granularidad adaptativa según el periodo seleccionado.
+- **Navegación interactiva desde los chips de ingresos y gastos**:
+  - Al pulsar sobre "Gastos" o "Ingresos" en la tarjeta superior, la aplicación navega automáticamente a la pestaña de Movimientos filtrando por el mes actual y por el tipo correspondiente (Gastos o Depósitos).
+
 ## [3.0.8-beta.9] - 2026-10-17
 ### Interfaz y Visualización
 - **Gráfica de evolución del patrimonio en pantalla de inicio**:
