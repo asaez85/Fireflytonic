@@ -1,6 +1,6 @@
 {
-  "version": "3.0.8-beta.8 (build 68)",
-  "versionCode": 683,
+  "version": "3.0.8-beta.8 (build 17)",
+  "versionCode": 173,
   "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.0.8-beta.8/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Mejoras y Correcciones\n- **Icono de categoría en movimientos divididos**: Si todas las divisiones de una transacción pertenecen a la misma categoría, la lista muestra el icono y color específicos de dicha categoría en vez del genérico.\n- **Desbloqueo biométrico y facial**: Desbloqueo facial directo sin botón de confirmación y soporte de PIN/patrón como respaldo.\n- **Fondo difuminado (blur)**: Interfaz de la app difuminada y protegida durante la autenticación de la pantalla de bloqueo.\n- **Localización completa**: Diálogo de biometría en español con textos descriptivos."
+  "changelog": "### Mejoras y Correcciones\n- **Icono de categoría en movimientos divididos (splits)**:\n  - En la lista de transacciones y búsquedas, si todas las divisiones de un movimiento pertenecen a la misma categoría, se muestra el icono y color específicos de dicha categoría en lugar del icono genérico.\n- **Desbloqueo biométrico y facial directo**:\n  - Reconocimiento facial sin requerir pulsar confirmación en pantalla (`sensitiveTransaction: false`).\n  - Soporte de PIN o patrón del dispositivo como respaldo en caso de fallo biométrico (`biometricOnly: false`).\n  - Localización al español de los diálogos y mensajes de autenticación biométrica en Android.\n- **Pantalla de bloqueo con fondo difuminado (Blur / Frosted Glass)**:\n  - Superposición con desenfoque gaussiano (`BackdropFilter`) sobre la interfaz activa mientras la sesión no esté autenticada, protegiendo los datos financieros en pantalla."
 }
