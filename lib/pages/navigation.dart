@@ -9,6 +9,7 @@ import 'package:waterflyiii/layout.dart';
 import 'package:waterflyiii/pages/accounts.dart';
 import 'package:waterflyiii/pages/categories.dart';
 import 'package:waterflyiii/pages/home.dart';
+import 'package:waterflyiii/pages/piggybanks.dart';
 import 'package:waterflyiii/pages/settings.dart';
 import 'package:waterflyiii/pages/settings/importer.dart';
 import 'package:waterflyiii/settings.dart';
@@ -119,6 +120,12 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
         const CategoriesPage(),
         const Icon(Icons.assignment_outlined),
         const Icon(Icons.assignment),
+      ),
+      NavDestination(
+        S.of(context).homeTabLabelPiggybanks,
+        const PiggyBanksPage(),
+        const Icon(Icons.savings_outlined),
+        const Icon(Icons.savings),
       ),
       const NavDestination(
         "Importación bancaria",

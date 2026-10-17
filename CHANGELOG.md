@@ -1,6 +1,25 @@
 # Changelog
 
-Todas las novedades y cambios notables de Fireflytonic se documentan en este archivo.
+Todas las novedades notables de Fireflytonic se documentan en este archivo.
+
+## [3.2.0-beta.1] - 2026-10-17
+
+### Added
+- **Nueva pantalla de Evolución y Análisis (`lib/pages/home/evolution.dart`)**:
+  - 4 modos de análisis interactivo: Patrimonio Neto, Saldo Agregado, Flujo de Efectivo (Ingresos vs Gastos) y Distribución por Categorías.
+  - Gráficos interactivos con Syncfusion (`SfCartesianChart` con curvas suaves `SplineAreaSeries` y `TrackballBehavior`, barras de flujo mensual y gráfico dona `SfCircularChart` para categorías).
+  - Selector de periodo temporal estilo Fintonic: 1M, 3M, 6M, 1A, Todo y selector de rango de fechas personalizado con `showDateRangePicker`.
+  - Filtros avanzados por cuentas de activo y categorías específicas mediante hoja modal (`FilterBottomSheet`).
+  - Tarjetas de KPIs con variación absoluta y porcentual, desglose de activos vs pasivos, tasa de ahorro y ranking de gastos con `FtProgressBar`.
+  - Respeto total al modo de ocultar saldos (`SettingsProvider.hideAmounts`) y temas claro/oscuro.
+- **Acceso a Huchas desde el menú lateral (`lib/pages/piggybanks.dart`)**:
+  - Nueva entrada en el menú lateral para acceder a la gestión y metas de ahorro.
+
+### Changed
+- **Reorganización de la navegación inferior (`lib/pages/home.dart`)**:
+  - Se sustituye el acceso inferior de Huchas por la nueva pestaña de **Evolución** (`Icons.insights_outlined` / `Icons.insights`).
+
+---
 
 ## [3.1.0] - 2026-10-17
 ### Novedades y Usabilidad

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/pages/home/analysis.dart';
 import 'package:waterflyiii/pages/home/budgets.dart';
-import 'package:waterflyiii/pages/home/piggybank.dart';
+import 'package:waterflyiii/pages/home/evolution.dart';
 import 'package:waterflyiii/pages/home/summary.dart';
 import 'package:waterflyiii/pages/home/transactions.dart';
 import 'package:waterflyiii/pages/navigation.dart';
@@ -56,7 +56,7 @@ class HomePageState extends State<HomePage>
     "Movimientos",
     "Presupuestos",
     "Análisis",
-    "Huchas",
+    "Evolución",
   ];
 
   late final List<Widget> tabPages;
@@ -73,7 +73,7 @@ class HomePageState extends State<HomePage>
         onOpenBudgetTransactions: openTransactionsForBudget,
       ),
       const HomeAnalysis(key: Key("HomeAnalysis")),
-      const HomePiggybank(key: Key("HomePiggybanks")),
+      const HomeEvolution(key: Key("HomeEvolution")),
     ];
 
     _tabController = TabController(vsync: this, length: 5);
@@ -211,9 +211,9 @@ class HomePageState extends State<HomePage>
                 label: "Análisis",
               ),
               NavigationDestination(
-                icon: Icon(Icons.savings_outlined),
-                selectedIcon: Icon(Icons.savings),
-                label: "Huchas",
+                icon: Icon(Icons.insights_outlined),
+                selectedIcon: Icon(Icons.insights),
+                label: "Evolución",
               ),
             ],
           ),

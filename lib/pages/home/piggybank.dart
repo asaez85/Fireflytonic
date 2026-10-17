@@ -39,10 +39,10 @@ class HomePiggybank extends StatefulWidget {
   const HomePiggybank({super.key});
 
   @override
-  State<HomePiggybank> createState() => _HomePiggybankState();
+  State<HomePiggybank> createState() => HomePiggybankState();
 }
 
-class _HomePiggybankState extends State<HomePiggybank>
+class HomePiggybankState extends State<HomePiggybank>
     with AutomaticKeepAliveClientMixin {
   final Logger log = Logger("Pages.Home.Piggybank");
 
@@ -62,7 +62,7 @@ class _HomePiggybankState extends State<HomePiggybank>
         IconButton(
           icon: const Icon(Icons.account_balance_wallet_outlined),
           tooltip: S.of(context).homePiggyAvailableAmounts,
-          onPressed: _showAvailableAmountsSheet,
+          onPressed: showAvailableAmountsSheet,
         ),
       ]);
     });
@@ -445,7 +445,7 @@ class _HomePiggybankState extends State<HomePiggybank>
     return list;
   }
 
-  void _showAvailableAmountsSheet() {
+  void showAvailableAmountsSheet() {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

@@ -1,0 +1,1179 @@
+import 'dart:async';
+import 'dart:collection';
+
+import 'package:chopper/chopper.dart' show Response;
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+
+import 'package:waterflyiii/animations.dart';
+import 'package:waterflyiii/auth.dart';
+import 'package:waterflyiii/extensions.dart';
+import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
+import 'package:waterflyiii/pages/home/analysis_period.dart';
+import 'package:waterflyiii/settings.dart';
+import 'package:waterflyiii/theme.dart';
+import 'package:waterflyiii/widgets/ft_category_icon.dart';
+import 'package:waterflyiii/widgets/ft_progress_bar.dart';
+
+final Logger log = Logger('Pages.Home.Evolution');
+
+enum EvolutionViewMode {
+  netWorth,
+  balance,
+  cashFlow,
+  categories,
+}
+
+extension EvolutionViewModeExt on EvolutionViewMode {
+  String get label => switch (this) {
+        EvolutionViewMode.netWorth => 'Patrimonio',
+        EvolutionViewMode.balance => 'Saldo',
+        EvolutionViewMode.cashFlow => 'Flujo',
+        EvolutionViewMode.categories => 'Categorías',
+      };
+
+  IconData get icon => switch (this) {
+        EvolutionViewMode.netWorth => Icons.account_balance_outlined,
+        EvolutionViewMode.balance => Icons.wallet_outlined,
+        EvolutionViewMode.cashFlow => Icons.swap_vert_rounded,
+        EvolutionViewMode.categories => Icons.pie_chart_outline_rounded,
+      };
+}
+
+enum EvolutionPeriodPreset {
+  oneMonth,
+  threeMonths,
+  sixMonths,
+  oneYear,
+  all,
+  custom,
+}
+
+extension EvolutionPeriodPresetExt on EvolutionPeriodPreset {
+  String get label => switch (this) {
+        EvolutionPeriodPreset.oneMonth => '1M',
+        EvolutionPeriodPreset.threeMonths => '3M',
+        EvolutionPeriodPreset.sixMonths => '6M',
+        EvolutionPeriodPreset.oneYear => '1A',
+        EvolutionPeriodPreset.all => 'Todo',
+        EvolutionPeriodPreset.custom => '📅',
+      };
+}
+
+class ChartDataPoint {
+  const ChartDataPoint({
+    required this.date,
+    required this.value,
+    this.secondaryValue,
+    this.label,
+  });
+
+  final DateTime date;
+  final double value;
+  final double? secondaryValue;
+  final String? label;
+}
+
+class _CategoryEvolutionItem {
+  const _CategoryEvolutionItem({
+    required this.name,
+    required this.amount,
+    required this.percentage,
+  });
+
+  final String name;
+  final double amount;
+  final double percentage;
+}
+
+class _EvolutionData {
+  const _EvolutionData({
+    required this.points,
+    required this.currentTotal,
+    required this.startTotal,
+    required this.difference,
+    required this.percentChange,
+    this.minVal = 0,
+    this.maxVal = 0,
+    this.categories = const <_CategoryEvolutionItem>[],
+    this.accountBreakdown = const <String, double>{},
+    this.totalIncome = 0,
+    this.totalExpense = 0,
+    this.savingsRate = 0,
+    this.liabilitiesTotal = 0,
+    this.assetsTotal = 0,
+  });
+
+  final List<ChartDataPoint> points;
+  final double currentTotal;
+  final double startTotal;
+  final double difference;
+  final double percentChange;
+  final double minVal;
+  final double maxVal;
+  final List<_CategoryEvolutionItem> categories;
+  final Map<String, double> accountBreakdown;
+  final double totalIncome;
+  final double totalExpense;
+  final double savingsRate;
+  final double liabilitiesTotal;
+  final double assetsTotal;
+}
+
+/// Pantalla completa de Evolución y Análisis gráfico
+class HomeEvolution extends StatefulWidget {
+  const HomeEvolution({super.key});
+
+  @override
+  State<HomeEvolution> createState() => _HomeEvolutionState();
+}
+
+class _HomeEvolutionState extends State<HomeEvolution>
+    with AutomaticKeepAliveClientMixin {
+  EvolutionViewMode _mode = EvolutionViewMode.netWorth;
+  EvolutionPeriodPreset _preset = EvolutionPeriodPreset.sixMonths;
+  DateTimeRange? _customRange;
+
+  // Filtro opcional de cuentas o categorías
+  final Set<String> _selectedAccountIds = <String>{};
+  final Set<String> _selectedCategoryNames = <String>{};
+  List<AccountRead> _availableAccounts = <AccountRead>[];
+  List<CategoryRead> _availableCategories = <CategoryRead>[];
+
+  late Future<_EvolutionData> _future;
+  _EvolutionData? _cachedData;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFilterOptions();
+    _future = _fetchEvolution();
+  }
+
+  Future<void> _loadFilterOptions() async {
+    try {
+      final FireflyIii api = context.read<FireflyService>().api;
+      final Response<AccountArray> respAcc =
+          await api.v1AccountsGet(type: .assetAccount);
+      if (respAcc.isSuccessful && respAcc.body != null) {
+        _availableAccounts = respAcc.body!.data;
+      }
+      final Response<CategoryArray> respCat =
+          await api.v1CategoriesGet(limit: 100);
+      if (respCat.isSuccessful && respCat.body != null) {
+        _availableCategories = respCat.body!.data;
+      }
+    } catch (e) {
+      log.warning('Error loading filter options: $e');
+    }
+  }
+
+  ({DateTime start, DateTime end}) _computeDateRange() {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    switch (_preset) {
+      case EvolutionPeriodPreset.oneMonth:
+        return (
+          start: DateTime(today.year, today.month - 1, today.day),
+          end: today,
+        );
+      case EvolutionPeriodPreset.threeMonths:
+        return (
+          start: DateTime(today.year, today.month - 3, today.day),
+          end: today,
+        );
+      case EvolutionPeriodPreset.sixMonths:
+        return (
+          start: DateTime(today.year, today.month - 6, today.day),
+          end: today,
+        );
+      case EvolutionPeriodPreset.oneYear:
+        return (
+          start: DateTime(today.year - 1, today.month, today.day),
+          end: today,
+        );
+      case EvolutionPeriodPreset.all:
+        return (
+          start: DateTime(today.year - 3, today.month, today.day),
+          end: today,
+        );
+      case EvolutionPeriodPreset.custom:
+        if (_customRange != null) {
+          return (start: _customRange!.start, end: _customRange!.end);
+        }
+        return (
+          start: DateTime(today.year, today.month - 6, today.day),
+          end: today,
+        );
+    }
+  }
+
+  String _fmt(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
+
+  Future<void> _refresh() async {
+    setState(() {
+      _cachedData = null;
+      _future = _fetchEvolution();
+    });
+  }
+
+  Future<_EvolutionData> _fetchEvolution() {
+    final FireflyIii api = context.read<FireflyService>().api;
+    final ({DateTime start, DateTime end}) range = _computeDateRange();
+    final String startStr = _fmt(range.start);
+    final String endStr = _fmt(range.end);
+
+    switch (_mode) {
+      case EvolutionViewMode.netWorth:
+        return _fetchNetWorth(api, startStr, endStr);
+      case EvolutionViewMode.balance:
+        return _fetchBalance(api, startStr, endStr);
+      case EvolutionViewMode.cashFlow:
+        return _fetchCashFlow(api, range.start, range.end);
+      case EvolutionViewMode.categories:
+        return _fetchCategoriesEvolution(api, startStr, endStr);
+    }
+  }
+
+  Future<_EvolutionData> _fetchNetWorth(
+    FireflyIii api,
+    String startStr,
+    String endStr,
+  ) async {
+    final Response<ChartLine> resp = await api.v1ChartAccountOverviewGet(
+      start: startStr,
+      end: endStr,
+      period: _preset == EvolutionPeriodPreset.oneMonth
+          ? .value_1d
+          : .value_1w,
+      preselected: .all,
+    );
+    apiThrowErrorIfEmpty(resp, mounted ? context : null);
+
+    final List<ChartDataSet> datasets = resp.body ?? <ChartDataSet>[];
+    final Map<DateTime, double> assetsByDate = <DateTime, double>{};
+    final Map<DateTime, double> liabilitiesByDate = <DateTime, double>{};
+    final Map<String, double> latestBreakdown = <String, double>{};
+
+    double latestAssets = 0;
+    double latestLiabilities = 0;
+
+    for (final ChartDataSet ds in datasets) {
+      final String label = ds.label ?? '';
+      final Map<String, dynamic> entries =
+          (ds.entries as Map<String, dynamic>?) ?? <String, dynamic>{};
+
+      double lastVal = 0;
+      entries.forEach((String dStr, dynamic val) {
+        final DateTime? date = DateTime.tryParse(dStr);
+        if (date == null) return;
+        final double v = double.tryParse(val.toString()) ?? 0;
+        lastVal = v;
+
+        if (v >= 0) {
+          assetsByDate[date] = (assetsByDate[date] ?? 0) + v;
+        } else {
+          liabilitiesByDate[date] = (liabilitiesByDate[date] ?? 0) + v;
+        }
+      });
+      latestBreakdown[label] = lastVal;
+      if (lastVal >= 0) {
+        latestAssets += lastVal;
+      } else {
+        latestLiabilities += lastVal;
+      }
+    }
+
+    final SplayTreeSet<DateTime> allDates = SplayTreeSet<DateTime>()
+      ..addAll(assetsByDate.keys)
+      ..addAll(liabilitiesByDate.keys);
+
+    final List<ChartDataPoint> points = <ChartDataPoint>[];
+    double minV = double.infinity;
+    double maxV = -double.infinity;
+
+    for (final DateTime d in allDates) {
+      final double a = assetsByDate[d] ?? 0;
+      final double l = liabilitiesByDate[d] ?? 0;
+      final double net = a + l; // l es negativo
+      if (net < minV) minV = net;
+      if (net > maxV) maxV = net;
+      points.add(ChartDataPoint(date: d, value: net, secondaryValue: a));
+    }
+
+    if (points.isEmpty) {
+      return const _EvolutionData(
+        points: <ChartDataPoint>[],
+        currentTotal: 0,
+        startTotal: 0,
+        difference: 0,
+        percentChange: 0,
+      );
+    }
+
+    final double startVal = points.first.value;
+    final double currentVal = points.last.value;
+    final double diff = currentVal - startVal;
+    final double pct =
+        startVal.abs() > 0 ? (diff / startVal.abs()) * 100 : 0.0;
+
+    return _EvolutionData(
+      points: points,
+      currentTotal: currentVal,
+      startTotal: startVal,
+      difference: diff,
+      percentChange: pct,
+      minVal: minV == double.infinity ? 0 : minV,
+      maxVal: maxV == -double.infinity ? 0 : maxV,
+      accountBreakdown: latestBreakdown,
+      assetsTotal: latestAssets,
+      liabilitiesTotal: latestLiabilities,
+    );
+  }
+
+  Future<_EvolutionData> _fetchBalance(
+    FireflyIii api,
+    String startStr,
+    String endStr,
+  ) async {
+    final List<int>? accountFilter = _selectedAccountIds.isNotEmpty
+        ? _selectedAccountIds
+            .map((String id) => int.tryParse(id) ?? 0)
+            .where((int id) => id > 0)
+            .toList()
+        : null;
+
+    final Response<ChartLine> resp = await api.v1ChartBalanceBalanceGet(
+      start: startStr,
+      end: endStr,
+      period: _preset == EvolutionPeriodPreset.oneMonth
+          ? .value_1d
+          : .value_1w,
+      accounts: accountFilter,
+    );
+    apiThrowErrorIfEmpty(resp, mounted ? context : null);
+
+    final List<ChartDataSet> datasets = resp.body ?? <ChartDataSet>[];
+    final Map<DateTime, double> totalByDate = <DateTime, double>{};
+    final Map<String, double> breakdown = <String, double>{};
+
+    for (final ChartDataSet ds in datasets) {
+      final String label = ds.label ?? '';
+      final Map<String, dynamic> entries =
+          (ds.entries as Map<String, dynamic>?) ?? <String, dynamic>{};
+      double lastVal = 0;
+      entries.forEach((String dStr, dynamic val) {
+        final DateTime? date = DateTime.tryParse(dStr);
+        if (date == null) return;
+        final double v = double.tryParse(val.toString()) ?? 0;
+        totalByDate[date] = (totalByDate[date] ?? 0) + v;
+        lastVal = v;
+      });
+      breakdown[label] = lastVal;
+    }
+
+    final List<DateTime> sortedDates = totalByDate.keys.toList()..sort();
+    final List<ChartDataPoint> points = <ChartDataPoint>[];
+    double minV = double.infinity;
+    double maxV = -double.infinity;
+
+    for (final DateTime d in sortedDates) {
+      final double v = totalByDate[d] ?? 0;
+      if (v < minV) minV = v;
+      if (v > maxV) maxV = v;
+      points.add(ChartDataPoint(date: d, value: v));
+    }
+
+    if (points.isEmpty) {
+      return const _EvolutionData(
+        points: <ChartDataPoint>[],
+        currentTotal: 0,
+        startTotal: 0,
+        difference: 0,
+        percentChange: 0,
+      );
+    }
+
+    final double startVal = points.first.value;
+    final double currentVal = points.last.value;
+    final double diff = currentVal - startVal;
+    final double pct =
+        startVal.abs() > 0 ? (diff / startVal.abs()) * 100 : 0.0;
+
+    return _EvolutionData(
+      points: points,
+      currentTotal: currentVal,
+      startTotal: startVal,
+      difference: diff,
+      percentChange: pct,
+      minVal: minV == double.infinity ? 0 : minV,
+      maxVal: maxV == -double.infinity ? 0 : maxV,
+      accountBreakdown: breakdown,
+    );
+  }
+
+  Future<_EvolutionData> _fetchCashFlow(
+    FireflyIii api,
+    DateTime start,
+    DateTime end,
+  ) async {
+    // Para flujo mensual o por buckets
+    final int monthsCount =
+        ((end.year - start.year) * 12 + end.month - start.month).clamp(1, 24);
+    final List<PeriodBucket> buckets = generateBuckets(
+      AnalysisPeriod.month,
+      count: monthsCount + 1,
+    );
+
+    double totalIncome = 0;
+    double totalExpense = 0;
+    final List<ChartDataPoint> points = <ChartDataPoint>[];
+
+    for (final PeriodBucket b in buckets) {
+      final (
+        Response<InsightTotal> respInc,
+        Response<InsightTotal> respExp,
+      ) = await (
+        api.v1InsightIncomeTotalGet(start: _fmt(b.start), end: _fmt(b.end)),
+        api.v1InsightExpenseTotalGet(start: _fmt(b.start), end: _fmt(b.end)),
+      ).wait;
+
+      double inc = 0;
+      for (final InsightTotalEntry e in respInc.body ?? <InsightTotalEntry>[]) {
+        inc += (e.differenceFloat ?? 0).abs();
+      }
+      double exp = 0;
+      for (final InsightTotalEntry e in respExp.body ?? <InsightTotalEntry>[]) {
+        exp += (e.differenceFloat ?? 0).abs();
+      }
+
+      totalIncome += inc;
+      totalExpense += exp;
+
+      points.add(
+        ChartDataPoint(
+          date: b.start,
+          value: inc,
+          secondaryValue: exp,
+          label: b.shortLabel,
+        ),
+      );
+    }
+
+    final double netTotal = totalIncome - totalExpense;
+    final double savingsRate =
+        totalIncome > 0 ? (netTotal / totalIncome) * 100 : 0;
+
+    return _EvolutionData(
+      points: points,
+      currentTotal: netTotal,
+      startTotal: 0,
+      difference: netTotal,
+      percentChange: savingsRate,
+      totalIncome: totalIncome,
+      totalExpense: totalExpense,
+      savingsRate: savingsRate,
+    );
+  }
+
+  Future<_EvolutionData> _fetchCategoriesEvolution(
+    FireflyIii api,
+    String startStr,
+    String endStr,
+  ) async {
+    final Response<InsightGroup> resp = await api.v1InsightExpenseCategoryGet(
+      start: startStr,
+      end: endStr,
+    );
+    apiThrowErrorIfEmpty(resp, mounted ? context : null);
+
+    final List<InsightGroupEntry> rawCats = resp.body ?? <InsightGroupEntry>[];
+    double totalSpend = 0;
+    final Map<String, double> catMap = <String, double>{};
+
+    for (final InsightGroupEntry e in rawCats) {
+      final String name = e.name?.isNotEmpty ?? false ? e.name! : 'Sin categoría';
+      if (_selectedCategoryNames.isNotEmpty &&
+          !_selectedCategoryNames.contains(name)) {
+        continue;
+      }
+      final double amt = (e.differenceFloat ?? 0).abs();
+      catMap[name] = (catMap[name] ?? 0) + amt;
+      totalSpend += amt;
+    }
+
+    final List<_CategoryEvolutionItem> sortedCats = catMap.entries
+        .map(
+          (MapEntry<String, double> e) => _CategoryEvolutionItem(
+            name: e.key,
+            amount: e.value,
+            percentage: totalSpend > 0 ? (e.value / totalSpend) * 100 : 0,
+          ),
+        )
+        .sortedBy<num>((_CategoryEvolutionItem c) => -c.amount);
+
+    return _EvolutionData(
+      points: <ChartDataPoint>[],
+      currentTotal: totalSpend,
+      startTotal: 0,
+      difference: 0,
+      percentChange: 0,
+      categories: sortedCats,
+    );
+  }
+
+  Future<void> _openFiltersSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext ctx) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(
+                          'Filtros de visualización',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setModalState(() {
+                              _selectedAccountIds.clear();
+                              _selectedCategoryNames.clear();
+                            });
+                          },
+                          child: const Text('Limpiar'),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    Text(
+                      'Cuentas para Saldo / Patrimonio:',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _availableAccounts.map((AccountRead a) {
+                        final bool isSel = _selectedAccountIds.contains(a.id);
+                        return FilterChip(
+                          label: Text(a.attributes.name),
+                          selected: isSel,
+                          onSelected: (bool sel) {
+                            setModalState(() {
+                              if (sel) {
+                                _selectedAccountIds.add(a.id);
+                              } else {
+                                _selectedAccountIds.remove(a.id);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Categorías para desglose:',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 180),
+                      child: SingleChildScrollView(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: _availableCategories.map((CategoryRead c) {
+                            final String name = c.attributes.name;
+                            final bool isSel =
+                                _selectedCategoryNames.contains(name);
+                            return FilterChip(
+                              label: Text(name),
+                              selected: isSel,
+                              onSelected: (bool sel) {
+                                setModalState(() {
+                                  if (sel) {
+                                    _selectedCategoryNames.add(name);
+                                  } else {
+                                    _selectedCategoryNames.remove(name);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _refresh();
+                        },
+                        child: const Text('Aplicar filtros'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _pickCustomRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2015),
+      lastDate: DateTime.now(),
+      initialDateRange: _customRange ??
+          DateTimeRange(
+            start: DateTime.now().subtract(const Duration(days: 90)),
+            end: DateTime.now(),
+          ),
+    );
+    if (picked != null) {
+      setState(() {
+        _customRange = picked;
+        _preset = EvolutionPeriodPreset.custom;
+        _refresh();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final CurrencyRead currency =
+        context.read<FireflyService>().defaultCurrency;
+    final SettingsProvider settings = context.watch<SettingsProvider>();
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: RefreshIndicator.adaptive(
+        onRefresh: _refresh,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          children: <Widget>[
+            // Fila de Filtro de Periodos (Estilo Fintonic)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: EvolutionPeriodPreset.values.map((
+                        EvolutionPeriodPreset p,
+                      ) {
+                        final bool isSel = _preset == p;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(p.label),
+                            selected: isSel,
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
+                            onSelected: (bool sel) {
+                              if (!sel) return;
+                              if (p == EvolutionPeriodPreset.custom) {
+                                _pickCustomRange();
+                              } else {
+                                setState(() {
+                                  _preset = p;
+                                  _refresh();
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Badge(
+                    isLabelVisible: _selectedAccountIds.isNotEmpty ||
+                        _selectedCategoryNames.isNotEmpty,
+                    child: const Icon(Icons.filter_list_rounded),
+                  ),
+                  tooltip: 'Filtros avanzados',
+                  onPressed: _openFiltersSheet,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Selector de Modo (Patrimonio, Saldo, Flujo, Categorías)
+            SegmentedButton<EvolutionViewMode>(
+              segments: EvolutionViewMode.values
+                  .map(
+                    (EvolutionViewMode m) => ButtonSegment<EvolutionViewMode>(
+                      value: m,
+                      label: Text(m.label),
+                      icon: Icon(m.icon, size: 18),
+                    ),
+                  )
+                  .toList(),
+              selected: <EvolutionViewMode>{_mode},
+              showSelectedIcon: false,
+              onSelectionChanged: (Set<EvolutionViewMode> newSelection) {
+                setState(() {
+                  _mode = newSelection.first;
+                  _refresh();
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Bloque de datos y gráfico
+            FutureBuilder<_EvolutionData>(
+              future: _future,
+              builder: (
+                BuildContext context,
+                AsyncSnapshot<_EvolutionData> snapshot,
+              ) {
+                if (snapshot.connectionState != ConnectionState.done &&
+                    _cachedData == null) {
+                  return const SizedBox(
+                    height: 350,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'Error al cargar métricas de evolución:\n${snapshot.error}',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasData) {
+                  _cachedData = snapshot.data;
+                }
+
+                final _EvolutionData data = _cachedData!;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    // Tarjeta KPI principal
+                    _buildKpiCard(context, data, currency, settings),
+                    const SizedBox(height: 16),
+
+                    // Gráfico Principal SfCartesianChart
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 16, 12, 12),
+                        child: _buildChart(context, data, currency),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Desglose contextual inferior
+                    _buildBottomBreakdown(context, data, currency, settings),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKpiCard(
+    BuildContext context,
+    _EvolutionData data,
+    CurrencyRead currency,
+    SettingsProvider settings,
+  ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final String mainTitle = switch (_mode) {
+      EvolutionViewMode.netWorth => 'Patrimonio Neto',
+      EvolutionViewMode.balance => 'Saldo Agregado',
+      EvolutionViewMode.cashFlow => 'Ahorro Neto Acumulado',
+      EvolutionViewMode.categories => 'Gasto Total en Periodo',
+    };
+
+    final double diff = data.difference;
+    final bool isPositive = diff >= 0;
+    final Color diffColor = isPositive
+        ? FtColors.incomeFor(isDark: isDark)
+        : FtColors.coralFor(isDark: isDark);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              mainTitle,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: <Widget>[
+                Text(
+                  settings.hideAmounts
+                      ? '••••'
+                      : currency.fmt(data.currentTotal, context: context),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
+                ),
+                const Spacer(),
+                if (_mode != EvolutionViewMode.categories) ...<Widget>[
+                  Icon(
+                    isPositive
+                        ? Icons.trending_up_rounded
+                        : Icons.trending_down_rounded,
+                    color: diffColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${isPositive ? '+' : ''}${currency.fmt(diff, decimalDigits: 0, context: context)} (${data.percentChange.toStringAsFixed(1)}%)',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: diffColor,
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: const <FontFeature>[
+                            FontFeature.tabularFigures(),
+                          ],
+                        ),
+                  ),
+                ],
+              ],
+            ),
+            if (_mode == EvolutionViewMode.netWorth) ...<Widget>[
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Activos totales',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        settings.hideAmounts
+                            ? '••••'
+                            : currency.fmt(data.assetsTotal, context: context),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: FtColors.incomeFor(isDark: isDark),
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Text(
+                        'Deuda / Pasivos',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        settings.hideAmounts
+                            ? '••••'
+                            : currency.fmt(
+                                data.liabilitiesTotal.abs(),
+                                context: context,
+                              ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: FtColors.coralFor(isDark: isDark),
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+            if (_mode == EvolutionViewMode.cashFlow) ...<Widget>[
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(
+                    'Tasa de ahorro: ${data.savingsRate.toStringAsFixed(1)}%',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    'Ingresos: ${currency.fmt(data.totalIncome, decimalDigits: 0, context: context)}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChart(
+    BuildContext context,
+    _EvolutionData data,
+    CurrencyRead currency,
+  ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color primaryLineColor = switch (_mode) {
+      EvolutionViewMode.netWorth => FtColors.blueFor(isDark: isDark),
+      EvolutionViewMode.balance => FtColors.incomeFor(isDark: isDark),
+      EvolutionViewMode.cashFlow => FtColors.blueFor(isDark: isDark),
+      EvolutionViewMode.categories => FtColors.coralFor(isDark: isDark),
+    };
+
+    if (_mode == EvolutionViewMode.categories) {
+      if (data.categories.isEmpty) {
+        return const SizedBox(
+          height: 240,
+          child: Center(child: Text('Sin datos en este periodo')),
+        );
+      }
+      final List<_CategoryEvolutionItem> top6 = data.categories.take(6).toList();
+      return SizedBox(
+        height: 260,
+        child: SfCircularChart(
+          legend: const Legend(
+            isVisible: true,
+            position: LegendPosition.bottom,
+            overflowMode: LegendItemOverflowMode.wrap,
+          ),
+          series: <CircularSeries<_CategoryEvolutionItem, String>>[
+            DoughnutSeries<_CategoryEvolutionItem, String>(
+              dataSource: top6,
+              xValueMapper: (_CategoryEvolutionItem item, _) => item.name,
+              yValueMapper: (_CategoryEvolutionItem item, _) => item.amount,
+              pointColorMapper: (_CategoryEvolutionItem item, _) =>
+                  FtColors.categoryColor(item.name, context: context),
+              innerRadius: '65%',
+              dataLabelSettings: const DataLabelSettings(isVisible: true),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_mode == EvolutionViewMode.cashFlow) {
+      return SizedBox(
+        height: 280,
+        child: SfCartesianChart(
+          primaryXAxis: CategoryAxis(
+            labelStyle: Theme.of(context).textTheme.labelSmall,
+          ),
+          primaryYAxis: NumericAxis(
+            numberFormat: NumberFormat.compact(),
+            labelStyle: Theme.of(context).textTheme.labelSmall,
+          ),
+          legend: const Legend(isVisible: true, position: LegendPosition.top),
+          tooltipBehavior: TooltipBehavior(enable: true),
+          series: <CartesianSeries<ChartDataPoint, String>>[
+            ColumnSeries<ChartDataPoint, String>(
+              name: 'Ingresos',
+              dataSource: data.points,
+              xValueMapper: (ChartDataPoint p, _) => p.label ?? '',
+              yValueMapper: (ChartDataPoint p, _) => p.value,
+              color: FtColors.incomeFor(isDark: isDark),
+            ),
+            ColumnSeries<ChartDataPoint, String>(
+              name: 'Gastos',
+              dataSource: data.points,
+              xValueMapper: (ChartDataPoint p, _) => p.label ?? '',
+              yValueMapper: (ChartDataPoint p, _) => p.secondaryValue ?? 0,
+              color: FtColors.coralFor(isDark: isDark),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (data.points.isEmpty) {
+      return const SizedBox(
+        height: 240,
+        child: Center(child: Text('No hay datos suficientes para el gráfico')),
+      );
+    }
+
+    final DateFormat dateFmt = _preset == EvolutionPeriodPreset.oneMonth
+        ? DateFormat('d MMM')
+        : DateFormat('MMM yy');
+
+    return SizedBox(
+      height: 280,
+      child: SfCartesianChart(
+        primaryXAxis: DateTimeAxis(
+          dateFormat: dateFmt,
+          labelStyle: Theme.of(context).textTheme.labelSmall,
+          majorGridLines: const MajorGridLines(width: 0.5),
+        ),
+        primaryYAxis: NumericAxis(
+          numberFormat: NumberFormat.compact(),
+          labelStyle: Theme.of(context).textTheme.labelSmall,
+        ),
+        trackballBehavior: TrackballBehavior(
+          enable: true,
+          activationMode: ActivationMode.singleTap,
+          tooltipDisplayMode: TrackballDisplayMode.floatAllPoints,
+          lineType: TrackballLineType.vertical,
+        ),
+        series: <CartesianSeries<ChartDataPoint, DateTime>>[
+          SplineAreaSeries<ChartDataPoint, DateTime>(
+            dataSource: data.points,
+            xValueMapper: (ChartDataPoint p, _) => p.date,
+            yValueMapper: (ChartDataPoint p, _) => p.value,
+            color: primaryLineColor.withValues(alpha: 0.18),
+            borderColor: primaryLineColor,
+            borderWidth: 2.5,
+            animationDuration: animDurationEmphasized.inMilliseconds.toDouble(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBreakdown(
+    BuildContext context,
+    _EvolutionData data,
+    CurrencyRead currency,
+    SettingsProvider settings,
+  ) {
+    if (_mode == EvolutionViewMode.categories) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(
+                  'Ranking de gastos por categoría',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              const Divider(height: 1),
+              ...data.categories.map((_CategoryEvolutionItem cat) {
+                return ListTile(
+                  leading: FtCategoryIconWidget(
+                    icon: FtCategoryIcon.forName(cat.name),
+                    color:
+                        FtColors.categoryColor(cat.name, context: context),
+                  ),
+                  title: Text(cat.name),
+                  subtitle: FtProgressBar(
+                    progress: (cat.percentage / 100).clamp(0.0, 1.0),
+                    color:
+                        FtColors.categoryColor(cat.name, context: context),
+                    height: 5,
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Text(
+                        settings.hideAmounts
+                            ? '••••'
+                            : currency.fmt(cat.amount, context: context),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${cat.percentage.toStringAsFixed(1)}%',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (data.accountBreakdown.isNotEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(
+                  'Desglose por cuentas',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              const Divider(height: 1),
+              ...data.accountBreakdown.entries.map((
+                MapEntry<String, double> entry,
+              ) {
+                final double val = entry.value;
+                final bool isNeg = val < 0;
+                return ListTile(
+                  title: Text(entry.key),
+                  trailing: Text(
+                    settings.hideAmounts
+                        ? '••••'
+                        : currency.fmt(val, context: context),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isNeg ? FtColors.coralOf(context) : null,
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+}
