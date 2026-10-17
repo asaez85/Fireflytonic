@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.9] - 2026-10-17
+
+### Changed
+- **Ajustes de interfaz y textos (`lib/pages/settings.dart`, `lib/l10n/app_es.arb`)**:
+  - Eliminado subtítulo redundante en «Usar la zona horaria del servidor» para una interfaz más limpia y compacta.
+  - Simplificada la descripción de bloqueo de pantalla a «Requerir autenticación» (eliminada la coletilla «al iniciar la aplicación»).
+
+---
+
 ## [3.2.0-beta.8] - 2026-10-17
 
 ### Fixed

@@ -155,7 +155,6 @@ class SettingsPageState extends State<SettingsPage>
         ),
         SwitchListTile.adaptive(
           title: Text(S.of(context).settingsUseServerTimezone),
-          subtitle: Text(S.of(context).settingsUseServerTimezoneHelp),
           value: context.select((SettingsProvider s) => s.useServerTime),
           secondary: CircleAvatar(
             child: Icon(
