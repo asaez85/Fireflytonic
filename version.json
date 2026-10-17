@@ -1,6 +1,6 @@
 {
-  "version": "3.2.0-beta.4 (build 24)",
-  "versionCode": 243,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0-beta.4/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Fixed\n- **Filtro de cuentas en desglose de Evolución (`lib/pages/home/evolution.dart`)**:\n  - En el desglose por cuentas de Saldo y Patrimonio únicamente se listan las cuentas activas o con movimientos dentro del periodo analizado, excluyendo cuentas inactivas sin variación de saldo.\n  - El selector modal de filtrado por cuentas ahora muestra exclusivamente cuentas activas.\n\n---"
+  "version": "3.2.0-beta.5 (build 25)",
+  "versionCode": 253,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0-beta.5/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Added\n- **Unificación de periodo por defecto para gráficos (`lib/pages/settings.dart`, `lib/pages/home/evolution.dart`)**:\n  - La opción de configuración «Periodo por defecto de los gráficos» ahora aplica tanto a los gráficos de patrimonio de la pantalla principal como al rango temporal inicial de la pantalla de Evolución.\n  - Sincronización reactiva del periodo en Evolución cuando cambia en los ajustes.\n  - Agrupación compacta de las opciones de actualización en un diálogo modal (`Actualizaciones`) para cambiar de canal (Estable/Beta) y buscar nuevas versiones.\n  - Reorganización de la pantalla de Configuración en secciones temáticas (*Apariencia y gráficos*, *Servidor y seguridad*, *Notificaciones*, *Acerca de*).\n\n### Removed\n- **FAQ en Configuración**:\n  - Eliminado el acceso directo a FAQ de la pantalla de ajustes para simplificar y limpiar la interfaz.\n\n---"
 }
