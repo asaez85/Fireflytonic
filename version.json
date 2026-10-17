@@ -1,6 +1,6 @@
 {
-  "version": "3.2.0-beta.2 (build 22)",
-  "versionCode": 223,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0-beta.2/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Fixed\n- **Cálculo de Saldo Agregado y desglose en Evolución (`lib/pages/home/evolution.dart`)**:\n  - Uso del endpoint `/chart/account/overview` con filtro de cuentas de activo para calcular el saldo acumulado real y continuo en lugar del flujo diario (`earned`/`spent`).\n  - Desglose inferior con el nombre real de cada cuenta bancaria/activo y su saldo correspondiente.\n  - Ajuste de tamaño y desbordamiento en el selector de modos para evitar el salto de línea en \"Categorías\".\n\n---"
+  "version": "3.2.0-beta.3 (build 23)",
+  "versionCode": 233,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0-beta.3/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Fixed\n- **Cálculo y gráfico de Saldo en pantalla de Evolución (`lib/pages/home/evolution.dart`)**:\n  - Corrección en `_fetchBalance()` eliminando el descarte indebido por `ds.type != 'asset'` (la API de Firefly III devuelve `type: \"line\"` para las series temporales del endpoint `/chart/account/overview`), permitiendo renderizar correctamente la serie temporal.\n  - Clasificación y mapeo robusto de pasivos en `_fetchNetWorth()` mediante consulta de cuentas de pasivo registradas.\n\n---"
 }
