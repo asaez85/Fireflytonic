@@ -1,6 +1,6 @@
 {
-  "version": "3.2.0-beta.5 (build 25)",
-  "versionCode": 253,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0-beta.5/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Added\n- **Unificación de periodo por defecto para gráficos (`lib/pages/settings.dart`, `lib/pages/home/evolution.dart`)**:\n  - La opción de configuración «Periodo por defecto de los gráficos» ahora aplica tanto a los gráficos de patrimonio de la pantalla principal como al rango temporal inicial de la pantalla de Evolución.\n  - Sincronización reactiva del periodo en Evolución cuando cambia en los ajustes.\n  - Agrupación compacta de las opciones de actualización en un diálogo modal (`Actualizaciones`) para cambiar de canal (Estable/Beta) y buscar nuevas versiones.\n  - Reorganización de la pantalla de Configuración en secciones temáticas (*Apariencia y gráficos*, *Servidor y seguridad*, *Notificaciones*, *Acerca de*).\n\n### Removed\n- **FAQ en Configuración**:\n  - Eliminado el acceso directo a FAQ de la pantalla de ajustes para simplificar y limpiar la interfaz.\n\n---"
+  "version": "3.2.0-beta.6 (build 26)",
+  "versionCode": 263,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0-beta.6/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Added\n- **Gráfico circular interactivo y leyenda optimizada en Evolución (`lib/pages/home/evolution.dart`)**:\n  - Nueva leyenda responsiva tipo chips con `Wrap` que elimina el scroll incómodo sobre el gráfico, mostrando Top 5 + «Otros» de forma compacta.\n  - Etiquetas de datos exteriores legibles con líneas conectoras suaves y resolución anticolisión (`shift`).\n  - Interactividad y selección bidireccional entre sectores, leyenda chips, anotación central con detalle del importe/porcentaje y el ranking inferior de gastos.\n- **Optimización de rendimiento y aceleración de carga (`lib/pages/home/evolution.dart`)**:\n  - Paralelización con `Future.wait` de las peticiones mensuales a la API en Flujo y Saldo, reduciendo sustancialmente los tiempos de espera en periodos amplios.\n  - Caché de cuentas e inicialización diferida (*lazy loading*) de filtros.\n\n---"
 }
