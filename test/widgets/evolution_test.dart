@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:waterflyiii/pages/home/evolution.dart';
+import 'package:waterflyiii/settings.dart';
 
 void main() {
   group('Evolution Enums & Data Points Tests', () {
@@ -17,6 +18,53 @@ void main() {
       expect(EvolutionPeriodPreset.oneYear.label, '1A');
       expect(EvolutionPeriodPreset.all.label, 'Todo');
       expect(EvolutionPeriodPreset.custom.label, '📅');
+    });
+
+    test('EvolutionPeriodPreset converts to and from HomePatrimonyPeriod', () {
+      expect(
+        EvolutionPeriodPresetExt.fromHomePeriod(HomePatrimonyPeriod.oneMonth),
+        EvolutionPeriodPreset.oneMonth,
+      );
+      expect(
+        EvolutionPeriodPresetExt.fromHomePeriod(
+          HomePatrimonyPeriod.threeMonths,
+        ),
+        EvolutionPeriodPreset.threeMonths,
+      );
+      expect(
+        EvolutionPeriodPresetExt.fromHomePeriod(HomePatrimonyPeriod.sixMonths),
+        EvolutionPeriodPreset.sixMonths,
+      );
+      expect(
+        EvolutionPeriodPresetExt.fromHomePeriod(HomePatrimonyPeriod.oneYear),
+        EvolutionPeriodPreset.oneYear,
+      );
+      expect(
+        EvolutionPeriodPresetExt.fromHomePeriod(HomePatrimonyPeriod.allTime),
+        EvolutionPeriodPreset.all,
+      );
+
+      expect(
+        EvolutionPeriodPreset.oneMonth.toHomePeriod(),
+        HomePatrimonyPeriod.oneMonth,
+      );
+      expect(
+        EvolutionPeriodPreset.threeMonths.toHomePeriod(),
+        HomePatrimonyPeriod.threeMonths,
+      );
+      expect(
+        EvolutionPeriodPreset.sixMonths.toHomePeriod(),
+        HomePatrimonyPeriod.sixMonths,
+      );
+      expect(
+        EvolutionPeriodPreset.oneYear.toHomePeriod(),
+        HomePatrimonyPeriod.oneYear,
+      );
+      expect(
+        EvolutionPeriodPreset.all.toHomePeriod(),
+        HomePatrimonyPeriod.allTime,
+      );
+      expect(EvolutionPeriodPreset.custom.toHomePeriod(), isNull);
     });
 
     test('ChartDataPoint models point data correctly', () {

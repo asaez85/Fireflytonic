@@ -2,6 +2,21 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.5] - 2026-10-17
+
+### Added
+- **Unificación de periodo por defecto para gráficos (`lib/pages/settings.dart`, `lib/pages/home/evolution.dart`)**:
+  - La opción de configuración «Periodo por defecto de los gráficos» ahora aplica tanto a los gráficos de patrimonio de la pantalla principal como al rango temporal inicial de la pantalla de Evolución.
+  - Sincronización reactiva del periodo en Evolución cuando cambia en los ajustes.
+  - Agrupación compacta de las opciones de actualización en un diálogo modal (`Actualizaciones`) para cambiar de canal (Estable/Beta) y buscar nuevas versiones.
+  - Reorganización de la pantalla de Configuración en secciones temáticas (*Apariencia y gráficos*, *Servidor y seguridad*, *Notificaciones*, *Acerca de*).
+
+### Removed
+- **FAQ en Configuración**:
+  - Eliminado el acceso directo a FAQ de la pantalla de ajustes para simplificar y limpiar la interfaz.
+
+---
+
 ## [3.2.0-beta.4] - 2026-10-17
 
 ### Fixed

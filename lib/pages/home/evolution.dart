@@ -57,6 +57,24 @@ extension EvolutionPeriodPresetExt on EvolutionPeriodPreset {
     EvolutionPeriodPreset.all => 'Todo',
     EvolutionPeriodPreset.custom => '📅',
   };
+
+  static EvolutionPeriodPreset fromHomePeriod(HomePatrimonyPeriod period) =>
+      switch (period) {
+        HomePatrimonyPeriod.oneMonth => EvolutionPeriodPreset.oneMonth,
+        HomePatrimonyPeriod.threeMonths => EvolutionPeriodPreset.threeMonths,
+        HomePatrimonyPeriod.sixMonths => EvolutionPeriodPreset.sixMonths,
+        HomePatrimonyPeriod.oneYear => EvolutionPeriodPreset.oneYear,
+        HomePatrimonyPeriod.allTime => EvolutionPeriodPreset.all,
+      };
+
+  HomePatrimonyPeriod? toHomePeriod() => switch (this) {
+    EvolutionPeriodPreset.oneMonth => HomePatrimonyPeriod.oneMonth,
+    EvolutionPeriodPreset.threeMonths => HomePatrimonyPeriod.threeMonths,
+    EvolutionPeriodPreset.sixMonths => HomePatrimonyPeriod.sixMonths,
+    EvolutionPeriodPreset.oneYear => HomePatrimonyPeriod.oneYear,
+    EvolutionPeriodPreset.all => HomePatrimonyPeriod.allTime,
+    EvolutionPeriodPreset.custom => null,
+  };
 }
 
 class ChartDataPoint {
@@ -130,8 +148,10 @@ class HomeEvolution extends StatefulWidget {
 class _HomeEvolutionState extends State<HomeEvolution>
     with AutomaticKeepAliveClientMixin {
   EvolutionViewMode _mode = EvolutionViewMode.netWorth;
-  EvolutionPeriodPreset _preset = EvolutionPeriodPreset.sixMonths;
+  late EvolutionPeriodPreset _preset;
   DateTimeRange? _customRange;
+  HomePatrimonyPeriod? _currentHomePeriod;
+  bool _initialized = false;
 
   // Filtro opcional de cuentas o categorías
   final Set<String> _selectedAccountIds = <String>{};
@@ -149,7 +169,25 @@ class _HomeEvolutionState extends State<HomeEvolution>
   void initState() {
     super.initState();
     _loadFilterOptions();
-    _future = _fetchEvolution();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final HomePatrimonyPeriod defaultPeriod = context
+        .watch<SettingsProvider>()
+        .homePatrimonyPeriod;
+    if (!_initialized) {
+      _initialized = true;
+      _currentHomePeriod = defaultPeriod;
+      _preset = EvolutionPeriodPresetExt.fromHomePeriod(defaultPeriod);
+      _future = _fetchEvolution();
+    } else if (_currentHomePeriod != defaultPeriod) {
+      _currentHomePeriod = defaultPeriod;
+      _preset = EvolutionPeriodPresetExt.fromHomePeriod(defaultPeriod);
+      _cachedData = null;
+      _future = _fetchEvolution();
+    }
   }
 
   Future<void> _loadFilterOptions() async {
