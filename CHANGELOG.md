@@ -2,6 +2,16 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.0-beta.2] - 2026-10-17
+
+### Fixed
+- **Cálculo de Saldo Agregado y desglose en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Uso del endpoint `/chart/account/overview` con filtro de cuentas de activo para calcular el saldo acumulado real y continuo en lugar del flujo diario (`earned`/`spent`).
+  - Desglose inferior con el nombre real de cada cuenta bancaria/activo y su saldo correspondiente.
+  - Ajuste de tamaño y desbordamiento en el selector de modos para evitar el salto de línea en "Categorías".
+
+---
+
 ## [3.2.0-beta.1] - 2026-10-17
 
 ### Added

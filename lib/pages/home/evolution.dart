@@ -267,8 +267,10 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     for (final ChartDataSet ds in datasets) {
       final String label = ds.label ?? '';
-      final Map<String, dynamic> entries =
-          (ds.entries as Map<String, dynamic>?) ?? <String, dynamic>{};
+      final bool isLiability = ds.type == 'liability';
+      final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
+          ? (ds.entries as Map<String, dynamic>)
+          : <String, dynamic>{};
 
       double lastVal = 0;
       entries.forEach((String dStr, dynamic val) {
@@ -277,17 +279,17 @@ class _HomeEvolutionState extends State<HomeEvolution>
         final double v = double.tryParse(val.toString()) ?? 0;
         lastVal = v;
 
-        if (v >= 0) {
-          assetsByDate[date] = (assetsByDate[date] ?? 0) + v;
-        } else {
+        if (isLiability) {
           liabilitiesByDate[date] = (liabilitiesByDate[date] ?? 0) + v;
+        } else {
+          assetsByDate[date] = (assetsByDate[date] ?? 0) + v;
         }
       });
-      latestBreakdown[label] = lastVal;
-      if (lastVal >= 0) {
-        latestAssets += lastVal;
-      } else {
+      latestBreakdown[label] = isLiability ? -lastVal : lastVal;
+      if (isLiability) {
         latestLiabilities += lastVal;
+      } else {
+        latestAssets += lastVal;
       }
     }
 
@@ -302,7 +304,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
     for (final DateTime d in allDates) {
       final double a = assetsByDate[d] ?? 0;
       final double l = liabilitiesByDate[d] ?? 0;
-      final double net = a + l; // l es negativo
+      final double net = a - l;
       if (net < minV) minV = net;
       if (net > maxV) maxV = net;
       points.add(ChartDataPoint(date: d, value: net, secondaryValue: a));
@@ -343,20 +345,20 @@ class _HomeEvolutionState extends State<HomeEvolution>
     String startStr,
     String endStr,
   ) async {
-    final List<int>? accountFilter = _selectedAccountIds.isNotEmpty
-        ? _selectedAccountIds
-            .map((String id) => int.tryParse(id) ?? 0)
-            .where((int id) => id > 0)
-            .toList()
-        : null;
+    final Set<String> selectedNames = _selectedAccountIds.isNotEmpty
+        ? _availableAccounts
+            .where((AccountRead a) => _selectedAccountIds.contains(a.id))
+            .map((AccountRead a) => a.attributes.name)
+            .toSet()
+        : const <String>{};
 
-    final Response<ChartLine> resp = await api.v1ChartBalanceBalanceGet(
+    final Response<ChartLine> resp = await api.v1ChartAccountOverviewGet(
       start: startStr,
       end: endStr,
       period: _preset == EvolutionPeriodPreset.oneMonth
           ? .value_1d
           : .value_1w,
-      accounts: accountFilter,
+      preselected: .assets,
     );
     apiThrowErrorIfEmpty(resp, mounted ? context : null);
 
@@ -365,9 +367,14 @@ class _HomeEvolutionState extends State<HomeEvolution>
     final Map<String, double> breakdown = <String, double>{};
 
     for (final ChartDataSet ds in datasets) {
+      if (ds.type != null && ds.type != 'asset') continue;
       final String label = ds.label ?? '';
-      final Map<String, dynamic> entries =
-          (ds.entries as Map<String, dynamic>?) ?? <String, dynamic>{};
+      if (selectedNames.isNotEmpty && !selectedNames.contains(label)) {
+        continue;
+      }
+      final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
+          ? (ds.entries as Map<String, dynamic>)
+          : <String, dynamic>{};
       double lastVal = 0;
       entries.forEach((String dStr, dynamic val) {
         final DateTime? date = DateTime.tryParse(dStr);
@@ -731,8 +738,13 @@ class _HomeEvolutionState extends State<HomeEvolution>
                   .map(
                     (EvolutionViewMode m) => ButtonSegment<EvolutionViewMode>(
                       value: m,
-                      label: Text(m.label),
-                      icon: Icon(m.icon, size: 18),
+                      label: Text(
+                        m.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      icon: Icon(m.icon, size: 16),
                     ),
                   )
                   .toList(),
