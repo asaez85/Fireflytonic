@@ -2,6 +2,18 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.4] - 2026-10-18
+
+### Fixed
+- **Carga infinita en Categorías (`lib/pages/categories.dart`)**:
+  - Se corrigió un bloqueo crítico introducido en la beta anterior: `_isLoading` se inicializaba a `true`, por lo que el `guard` de `_loadData()` hacía `return` inmediatamente en el arranque y la pantalla quedaba en un spinner infinito.
+  - `_isLoading` ahora inicia en `false` y el guard evita solo las cargas redundantes cuando ya hay datos cargados: `if (_isLoading && !isRefresh && _categories != null) return;`.
+  - Las peticiones `stock.get(stockDate)` y `_fetchAllCategories()` se ejecutan en paralelo con `Future.wait` para reducir el tiempo de carga.
+  - Los cambios de mes (`_previousMonth`, `_nextMonth`, `_currentMonth`) fuerzan la recarga con `_loadData(isRefresh: true)`.
+  - El `build` distingue ahora carga inicial, error y recarga en segundo plano: muestra un `CircularProgressIndicator` la primera vez, una pantalla de error reintentable si falla, y un `LinearProgressIndicator` superior sin parpadeo blanco durante las recargas posteriores.
+
+---
+
 ## [3.2.1-beta.3] - 2026-10-18
 
 ### Fixed

@@ -36,7 +36,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   CategoryArray? _categories;
   List<CategoryRead>? _allCategories;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _error;
   bool _isSearchOpen = false;
   int _selectedFilterSegment = 0; // 0: Todas, 1: Gastos, 2: Ingresos
@@ -109,7 +109,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   Future<void> _loadData({bool isRefresh = false}) async {
-    if (_isLoading && !isRefresh) return;
+    if (_isLoading && !isRefresh && _categories != null) return;
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -117,8 +117,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
     try {
       final DateTime stockDate = _stockDate;
-      final CategoryArray updated = await stock.get(stockDate);
-      await _fetchAllCategories();
+      final List<dynamic> results = await Future.wait<dynamic>(
+        <Future<dynamic>>[stock.get(stockDate), _fetchAllCategories()],
+      );
+      final CategoryArray updated = results[0] as CategoryArray;
       if (mounted) {
         setState(() {
           _categories = updated;
@@ -147,7 +149,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       selectedMonth = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
     });
     _updateNavElements();
-    _loadData();
+    _loadData(isRefresh: true);
   }
 
   void _nextMonth() {
@@ -155,7 +157,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       selectedMonth = DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
     });
     _updateNavElements();
-    _loadData();
+    _loadData(isRefresh: true);
   }
 
   void _currentMonth() {
@@ -163,7 +165,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       selectedMonth = DateTime(now.year, now.month, 1);
     });
     _updateNavElements();
-    _loadData();
+    _loadData(isRefresh: true);
   }
 
   Future<void> _openAddCategory() async {
@@ -220,9 +222,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final DateTime stockDate = _stockDate;
 
     final Widget content;
-    if (_isLoading) {
+    if (_isLoading && _categories == null) {
       content = const Center(child: CircularProgressIndicator.adaptive());
-    } else if (_error != null) {
+    } else if (_error != null && _categories == null) {
       log.severe("Error loading categories: $_error");
       content = Center(
         child: Column(
@@ -252,6 +254,20 @@ class _CategoriesPageState extends State<CategoriesPage> {
       content = _buildCategoryList(_categories!, stockDate);
     } else {
       content = const Center(child: CircularProgressIndicator.adaptive());
+    }
+
+    if (_categories != null && _isLoading) {
+      return Stack(
+        children: <Widget>[
+          Positioned.fill(child: content),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LinearProgressIndicator(minHeight: 2.5),
+          ),
+        ],
+      );
     }
 
     return content;
