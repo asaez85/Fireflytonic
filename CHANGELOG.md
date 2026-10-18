@@ -2,6 +2,21 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.3] - 2026-10-18
+
+### Fixed
+- **Pantalla gris en Categorías (`lib/pages/categories.dart`, `lib/stock.dart`, `lib/extensions.dart`)**:
+  - Al cargar categorías desde la caché de disco, los objetos se deserializaban como `CategoryProperties` en lugar de `CategoryWithSum`, provocando un `TypeError` y una pantalla gris.
+  - `CatStock` reconstruye ahora `CategoryWithSum` con `sumSpent` y `sumEarned` al leer de `PersistentSourceOfTruth`.
+  - Añadida extensión segura `CategoryPropertiesSumExt` en `extensions.dart` con getters `sumSpent` y `sumEarned` que funcionan tanto para `CategoryWithSum` como para `CategoryProperties`.
+  - Refactorizado `CategoriesPage` para usar carga determinista mediante `_loadData()`, eliminando el `FutureBuilder` recreado en `build()` y todos los casts inseguros a `CategoryWithSum`.
+
+### Changed
+- **Acciones duplicadas en Presupuestos (`lib/pages/home/budgets.dart`)**:
+  - Eliminados los botones duplicados `auto_awesome` y `rule_folder` del `AppBar`; las acciones de generar presupuestos y aplicar reglas ya están presentes como `TextButton` en la cabecera "MIS PRESUPUESTOS". Solo permanece el botón de añadir presupuesto en el `AppBar`.
+
+---
+
 ## [3.2.1-beta.2] - 2026-10-18
 
 ### Changed

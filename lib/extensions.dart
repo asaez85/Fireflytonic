@@ -717,6 +717,30 @@ class CategoryWithSum extends CategoryProperties {
   double sumEarned = 0;
 }
 
+extension CategoryPropertiesSumExt on CategoryProperties {
+  double get sumSpent {
+    if (this is CategoryWithSum) {
+      return (this as CategoryWithSum).sumSpent;
+    }
+    return (spent ?? <ArrayEntryWithCurrencyAndSum>[]).fold<double>(
+      0,
+      (double p, ArrayEntryWithCurrencyAndSum e) =>
+          p + (double.tryParse(e.sum ?? '0') ?? 0),
+    );
+  }
+
+  double get sumEarned {
+    if (this is CategoryWithSum) {
+      return (this as CategoryWithSum).sumEarned;
+    }
+    return (earned ?? <ArrayEntryWithCurrencyAndSum>[]).fold<double>(
+      0,
+      (double p, ArrayEntryWithCurrencyAndSum e) =>
+          p + (double.tryParse(e.sum ?? '0') ?? 0),
+    );
+  }
+}
+
 extension LocaleExt on Locale {
   static Locale fromLanguageTag(String tag) {
     String? langCode;

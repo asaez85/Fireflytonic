@@ -49,22 +49,6 @@ class _HomeBudgetsState extends State<HomeBudgets> {
   void _registerAppBarActions() {
     context.read<PageActions>().set(widget.key!, <Widget>[
       IconButton(
-        icon: const Icon(Icons.auto_awesome_outlined),
-        tooltip: 'Generar presupuestos con histórico',
-        onPressed: _openAutoBudgetSheet,
-      ),
-      IconButton(
-        icon: _isApplyingRules
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-              )
-            : const Icon(Icons.rule_folder_outlined),
-        tooltip: 'Asignar reglas a gastos del mes',
-        onPressed: _isApplyingRules ? null : _applyRulesToCurrentMonth,
-      ),
-      IconButton(
         icon: const Icon(Icons.add),
         tooltip: 'Nuevo presupuesto',
         onPressed: _openAddBudgetDialog,
