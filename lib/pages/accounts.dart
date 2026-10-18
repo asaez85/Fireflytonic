@@ -87,11 +87,6 @@ class _AccountsPageState extends State<AccountsPage> {
           });
         },
       ),
-      IconButton(
-        icon: const Icon(Icons.add),
-        tooltip: 'Añadir cuenta',
-        onPressed: _openAddAccount,
-      ),
     ];
 
     nav.fab = FloatingActionButton(
@@ -259,17 +254,18 @@ class _AccountsPageState extends State<AccountsPage> {
       final double bal =
           double.tryParse(acc.attributes.currentBalance ?? '0') ?? 0.0;
       final ShortAccountTypeProperty type = acc.attributes.type;
+      final bool includeNetWorth = acc.attributes.includeNetWorth ?? true;
 
       if (type == ShortAccountTypeProperty.asset) {
         assets.add(acc);
-        if (isActive) {
+        if (isActive && includeNetWorth) {
           totalAssets += bal;
         }
       } else if (type == ShortAccountTypeProperty.liability ||
           type == ShortAccountTypeProperty.liabilities) {
         liabilities.add(acc);
-        if (isActive) {
-          totalLiabilities += bal;
+        if (isActive && includeNetWorth) {
+          totalLiabilities += bal.abs();
         }
       } else {
         others.add(acc);
@@ -796,6 +792,30 @@ class _AccountsPageState extends State<AccountsPage> {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: FtColors.warningOf(context),
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (!(account.attributes.includeNetWorth ??
+                              true)) ...<Widget>[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'No computable',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).colorScheme.outline,
                                 ),
                               ),
                             ),
