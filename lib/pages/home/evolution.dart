@@ -107,10 +107,15 @@ class _CategoryEvolutionItem {
 /// Expande el rango un 30% por encima de la máxima desviación respecto a la
 /// media, de modo que la línea del gráfico quede aproximadamente a mitad de
 /// la pantalla incluso cuando los valores fluctúen muy por encima de cero.
-({double min, double max})? computeAdaptiveYAxisRange(List<ChartDataPoint> points) {
+({double min, double max})? computeAdaptiveYAxisRange(
+  List<ChartDataPoint> points,
+) {
   if (points.isEmpty) return null;
-  final List<double> values = points.map((ChartDataPoint p) => p.value).toList();
-  final double mean = values.reduce((double a, double b) => a + b) / values.length;
+  final List<double> values = points
+      .map((ChartDataPoint p) => p.value)
+      .toList();
+  final double mean =
+      values.reduce((double a, double b) => a + b) / values.length;
   double maxDiff = 0.0;
   for (final double v in values) {
     final double diff = (v - mean).abs();
@@ -1573,7 +1578,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
         ? DateFormat('d MMM')
         : DateFormat('d MMM yyyy');
 
-    final bool useAdaptiveYAxis = _mode == EvolutionViewMode.netWorth ||
+    final bool useAdaptiveYAxis =
+        _mode == EvolutionViewMode.netWorth ||
         _mode == EvolutionViewMode.balance;
     final ({double min, double max})? yRange = useAdaptiveYAxis
         ? computeAdaptiveYAxisRange(data.points)

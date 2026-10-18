@@ -95,12 +95,18 @@ void main() {
             value: 10000.0 + (i - 2) * 200.0,
           ),
       ];
-      final ({double min, double max})? range = computeAdaptiveYAxisRange(points);
+      final ({double min, double max})? range = computeAdaptiveYAxisRange(
+        points,
+      );
       expect(range, isNotNull);
       expect(range!.min, greaterThan(0));
       expect(range.max, greaterThan(range.min));
 
-      final double mean = points.map((ChartDataPoint p) => p.value).reduce((double a, double b) => a + b) / points.length;
+      final double mean =
+          points
+              .map((ChartDataPoint p) => p.value)
+              .reduce((double a, double b) => a + b) /
+          points.length;
       expect((range.min + range.max) / 2, equals(mean));
     });
 
@@ -108,7 +114,9 @@ void main() {
       final List<ChartDataPoint> points = <ChartDataPoint>[
         ChartDataPoint(date: DateTime(2026, 1, 1), value: 50000.0),
       ];
-      final ({double min, double max})? range = computeAdaptiveYAxisRange(points);
+      final ({double min, double max})? range = computeAdaptiveYAxisRange(
+        points,
+      );
       expect(range, isNotNull);
       expect(range!.min, lessThan(50000.0));
       expect(range.max, greaterThan(50000.0));
@@ -120,7 +128,9 @@ void main() {
         for (int i = 0; i < 3; i++)
           ChartDataPoint(date: DateTime(2026, 1, i + 1), value: 12345.0),
       ];
-      final ({double min, double max})? range = computeAdaptiveYAxisRange(points);
+      final ({double min, double max})? range = computeAdaptiveYAxisRange(
+        points,
+      );
       expect(range, isNotNull);
       expect(range!.min, lessThan(12345.0));
       expect(range.max, greaterThan(12345.0));
