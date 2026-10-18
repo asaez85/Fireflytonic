@@ -1,6 +1,6 @@
 {
-  "version": "3.2.1-beta.2 (build 33)",
-  "versionCode": 333,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.2/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Changed\n- **Eje vertical adaptativo en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:\n  - Los gráficos de **Patrimonio Neto** y **Saldo Agregado** ajustan ahora dinámicamente los límites del eje Y, centrándolos en la media de los datos en lugar de forzar el inicio en 0.\n  - La línea de la serie se sitúa aproximadamente a mitad del gráfico, mejorando la legibilidad cuando los importes son altos y las variaciones relativas pequeñas (por ejemplo, patrimonios de ~50.000 € que oscilan entre 49.000 € y 51.000 €).\n\n---"
+  "version": "3.2.1-beta.3 (build 34)",
+  "versionCode": 343,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.3/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Fixed\n- **Pantalla gris en Categorías (`lib/pages/categories.dart`, `lib/stock.dart`, `lib/extensions.dart`)**:\n  - Al cargar categorías desde la caché de disco, los objetos se deserializaban como `CategoryProperties` en lugar de `CategoryWithSum`, provocando un `TypeError` y una pantalla gris.\n  - `CatStock` reconstruye ahora `CategoryWithSum` con `sumSpent` y `sumEarned` al leer de `PersistentSourceOfTruth`.\n  - Añadida extensión segura `CategoryPropertiesSumExt` en `extensions.dart` con getters `sumSpent` y `sumEarned` que funcionan tanto para `CategoryWithSum` como para `CategoryProperties`.\n  - Refactorizado `CategoriesPage` para usar carga determinista mediante `_loadData()`, eliminando el `FutureBuilder` recreado en `build()` y todos los casts inseguros a `CategoryWithSum`.\n\n### Changed\n- **Acciones duplicadas en Presupuestos (`lib/pages/home/budgets.dart`)**:\n  - Eliminados los botones duplicados `auto_awesome` y `rule_folder` del `AppBar`; las acciones de generar presupuestos y aplicar reglas ya están presentes como `TextButton` en la cabecera \"MIS PRESUPUESTOS\". Solo permanece el botón de añadir presupuesto en el `AppBar`.\n\n---"
 }
