@@ -1,6 +1,6 @@
 {
   "version": "3.2.1-beta.9 (build 40)",
-  "versionCode": 385,
+  "versionCode": 403,
   "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.9/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Fixed\n- **Pantalla de Inicio**: el gráfico de saldo neto ahora incluye todas las cuentas con `includeNetWorth` activo usando `preselected: all`, y también carga los pasivos para reflejar correctamente la deuda. La lista de cuentas visible filtra aquellas con saldo distinto de cero y `includeNetWorth` activo.\n- Los pasivos se muestran con signo negativo en el total y en la evolución del gráfico.\n\n---"
+  "changelog": "### Fixed\n- **Pantalla de Inicio (`lib/pages/home/summary.dart`)**:\n  - El gráfico de saldo neto ahora solicita `preselected: all` en `v1ChartAccountOverviewGet`, incluyendo tanto cuentas de activo como de pasivo en la evolución del patrimonio y evitando el filtro por preferencias de `frontpage accounts` del usuario.\n  - Se cargan en paralelo activos (`assetAccount`) y pasivos (`liabilities`) con límite 100, combinándolos en una única lista de cuentas.\n  - Se registra `includeNetWorth` para todas las cuentas y se detectan los nombres de pasivos, aplicando signo negativo a sus balances tanto en el saldo como en el gráfico.\n  - La lista de cuentas visibles en la pantalla de inicio filtra solo aquellas con `includeNetWorth == true` y saldo distinto de cero (`effectiveBal.abs() > 0.0001`).\n\n---"
 }
