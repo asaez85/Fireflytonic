@@ -2,6 +2,14 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.1] - 2026-10-18
+
+### Added
+- **Detalle temporal en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Al pulsar sobre los gráficos de evolución de Patrimonio Neto y Saldo, la línea vertical (trackball) muestra ahora la fecha además del importe (`d MMM` en rango mensual, `d MMM yyyy` en periodos superiores), formateado con la divisa y respetando el modo de privacidad (`hideAmounts`).
+
+---
+
 ## [3.2.0] - 2026-10-17
 
 ### Novedades y Análisis Financiero
