@@ -1,6 +1,6 @@
 {
-  "version": "3.2.0 (build 81)",
-  "versionCode": 813,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.0/fireflytonic-arm64-v8a.apk",
-  "changelog": "### Novedades y Análisis Financiero\n- **Nueva pantalla de Evolución y Análisis**: 4 modos interactivos (Patrimonio Neto, Saldo Agregado, Flujo de Efectivo e Ingresos vs Gastos, y Distribución por Categorías) con selector temporal (1M, 3M, 6M, 1A, Todo, Personalizado), filtros avanzados por cuentas y categorías, y métricas de variación y tasa de ahorro.\n- **Gráficos interactivos de alta fluidez**: Curvas suaves monótonas en área, gráfico dona para categorías con leyenda en chips anticolisión, centro táctil interactivo y rendimiento optimizado sin caídas de frames.\n\n### Navegación y Usabilidad\n- **Pestaña Evolución en barra inferior**: Acceso directo y destacado al análisis financiero en la barra principal.\n- **Huchas en menú lateral**: Reubicado el acceso a metas de ahorro en el drawer para una interfaz más despejada.\n\n### Configuración y Mejoras\n- **Ajustes reorganizados por secciones**: Agrupación temática, unificación de periodo por defecto para todos los gráficos, diálogo modal de actualizaciones para cambiar entre canal Estable y Beta, y textos simplificados en seguridad y zona horaria.\n- **Actualizador integrado**: Descarga e instalación fluida de APKs preservando el contexto de la aplicación."
+  "version": "3.2.1-beta.1 (build 31)",
+  "versionCode": 313,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.1/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Added\n- **Detalle temporal en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:\n  - Al pulsar sobre los gráficos de evolución de Patrimonio Neto y Saldo, la línea vertical (trackball) muestra ahora la fecha además del importe (`d MMM` en rango mensual, `d MMM yyyy` en periodos superiores), formateado con la divisa y respetando el modo de privacidad (`hideAmounts`).\n\n---"
 }
