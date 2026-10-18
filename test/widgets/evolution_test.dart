@@ -81,4 +81,50 @@ void main() {
       expect(point.label, 'May');
     });
   });
+
+  group('Adaptive Y-Axis Range Tests', () {
+    test('returns null when points is empty', () {
+      expect(computeAdaptiveYAxisRange(<ChartDataPoint>[]), isNull);
+    });
+
+    test('centers range on the mean for fluctuating values above zero', () {
+      final List<ChartDataPoint> points = <ChartDataPoint>[
+        for (int i = 0; i < 5; i++)
+          ChartDataPoint(
+            date: DateTime(2026, 1, i + 1),
+            value: 10000.0 + (i - 2) * 200.0,
+          ),
+      ];
+      final ({double min, double max})? range = computeAdaptiveYAxisRange(points);
+      expect(range, isNotNull);
+      expect(range!.min, greaterThan(0));
+      expect(range.max, greaterThan(range.min));
+
+      final double mean = points.map((ChartDataPoint p) => p.value).reduce((double a, double b) => a + b) / points.length;
+      expect((range.min + range.max) / 2, equals(mean));
+    });
+
+    test('handles a single data point without collapsing the range', () {
+      final List<ChartDataPoint> points = <ChartDataPoint>[
+        ChartDataPoint(date: DateTime(2026, 1, 1), value: 50000.0),
+      ];
+      final ({double min, double max})? range = computeAdaptiveYAxisRange(points);
+      expect(range, isNotNull);
+      expect(range!.min, lessThan(50000.0));
+      expect(range.max, greaterThan(50000.0));
+      expect((range.min + range.max) / 2, equals(50000.0));
+    });
+
+    test('handles identical flat values without collapsing the range', () {
+      final List<ChartDataPoint> points = <ChartDataPoint>[
+        for (int i = 0; i < 3; i++)
+          ChartDataPoint(date: DateTime(2026, 1, i + 1), value: 12345.0),
+      ];
+      final ({double min, double max})? range = computeAdaptiveYAxisRange(points);
+      expect(range, isNotNull);
+      expect(range!.min, lessThan(12345.0));
+      expect(range.max, greaterThan(12345.0));
+      expect((range.min + range.max) / 2, equals(12345.0));
+    });
+  });
 }

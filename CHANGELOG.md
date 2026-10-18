@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.2] - 2026-10-18
+
+### Changed
+- **Eje vertical adaptativo en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Los gráficos de **Patrimonio Neto** y **Saldo Agregado** ajustan ahora dinámicamente los límites del eje Y, centrándolos en la media de los datos en lugar de forzar el inicio en 0.
+  - La línea de la serie se sitúa aproximadamente a mitad del gráfico, mejorando la legibilidad cuando los importes son altos y las variaciones relativas pequeñas (por ejemplo, patrimonios de ~50.000 € que oscilan entre 49.000 € y 51.000 €).
+
+---
+
 ## [3.2.1-beta.1] - 2026-10-18
 
 ### Added

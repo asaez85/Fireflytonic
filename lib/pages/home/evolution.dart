@@ -102,6 +102,28 @@ class _CategoryEvolutionItem {
   final double percentage;
 }
 
+/// Calcula un rango del eje Y centrado en la media de los datos.
+///
+/// Expande el rango un 30% por encima de la máxima desviación respecto a la
+/// media, de modo que la línea del gráfico quede aproximadamente a mitad de
+/// la pantalla incluso cuando los valores fluctúen muy por encima de cero.
+({double min, double max})? computeAdaptiveYAxisRange(List<ChartDataPoint> points) {
+  if (points.isEmpty) return null;
+  final List<double> values = points.map((ChartDataPoint p) => p.value).toList();
+  final double mean = values.reduce((double a, double b) => a + b) / values.length;
+  double maxDiff = 0.0;
+  for (final double v in values) {
+    final double diff = (v - mean).abs();
+    if (diff > maxDiff) {
+      maxDiff = diff;
+    }
+  }
+  final double span = maxDiff > 0
+      ? maxDiff * 1.3
+      : (mean.abs() * 0.1 > 0 ? mean.abs() * 0.1 : 100.0);
+  return (min: mean - span, max: mean + span);
+}
+
 class _EvolutionData {
   const _EvolutionData({
     required this.points,
@@ -1551,6 +1573,12 @@ class _HomeEvolutionState extends State<HomeEvolution>
         ? DateFormat('d MMM')
         : DateFormat('d MMM yyyy');
 
+    final bool useAdaptiveYAxis = _mode == EvolutionViewMode.netWorth ||
+        _mode == EvolutionViewMode.balance;
+    final ({double min, double max})? yRange = useAdaptiveYAxis
+        ? computeAdaptiveYAxisRange(data.points)
+        : null;
+
     return SizedBox(
       height: 280,
       child: SfCartesianChart(
@@ -1560,6 +1588,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
           majorGridLines: const MajorGridLines(width: 0.5),
         ),
         primaryYAxis: NumericAxis(
+          minimum: yRange?.min,
+          maximum: yRange?.max,
           numberFormat: NumberFormat.compact(),
           labelStyle: Theme.of(context).textTheme.labelSmall,
         ),
