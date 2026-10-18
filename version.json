@@ -1,6 +1,6 @@
 {
-  "version": "3.2.1-beta.1 (build 31)",
-  "versionCode": 313,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.1/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Added\n- **Detalle temporal en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:\n  - Al pulsar sobre los gráficos de evolución de Patrimonio Neto y Saldo, la línea vertical (trackball) muestra ahora la fecha además del importe (`d MMM` en rango mensual, `d MMM yyyy` en periodos superiores), formateado con la divisa y respetando el modo de privacidad (`hideAmounts`).\n\n---"
+  "version": "3.2.1-beta.2 (build 33)",
+  "versionCode": 333,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.2/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Changed\n- **Eje vertical adaptativo en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:\n  - Los gráficos de **Patrimonio Neto** y **Saldo Agregado** ajustan ahora dinámicamente los límites del eje Y, centrándolos en la media de los datos en lugar de forzar el inicio en 0.\n  - La línea de la serie se sitúa aproximadamente a mitad del gráfico, mejorando la legibilidad cuando los importes son altos y las variaciones relativas pequeñas (por ejemplo, patrimonios de ~50.000 € que oscilan entre 49.000 € y 51.000 €).\n\n---"
 }
