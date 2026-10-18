@@ -1951,7 +1951,9 @@ class _BalanceHeader extends StatelessWidget {
                                     filterTitle!,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall!
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
                                         .copyWith(
                                           color: Theme.of(
                                             context,

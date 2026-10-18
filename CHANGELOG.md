@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.9] - 2026-10-18
+
+### Fixed
+- **Pantalla de Inicio (`lib/pages/home/summary.dart`)**:
+  - El gráfico de saldo neto ahora solicita `preselected: all` en `v1ChartAccountOverviewGet`, incluyendo tanto cuentas de activo como de pasivo en la evolución del patrimonio y evitando el filtro por preferencias de `frontpage accounts` del usuario.
+  - Se cargan en paralelo activos (`assetAccount`) y pasivos (`liabilities`) con límite 100, combinándolos en una única lista de cuentas.
+  - Se registra `includeNetWorth` para todas las cuentas y se detectan los nombres de pasivos, aplicando signo negativo a sus balances tanto en el saldo como en el gráfico.
+  - La lista de cuentas visibles en la pantalla de inicio filtra solo aquellas con `includeNetWorth == true` y saldo distinto de cero (`effectiveBal.abs() > 0.0001`).
+
+---
+
 ## [3.2.1-beta.8] - 2026-10-18
 
 ### Fixed

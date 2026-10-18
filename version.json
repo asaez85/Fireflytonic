@@ -1,6 +1,6 @@
 {
-  "version": "3.2.1-beta.8 (build 39)",
-  "versionCode": 384,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.8/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Fixed\n- **Cálculo de saldo y patrimonio con cuentas activas e inactivas**: todas las cuentas, activas o inactivas, se incluyen en el cálculo de activos, pasivos y patrimonio neto en la pantalla de Cuentas, en el resumen inicial, en la evolución de patrimonio/saldo y en la cabecera de Movimientos. El flag `includeNetWorth` sigue filtrando el saldo neto cuando no hay cuentas seleccionadas.\n- **Movimientos**: se elimina el texto 'Saldo neto' mostrado por defecto en la cabecera; ahora solo aparece el nombre del filtro activo (con la X para limpiarlo) cuando hay uno.\n- **Cuentas**: se elimina el badge 'No computable' de cada fila; se mejora el contraste del texto 'PATRIMONIO NETO' en modo oscuro usando `onSurfaceVariant`.\n\n---"
+  "version": "3.2.1-beta.9 (build 40)",
+  "versionCode": 385,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.9/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Fixed\n- **Pantalla de Inicio**: el gráfico de saldo neto ahora incluye todas las cuentas con `includeNetWorth` activo usando `preselected: all`, y también carga los pasivos para reflejar correctamente la deuda. La lista de cuentas visible filtra aquellas con saldo distinto de cero y `includeNetWorth` activo.\n- Los pasivos se muestran con signo negativo en el total y en la evolución del gráfico.\n\n---"
 }

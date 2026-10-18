@@ -177,53 +177,75 @@ class _HomeSummaryState extends State<HomeSummary>
 
     try {
       final (
-        Response<AccountArray> accountsR,
+        Response<AccountArray> respAssets,
+        Response<AccountArray> respLiab,
         Response<InsightTotal> incomeR,
         Response<InsightTotal> expenseR,
         Response<List<ChartDataSet>> chartR,
       ) = await (
-        api.v1AccountsGet(type: AccountTypeFilter.asset),
+        api.v1AccountsGet(type: AccountTypeFilter.assetAccount, limit: 100),
+        api.v1AccountsGet(type: AccountTypeFilter.liabilities, limit: 100),
         api.v1InsightIncomeTotalGet(start: start, end: end),
         api.v1InsightExpenseTotalGet(start: start, end: end),
         api.v1ChartAccountOverviewGet(
           start: chartStart,
           end: end,
           period: apiPeriod,
+          preselected: V1ChartAccountOverviewGetPreselected.all,
         ),
       ).wait;
 
+      final List<AccountRead> allFetchedAccounts = <AccountRead>[
+        ...?respAssets.body?.data,
+        ...?respLiab.body?.data,
+      ];
       final List<_Account> accounts = <_Account>[];
       final Map<String, bool> includeInNetWorth = <String, bool>{};
-      for (final AccountRead a in accountsR.body?.data ?? <AccountRead>[]) {
+      final Set<String> liabilityNames = <String>{};
+      for (final AccountRead a in allFetchedAccounts) {
+        final String name = a.attributes.name.trim();
         final bool incNetWorth = a.attributes.includeNetWorth ?? true;
-        includeInNetWorth[a.attributes.name] = incNetWorth;
-        accounts.add(
-          _Account(
-            id: a.id,
-            name: a.attributes.name,
-            balance: double.tryParse(a.attributes.currentBalance ?? '0') ?? 0,
-            role: a.attributes.accountRole?.value ?? '',
-            includeNetWorth: incNetWorth,
-            account: a,
-          ),
-        );
+        includeInNetWorth[name] = incNetWorth;
+        final bool isLiab =
+            a.attributes.type == ShortAccountTypeProperty.liability ||
+            a.attributes.type == ShortAccountTypeProperty.liabilities ||
+            (a.attributes.type.value?.toLowerCase().contains('liab') ?? false);
+        if (isLiab) {
+          liabilityNames.add(name);
+        }
+        final double bal =
+            double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0;
+        final double effectiveBal = isLiab ? -bal.abs() : bal;
+        if (incNetWorth && effectiveBal.abs() > 0.0001) {
+          accounts.add(
+            _Account(
+              id: a.id,
+              name: name,
+              balance: effectiveBal,
+              role: a.attributes.accountRole?.value ?? '',
+              includeNetWorth: incNetWorth,
+              account: a,
+            ),
+          );
+        }
       }
 
       final Map<String, double> dailyTotals = <String, double>{};
       final List<ChartDataSet>? chartItems = chartR.body;
       if (chartItems != null) {
         for (final ChartDataSet item in chartItems) {
-          if (item.currencyId != null && item.currencyId != currency.id) {
+          final String label = item.label ?? '';
+          if (includeInNetWorth[label] != true) {
             continue;
           }
-          if (item.label == null || includeInNetWorth[item.label] != true) {
-            continue;
-          }
+          final bool isLiability =
+              item.type == 'liability' || liabilityNames.contains(label);
           if (item.entries is Map<String, dynamic>) {
             final Map<String, dynamic> entries =
                 item.entries as Map<String, dynamic>;
             for (final MapEntry<String, dynamic> e in entries.entries) {
-              final double val = double.tryParse(e.value.toString()) ?? 0.0;
+              final double rawVal = double.tryParse(e.value.toString()) ?? 0.0;
+              final double val = isLiability ? -rawVal.abs() : rawVal;
               dailyTotals[e.key] = (dailyTotals[e.key] ?? 0.0) + val;
             }
           }
