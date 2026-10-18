@@ -2,6 +2,20 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.5] - 2026-10-18
+
+### Fixed
+- **Cálculo de patrimonio neto en Cuentas (`lib/pages/accounts.dart`)**:
+  - Solo las cuentas con `attributes.includeNetWorth == true` (valor por defecto `true`) computan en el patrimonio neto. Las cuentas marcadas como excluidas se muestran con la etiqueta "No computable" para transparentar su exclusión al usuario.
+  - Las cuentas de pasivo (*liability/liabilities*) acumulan su deuda usando el valor absoluto del balance actual (`currentBalance.abs()`), corrigiendo el signo invertido que restaba en lugar de sumar la deuda total.
+  - El patrimonio neto se calcula como `totalAssets - totalLiabilities` y los pasivos se muestran como deuda positiva.
+
+### Changed
+- **Eliminación de botón "+" duplicado (`lib/pages/accounts.dart`, `lib/pages/categories.dart`)**:
+  - Se eliminó el `IconButton` con `Icons.add` de `nav.appBarActions` en las pantallas de Cuentas y Categorías, ya que la acción de añadir ya está cubierta por el `FloatingActionButton` asignado a `nav.fab`.
+
+---
+
 ## [3.2.1-beta.4] - 2026-10-18
 
 ### Fixed

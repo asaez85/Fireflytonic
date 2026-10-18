@@ -201,11 +201,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
           });
         },
       ),
-      IconButton(
-        icon: const Icon(Icons.add),
-        tooltip: S.of(context).categoryTitleAdd,
-        onPressed: _openAddCategory,
-      ),
     ];
 
     nav.fab = FloatingActionButton(
