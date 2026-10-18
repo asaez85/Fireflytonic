@@ -456,7 +456,7 @@ class _PatrimonyCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Text(
-                        "Patrimonio total",
+                        "Saldo neto",
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium!.copyWith(color: Colors.white70),

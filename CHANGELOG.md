@@ -2,6 +2,16 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.7] - 2026-10-18
+
+### Fixed
+- **Distinción entre Patrimonio neto y Saldo neto**:
+  - Patrimonio neto: se calcula como activos activos menos pasivos activos, sin filtrar por `includeNetWorth`. Se mantiene en la pantalla de Cuentas (`lib/pages/accounts.dart`) y en el modo Patrimonio de Evolución (`lib/pages/home/evolution.dart`).
+  - Saldo neto: solo suma cuentas activas marcadas con `includeNetWorth == true`. Se refleja en la pantalla inicial (`lib/pages/home/summary.dart`, etiqueta cambiada de 'Patrimonio total' a 'Saldo neto'), en el modo Saldo de Evolución cuando no hay cuentas seleccionadas (`lib/pages/home/evolution.dart`), y en la tarjeta superior de Movimientos (`lib/pages/home/transactions.dart`).
+- **Cabecera de Movimientos**: el título de la tarjeta de resumen pasa a ser 'Saldo neto' y el importe solo computa cuentas activas incluidas en el valor neto, tanto en carga online como en fallback de caché `summary_data`.
+
+---
+
 ## [3.2.1-beta.6] - 2026-10-18
 
 ### Fixed

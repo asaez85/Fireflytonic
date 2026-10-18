@@ -244,6 +244,11 @@ class HomeTransactionsState extends State<HomeTransactions>
         if (!(a.attributes.active ?? true)) {
           continue;
         }
+        // El saldo neto de la cabecera solo computa cuentas activas marcadas
+        // para incluir en el valor neto.
+        if (!(a.attributes.includeNetWorth ?? true)) {
+          continue;
+        }
         final double bal =
             double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0;
         _accountBalances[a.id] = bal;
@@ -334,6 +339,7 @@ class HomeTransactionsState extends State<HomeTransactions>
               final String name = a['name'] as String? ?? '';
               final String id = a['id'] as String? ?? '';
               final double bal = (a['balance'] as num?)?.toDouble() ?? 0.0;
+              final bool includeNetWorth = a['includeNetWorth'] != false;
               if (_filters.account != null) {
                 if ((id.isNotEmpty && id == _filters.account!.id) ||
                     (name.isNotEmpty &&
@@ -341,7 +347,7 @@ class HomeTransactionsState extends State<HomeTransactions>
                   accBal = bal;
                   break;
                 }
-              } else {
+              } else if (includeNetWorth) {
                 accBal += bal;
               }
             }
@@ -1200,7 +1206,7 @@ class HomeTransactionsState extends State<HomeTransactions>
         initialSummary = _cachedSummary;
       }
 
-      String filterTitle = "Saldo actual de las cuentas";
+      String filterTitle = "Saldo neto";
       final List<String> activeFilterNames = <String>[];
       if (_filters.account != null) {
         activeFilterNames.add(_filters.account!.attributes.name);
@@ -1944,7 +1950,7 @@ class _BalanceHeader extends StatelessWidget {
                             children: <Widget>[
                               Flexible(
                                 child: Text(
-                                  filterTitle ?? "Saldo actual de las cuentas",
+                                  filterTitle ?? "Saldo neto",
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context).textTheme.bodySmall!

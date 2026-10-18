@@ -553,6 +553,11 @@ class _HomeEvolutionState extends State<HomeEvolution>
       if (selectedNames.isNotEmpty && !selectedNames.contains(label)) {
         continue;
       }
+      // Cuando no se seleccionan cuentas individualmente, el Saldo Agregado
+      // solo incluye cuentas activas marcadas con includeNetWorth == true.
+      if (selectedNames.isEmpty && !(acc?.attributes.includeNetWorth ?? true)) {
+        continue;
+      }
       final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
           ? (ds.entries as Map<String, dynamic>)
           : <String, dynamic>{};
