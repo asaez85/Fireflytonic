@@ -2,6 +2,16 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.6] - 2026-10-18
+
+### Fixed
+- **Cálculo de saldo y gráficos según `includeNetWorth` y cuentas activas**:
+  - Pantalla inicial (`lib/pages/home/summary.dart`): el importe total y el gráfico de patrimonio solo computan cuentas activas marcadas con `includeNetWorth == true`. Las cuentas excluidas o inactivas no se suman al total ni se dibujan en la evolución de fondo.
+  - Pantalla de Cuentas (`lib/pages/accounts.dart`): el resumen de activos, pasivos y patrimonio neto contabiliza todas las cuentas activas, independientemente del flag `includeNetWorth`. Se mantiene la etiqueta visual "No computable" en la fila de cada cuenta excluida para informar al usuario.
+  - Pantalla de Evolución/Patrimonio (`lib/pages/home/evolution.dart`): los gráficos de Patrimonio Neto y Saldo excluyen las cuentas inactivas del cómputo, sumando todas las cuentas activas sin filtrar por `includeNetWorth`.
+
+---
+
 ## [3.2.1-beta.5] - 2026-10-18
 
 ### Fixed

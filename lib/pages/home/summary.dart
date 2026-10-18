@@ -22,12 +22,14 @@ class _Account {
     required this.name,
     required this.balance,
     required this.role,
+    this.includeNetWorth = true,
     this.account,
   });
   final String id;
   final String name;
   final double balance;
   final String role;
+  final bool includeNetWorth;
   final AccountRead? account;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -35,6 +37,7 @@ class _Account {
     'name': name,
     'balance': balance,
     'role': role,
+    'includeNetWorth': includeNetWorth,
   };
 
   factory _Account.fromJson(Map<String, dynamic> json) => _Account(
@@ -42,6 +45,7 @@ class _Account {
     name: json['name'] as String? ?? '',
     balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
     role: json['role'] as String? ?? '',
+    includeNetWorth: json['includeNetWorth'] as bool? ?? true,
   );
 
   AccountRead toAccountRead() {
@@ -55,6 +59,7 @@ class _Account {
         name: name,
         currentBalance: balance.toString(),
         type: ShortAccountTypeProperty.asset,
+        includeNetWorth: includeNetWorth,
       ),
     );
   }
@@ -72,8 +77,9 @@ class _SummaryData {
   final double expense;
   final List<double> history;
 
-  double get total =>
-      accounts.fold(0.0, (double a, _Account c) => a + c.balance);
+  double get total => accounts
+      .where((_Account c) => c.includeNetWorth)
+      .fold(0.0, (double a, _Account c) => a + c.balance);
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'accounts': accounts.map((_Account a) => a.toJson()).toList(),
@@ -192,14 +198,15 @@ class _HomeSummaryState extends State<HomeSummary>
         if (!(a.attributes.active ?? true)) {
           continue;
         }
-        includeInNetWorth[a.attributes.name] =
-            a.attributes.includeNetWorth ?? true;
+        final bool incNetWorth = a.attributes.includeNetWorth ?? true;
+        includeInNetWorth[a.attributes.name] = incNetWorth;
         accounts.add(
           _Account(
             id: a.id,
             name: a.attributes.name,
             balance: double.tryParse(a.attributes.currentBalance ?? '0') ?? 0,
             role: a.attributes.accountRole?.value ?? '',
+            includeNetWorth: incNetWorth,
             account: a,
           ),
         );
@@ -212,9 +219,7 @@ class _HomeSummaryState extends State<HomeSummary>
           if (item.currencyId != null && item.currencyId != currency.id) {
             continue;
           }
-          if (item.label != null &&
-              includeInNetWorth.containsKey(item.label) &&
-              includeInNetWorth[item.label] != true) {
+          if (item.label == null || includeInNetWorth[item.label] != true) {
             continue;
           }
           if (item.entries is Map<String, dynamic>) {

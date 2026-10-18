@@ -254,17 +254,16 @@ class _AccountsPageState extends State<AccountsPage> {
       final double bal =
           double.tryParse(acc.attributes.currentBalance ?? '0') ?? 0.0;
       final ShortAccountTypeProperty type = acc.attributes.type;
-      final bool includeNetWorth = acc.attributes.includeNetWorth ?? true;
 
       if (type == ShortAccountTypeProperty.asset) {
         assets.add(acc);
-        if (isActive && includeNetWorth) {
+        if (isActive) {
           totalAssets += bal;
         }
       } else if (type == ShortAccountTypeProperty.liability ||
           type == ShortAccountTypeProperty.liabilities) {
         liabilities.add(acc);
-        if (isActive && includeNetWorth) {
+        if (isActive) {
           totalLiabilities += bal.abs();
         }
       } else {
