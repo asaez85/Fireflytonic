@@ -195,9 +195,6 @@ class _HomeSummaryState extends State<HomeSummary>
       final List<_Account> accounts = <_Account>[];
       final Map<String, bool> includeInNetWorth = <String, bool>{};
       for (final AccountRead a in accountsR.body?.data ?? <AccountRead>[]) {
-        if (!(a.attributes.active ?? true)) {
-          continue;
-        }
         final bool incNetWorth = a.attributes.includeNetWorth ?? true;
         includeInNetWorth[a.attributes.name] = incNetWorth;
         accounts.add(

@@ -2,6 +2,19 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1-beta.8] - 2026-10-18
+
+### Fixed
+- **Cálculo de saldo y patrimonio con cuentas activas e inactivas**:
+  - `lib/pages/accounts.dart`: el resumen de activos, pasivos y patrimonio neto acumula el balance de todas las cuentas, activas o inactivas. Se mantienen los contadores `activeCount` e `inactiveCount` para los badges informativos.
+  - `lib/pages/home/summary.dart`: se elimina el filtro por `active` para que todas las cuentas se añadan a `accounts` y a `includeInNetWorth`.
+  - `lib/pages/home/evolution.dart`: se elimina el filtro por `isActive` tanto en el modo Patrimonio (`_fetchNetWorth`) como en el modo Saldo (`_fetchBalance`). Se mantiene el filtrado por `includeNetWorth == true` cuando `selectedNames.isEmpty`.
+  - `lib/pages/home/transactions.dart`: se elimina el filtro por `active` en `_fetchSummary`, manteniendo el filtro por `includeNetWorth == true`.
+- **Movimientos**: se elimina el texto por defecto 'Saldo neto' de la cabecera de la tarjeta de resumen; el subtítulo con el filtro activo y el botón de limpiar solo se muestran cuando `filterTitle` no es nulo ni vacío.
+- **Cuentas**: se elimina el badge/texto 'No computable' de cada fila de cuenta; se mejora el contraste del texto 'PATRIMONIO NETO' en modo oscuro cambiando el color a `colorScheme.onSurfaceVariant`.
+
+---
+
 ## [3.2.1-beta.7] - 2026-10-18
 
 ### Fixed

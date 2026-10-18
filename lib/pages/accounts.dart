@@ -257,15 +257,11 @@ class _AccountsPageState extends State<AccountsPage> {
 
       if (type == ShortAccountTypeProperty.asset) {
         assets.add(acc);
-        if (isActive) {
-          totalAssets += bal;
-        }
+        totalAssets += bal;
       } else if (type == ShortAccountTypeProperty.liability ||
           type == ShortAccountTypeProperty.liabilities) {
         liabilities.add(acc);
-        if (isActive) {
-          totalLiabilities += bal.abs();
-        }
+        totalLiabilities += bal.abs();
       } else {
         others.add(acc);
       }
@@ -591,7 +587,7 @@ class _AccountsPageState extends State<AccountsPage> {
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.outline,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -791,30 +787,6 @@ class _AccountsPageState extends State<AccountsPage> {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: FtColors.warningOf(context),
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (!(account.attributes.includeNetWorth ??
-                              true)) ...<Widget>[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'No computable',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Theme.of(context).colorScheme.outline,
                                 ),
                               ),
                             ),

@@ -1,6 +1,6 @@
 {
-  "version": "3.2.1-beta.7 (build 38)",
-  "versionCode": 383,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.7/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Fixed\n- **Distinción entre Patrimonio neto y Saldo neto**:\n  - Patrimonio neto: se calcula como activos activos menos pasivos activos, sin filtrar por `includeNetWorth`. Se mantiene en la pantalla de Cuentas y en el modo Patrimonio de Evolución.\n  - Saldo neto: solo suma cuentas activas marcadas con `includeNetWorth == true`. Se refleja en la pantalla inicial (etiqueta 'Saldo neto'), en el modo Saldo de Evolución cuando no hay cuentas seleccionadas, y en la tarjeta superior de Movimientos.\n- **Cabecera de Movimientos**: el título de la tarjeta de resumen pasa a ser 'Saldo neto' y el importe solo computa cuentas activas incluidas en el valor neto, tanto en carga online como en fallback de caché.\n\n---"
+  "version": "3.2.1-beta.8 (build 39)",
+  "versionCode": 384,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1-beta.8/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Fixed\n- **Cálculo de saldo y patrimonio con cuentas activas e inactivas**: todas las cuentas, activas o inactivas, se incluyen en el cálculo de activos, pasivos y patrimonio neto en la pantalla de Cuentas, en el resumen inicial, en la evolución de patrimonio/saldo y en la cabecera de Movimientos. El flag `includeNetWorth` sigue filtrando el saldo neto cuando no hay cuentas seleccionadas.\n- **Movimientos**: se elimina el texto 'Saldo neto' mostrado por defecto en la cabecera; ahora solo aparece el nombre del filtro activo (con la X para limpiarlo) cuando hay uno.\n- **Cuentas**: se elimina el badge 'No computable' de cada fila; se mejora el contraste del texto 'PATRIMONIO NETO' en modo oscuro usando `onSurfaceVariant`.\n\n---"
 }

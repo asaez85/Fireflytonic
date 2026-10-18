@@ -430,9 +430,6 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     for (final ChartDataSet ds in datasets) {
       final String label = ds.label ?? '';
-      final AccountRead? acc = accountsMap[label];
-      final bool isActive = acc?.attributes.active ?? true;
-      if (!isActive) continue;
 
       final bool isLiability =
           ds.type == 'liability' || liabilityNames.contains(label);
@@ -547,8 +544,6 @@ class _HomeEvolutionState extends State<HomeEvolution>
       // o type: null / "asset". No filtrar por ds.type == 'asset'.
       final String label = ds.label ?? '';
       final AccountRead? acc = accountsMap[label];
-      final bool isActive = acc?.attributes.active ?? true;
-      if (!isActive) continue;
 
       if (selectedNames.isNotEmpty && !selectedNames.contains(label)) {
         continue;

@@ -241,10 +241,7 @@ class HomeTransactionsState extends State<HomeTransactions>
       _accountBalances.clear();
       _accountBalancesByName.clear();
       for (final AccountRead a in accountsR.body?.data ?? <AccountRead>[]) {
-        if (!(a.attributes.active ?? true)) {
-          continue;
-        }
-        // El saldo neto de la cabecera solo computa cuentas activas marcadas
+        // El saldo neto de la cabecera solo computa cuentas marcadas
         // para incluir en el valor neto.
         if (!(a.attributes.includeNetWorth ?? true)) {
           continue;
@@ -1206,7 +1203,7 @@ class HomeTransactionsState extends State<HomeTransactions>
         initialSummary = _cachedSummary;
       }
 
-      String filterTitle = "Saldo neto";
+      String? filterTitle;
       final List<String> activeFilterNames = <String>[];
       if (_filters.account != null) {
         activeFilterNames.add(_filters.account!.attributes.name);
@@ -1944,43 +1941,44 @@ class _BalanceHeader extends StatelessWidget {
                                 ),
                           ),
                           const SizedBox(height: 2),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Flexible(
-                                child: Text(
-                                  filterTitle ?? "Saldo neto",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall!
-                                      .copyWith(
+                          if (filterTitle != null && filterTitle!.isNotEmpty)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Flexible(
+                                  child: Text(
+                                    filterTitle!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall!
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ),
+                                if (hasActiveFilter &&
+                                    onClearFilter != null) ...<Widget>[
+                                  const SizedBox(width: 4),
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: onClearFilter,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2),
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 14,
                                         color: Theme.of(
                                           context,
                                         ).colorScheme.onSurfaceVariant,
                                       ),
-                                ),
-                              ),
-                              if (hasActiveFilter &&
-                                  onClearFilter != null) ...<Widget>[
-                                const SizedBox(width: 4),
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: onClearFilter,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(2),
-                                    child: Icon(
-                                      Icons.close,
-                                      size: 14,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
-                          ),
+                            ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
