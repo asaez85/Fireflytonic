@@ -87,11 +87,6 @@ class _AccountsPageState extends State<AccountsPage> {
           });
         },
       ),
-      IconButton(
-        icon: const Icon(Icons.add),
-        tooltip: 'Añadir cuenta',
-        onPressed: _openAddAccount,
-      ),
     ];
 
     nav.fab = FloatingActionButton(
@@ -262,15 +257,11 @@ class _AccountsPageState extends State<AccountsPage> {
 
       if (type == ShortAccountTypeProperty.asset) {
         assets.add(acc);
-        if (isActive) {
-          totalAssets += bal;
-        }
+        totalAssets += bal;
       } else if (type == ShortAccountTypeProperty.liability ||
           type == ShortAccountTypeProperty.liabilities) {
         liabilities.add(acc);
-        if (isActive) {
-          totalLiabilities += bal;
-        }
+        totalLiabilities += bal.abs();
       } else {
         others.add(acc);
       }
@@ -596,7 +587,7 @@ class _AccountsPageState extends State<AccountsPage> {
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.outline,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 2),

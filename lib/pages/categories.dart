@@ -34,10 +34,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
   late DateTime now;
   late CatStock stock;
 
-  CategoryArray? _cachedCategories;
-  DateTime? _cachedMonth;
+  CategoryArray? _categories;
   List<CategoryRead>? _allCategories;
-  bool _isRefreshing = false;
+  bool _isLoading = false;
+  String? _error;
   bool _isSearchOpen = false;
   int _selectedFilterSegment = 0; // 0: Todas, 1: Gastos, 2: Ingresos
   final TextEditingController _searchController = TextEditingController();
@@ -68,7 +68,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateNavElements();
-      _fetchAllCategories();
+      _loadData();
     });
   }
 
@@ -108,28 +108,40 @@ class _CategoriesPageState extends State<CategoriesPage> {
     }
   }
 
-  Future<void> _handleRefresh(DateTime stockDate) async {
-    if (_isRefreshing) return;
+  Future<void> _loadData({bool isRefresh = false}) async {
+    if (_isLoading && !isRefresh && _categories != null) return;
+    if (!mounted) return;
     setState(() {
-      _isRefreshing = true;
+      _isLoading = true;
+      _error = null;
     });
     try {
-      await stock.reset();
-      final CategoryArray updated = await stock.get(stockDate);
-      await _fetchAllCategories();
+      final DateTime stockDate = _stockDate;
+      final List<dynamic> results = await Future.wait<dynamic>(
+        <Future<dynamic>>[stock.get(stockDate), _fetchAllCategories()],
+      );
+      final CategoryArray updated = results[0] as CategoryArray;
       if (mounted) {
         setState(() {
-          _cachedCategories = updated;
-          _cachedMonth = selectedMonth;
+          _categories = updated;
+          _isLoading = false;
         });
       }
-    } finally {
+    } catch (e, s) {
+      log.severe("Error loading categories", e, s);
       if (mounted) {
         setState(() {
-          _isRefreshing = false;
+          _error = e.toString();
+          _isLoading = false;
         });
       }
     }
+  }
+
+  Future<void> _handleRefresh() async {
+    if (_isLoading) return;
+    await stock.reset();
+    await _loadData(isRefresh: true);
   }
 
   void _previousMonth() {
@@ -137,6 +149,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       selectedMonth = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
     });
     _updateNavElements();
+    _loadData(isRefresh: true);
   }
 
   void _nextMonth() {
@@ -144,6 +157,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       selectedMonth = DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
     });
     _updateNavElements();
+    _loadData(isRefresh: true);
   }
 
   void _currentMonth() {
@@ -151,6 +165,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       selectedMonth = DateTime(now.year, now.month, 1);
     });
     _updateNavElements();
+    _loadData(isRefresh: true);
   }
 
   Future<void> _openAddCategory() async {
@@ -160,7 +175,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
           const CategoryAddEditDialog(category: null),
     );
     if ((ok ?? false) && mounted) {
-      await _handleRefresh(_stockDate);
+      await _handleRefresh();
     }
   }
 
@@ -186,11 +201,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
           });
         },
       ),
-      IconButton(
-        icon: const Icon(Icons.add),
-        tooltip: S.of(context).categoryTitleAdd,
-        onPressed: _openAddCategory,
-      ),
     ];
 
     nav.fab = FloatingActionButton(
@@ -207,67 +217,54 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final DateTime stockDate = _stockDate;
 
     final Widget content;
-    if (_cachedCategories != null && _cachedMonth == selectedMonth) {
-      content = _buildCategoryList(_cachedCategories!, stockDate);
-    } else {
-      content = FutureBuilder<CategoryArray>(
-        future: stock.get(stockDate),
-        builder: (BuildContext context, AsyncSnapshot<CategoryArray> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator.adaptive());
-          }
-          if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-            log.severe(
-              "Error loading categories",
-              snapshot.error,
-              snapshot.stackTrace,
-            );
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    S.of(context).categoryErrorLoading,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton.tonal(
-                    onPressed: () => _handleRefresh(stockDate),
-                    child: const Text('Reintentar'),
-                  ),
-                ],
+    if (_isLoading && _categories == null) {
+      content = const Center(child: CircularProgressIndicator.adaptive());
+    } else if (_error != null && _categories == null) {
+      log.severe("Error loading categories: $_error");
+      content = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              S.of(context).categoryErrorLoading,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
               ),
-            );
-          }
-          _cachedCategories = snapshot.data;
-          _cachedMonth = selectedMonth;
-          return _buildCategoryList(snapshot.data!, stockDate);
-        },
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: () => _loadData(isRefresh: true),
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
       );
+    } else if (_categories != null) {
+      content = _buildCategoryList(_categories!, stockDate);
+    } else {
+      content = const Center(child: CircularProgressIndicator.adaptive());
     }
 
-    if (_isRefreshing) {
-      return Column(
+    if (_categories != null && _isLoading) {
+      return Stack(
         children: <Widget>[
-          LinearProgressIndicator(
-            minHeight: 2.5,
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.surfaceContainerHighest,
-            color: Theme.of(context).colorScheme.primary,
+          Positioned.fill(child: content),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LinearProgressIndicator(minHeight: 2.5),
           ),
-          Expanded(child: content),
         ],
       );
     }
+
     return content;
   }
 
@@ -539,20 +536,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
       0,
       (double p, CategoryRead e) => p += categoriesSumExcluded.contains(e.id)
           ? 0
-          : (e.attributes as CategoryWithSum).sumEarned,
+          : e.attributes.sumEarned,
     );
     final double totalSpent = allCategoriesList.fold<double>(
       0,
-      (double p, CategoryRead e) => p += categoriesSumExcluded.contains(e.id)
-          ? 0
-          : (e.attributes as CategoryWithSum).sumSpent,
+      (double p, CategoryRead e) =>
+          p += categoriesSumExcluded.contains(e.id) ? 0 : e.attributes.sumSpent,
     );
 
     // Filtrado por segmento y búsqueda
     final List<CategoryRead> filtered = allCategoriesList.where((
       CategoryRead cat,
     ) {
-      final CategoryWithSum cs = cat.attributes as CategoryWithSum;
       final String name = cat.attributes.name == "L10NNONE"
           ? S.of(context).catNone
           : cat.attributes.name;
@@ -565,26 +560,26 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
       if (_selectedFilterSegment == 1) {
         // Gastos
-        return cs.sumSpent != 0;
+        return cat.attributes.sumSpent != 0;
       } else if (_selectedFilterSegment == 2) {
         // Ingresos
-        return cs.sumEarned != 0;
+        return cat.attributes.sumEarned != 0;
       }
       return true;
     }).toList();
 
     // Ordenar: primero las que tienen movimientos este mes (por mayor gasto), luego alfabético
     filtered.sort((CategoryRead a, CategoryRead b) {
-      final CategoryWithSum cA = a.attributes as CategoryWithSum;
-      final CategoryWithSum cB = b.attributes as CategoryWithSum;
-      final double activityA = cA.sumSpent.abs() + cA.sumEarned.abs();
-      final double activityB = cB.sumSpent.abs() + cB.sumEarned.abs();
+      final double activityA =
+          a.attributes.sumSpent.abs() + a.attributes.sumEarned.abs();
+      final double activityB =
+          b.attributes.sumSpent.abs() + b.attributes.sumEarned.abs();
 
       if (activityA != activityB) {
         return activityB.compareTo(activityA);
       }
-      if (cA.sumSpent != cB.sumSpent) {
-        return cA.sumSpent.compareTo(cB.sumSpent);
+      if (a.attributes.sumSpent != b.attributes.sumSpent) {
+        return a.attributes.sumSpent.compareTo(b.attributes.sumSpent);
       }
       return a.attributes.name.toLowerCase().compareTo(
         b.attributes.name.toLowerCase(),
@@ -592,8 +587,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
 
     final int activeCount = allCategoriesList.where((CategoryRead c) {
-      final CategoryWithSum cs = c.attributes as CategoryWithSum;
-      return cs.sumSpent != 0 || cs.sumEarned != 0;
+      return c.attributes.sumSpent != 0 || c.attributes.sumEarned != 0;
     }).length;
 
     final int excludedCount = allCategoriesList
@@ -601,7 +595,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         .length;
 
     return RefreshIndicator.adaptive(
-      onRefresh: () => _handleRefresh(stockDate),
+      onRefresh: () => _handleRefresh(),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
         children: <Widget>[
@@ -712,7 +706,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   excluded: excluded,
                   month: selectedMonth,
                   now: now,
-                  onRefreshNeeded: () => _handleRefresh(stockDate),
+                  onRefreshNeeded: () => _handleRefresh(),
                 );
               },
             ),
@@ -746,7 +740,7 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CategoryWithSum cs = category.attributes as CategoryWithSum;
+    final CategoryProperties attrs = category.attributes;
     final bool isNoCat =
         category.attributes.name == "L10NNONE" || category.id == "-1";
     final String displayName = isNoCat
@@ -754,8 +748,8 @@ class _CategoryTile extends StatelessWidget {
         : category.attributes.name;
     final Color tint = FtColors.categoryColor(displayName, context: context);
 
-    final double spent = cs.sumSpent;
-    final double earned = cs.sumEarned;
+    final double spent = attrs.sumSpent;
+    final double earned = attrs.sumEarned;
     final double net = spent + earned;
 
     final bool hasSpent = spent != 0;

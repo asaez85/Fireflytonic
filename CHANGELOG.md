@@ -2,6 +2,136 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.1] - 2026-10-19
+
+### Novedades y Mejoras
+- **Gráficos interactivos de Evolución y Saldo**:
+  - Tooltips interactivos táctiles al pulsar sobre las curvas de evolución, mostrando la fecha exacta y el importe correspondiente.
+  - Centrado dinámico del eje vertical en la media para mejorar la legibilidad y escala de las curvas de patrimonio y saldo.
+
+### Correcciones y Fiabilidad
+- **Pantalla de Inicio (`lib/pages/home/summary.dart`)**:
+  - El gráfico de saldo neto solicita `preselected: all`, integrando activos y pasivos para reflejar adecuadamente la deuda sin depender de filtros de la interfaz web.
+  - Carga paralela y optimizada de cuentas de activos y pasivos.
+  - Detección precisa de pasivos con signo negativo en totales y series temporales.
+  - La lista de cuentas visible en Inicio filtra únicamente aquellas con `includeNetWorth == true` y saldo distinto de cero (`effectiveBal.abs() > 0.0001`).
+- **Cuentas y Gestión Patrimonial (`lib/pages/accounts.dart`)**:
+  - Resumen patrimonial global (activos, pasivos y patrimonio neto) computando todas las cuentas del sistema (activas e inactivas).
+  - Cálculo de deuda de pasivos en valor absoluto positivo (`totalAssets - totalLiabilities`).
+  - Eliminado el botón flotante "+" redundante en la barra superior.
+  - Contraste visual optimizado para textos en modo oscuro.
+- **Distinción entre Patrimonio Neto y Saldo Neto**:
+  - *Patrimonio Neto*: activos menos pasivos totales en la pantalla de Cuentas y en el modo Patrimonio de Evolución.
+  - *Saldo Neto*: cómputo estricto de cuentas computables (`includeNetWorth == true`) en Inicio, Movimientos y modo Saldo de Evolución.
+- **Categorías (`lib/pages/categories.dart`)**:
+  - Resuelto bloqueo crítico de carga infinita (spinner persistente) provocado por condición de guarda inicial.
+  - Corregido error de deserialización de tipos (`TypeError`) al restaurar sumas de categorías desde caché persistente.
+  - Eliminado botón "+" duplicado en la cabecera.
+
+---
+
+## [3.2.1-beta.9] - 2026-10-18
+
+### Fixed
+- **Pantalla de Inicio (`lib/pages/home/summary.dart`)**:
+  - El gráfico de saldo neto ahora solicita `preselected: all` en `v1ChartAccountOverviewGet`, incluyendo tanto cuentas de activo como de pasivo en la evolución del patrimonio y evitando el filtro por preferencias de `frontpage accounts` del usuario.
+  - Se cargan en paralelo activos (`assetAccount`) y pasivos (`liabilities`) con límite 100, combinándolos en una única lista de cuentas.
+  - Se registra `includeNetWorth` para todas las cuentas y se detectan los nombres de pasivos, aplicando signo negativo a sus balances tanto en el saldo como en el gráfico.
+  - La lista de cuentas visibles en la pantalla de inicio filtra solo aquellas con `includeNetWorth == true` y saldo distinto de cero (`effectiveBal.abs() > 0.0001`).
+
+---
+
+## [3.2.1-beta.8] - 2026-10-18
+
+### Fixed
+- **Cálculo de saldo y patrimonio con cuentas activas e inactivas**:
+  - `lib/pages/accounts.dart`: el resumen de activos, pasivos y patrimonio neto acumula el balance de todas las cuentas, activas o inactivas. Se mantienen los contadores `activeCount` e `inactiveCount` para los badges informativos.
+  - `lib/pages/home/summary.dart`: se elimina el filtro por `active` para que todas las cuentas se añadan a `accounts` y a `includeInNetWorth`.
+  - `lib/pages/home/evolution.dart`: se elimina el filtro por `isActive` tanto en el modo Patrimonio (`_fetchNetWorth`) como en el modo Saldo (`_fetchBalance`). Se mantiene el filtrado por `includeNetWorth == true` cuando `selectedNames.isEmpty`.
+  - `lib/pages/home/transactions.dart`: se elimina el filtro por `active` en `_fetchSummary`, manteniendo el filtro por `includeNetWorth == true`.
+- **Movimientos**: se elimina el texto por defecto 'Saldo neto' de la cabecera de la tarjeta de resumen; el subtítulo con el filtro activo y el botón de limpiar solo se muestran cuando `filterTitle` no es nulo ni vacío.
+- **Cuentas**: se elimina el badge/texto 'No computable' de cada fila de cuenta; se mejora el contraste del texto 'PATRIMONIO NETO' en modo oscuro cambiando el color a `colorScheme.onSurfaceVariant`.
+
+---
+
+## [3.2.1-beta.7] - 2026-10-18
+
+### Fixed
+- **Distinción entre Patrimonio neto y Saldo neto**:
+  - Patrimonio neto: se calcula como activos activos menos pasivos activos, sin filtrar por `includeNetWorth`. Se mantiene en la pantalla de Cuentas (`lib/pages/accounts.dart`) y en el modo Patrimonio de Evolución (`lib/pages/home/evolution.dart`).
+  - Saldo neto: solo suma cuentas activas marcadas con `includeNetWorth == true`. Se refleja en la pantalla inicial (`lib/pages/home/summary.dart`, etiqueta cambiada de 'Patrimonio total' a 'Saldo neto'), en el modo Saldo de Evolución cuando no hay cuentas seleccionadas (`lib/pages/home/evolution.dart`), y en la tarjeta superior de Movimientos (`lib/pages/home/transactions.dart`).
+- **Cabecera de Movimientos**: el título de la tarjeta de resumen pasa a ser 'Saldo neto' y el importe solo computa cuentas activas incluidas en el valor neto, tanto en carga online como en fallback de caché `summary_data`.
+
+---
+
+## [3.2.1-beta.6] - 2026-10-18
+
+### Fixed
+- **Cálculo de saldo y gráficos según `includeNetWorth` y cuentas activas**:
+  - Pantalla inicial (`lib/pages/home/summary.dart`): el importe total y el gráfico de patrimonio solo computan cuentas activas marcadas con `includeNetWorth == true`. Las cuentas excluidas o inactivas no se suman al total ni se dibujan en la evolución de fondo.
+  - Pantalla de Cuentas (`lib/pages/accounts.dart`): el resumen de activos, pasivos y patrimonio neto contabiliza todas las cuentas activas, independientemente del flag `includeNetWorth`. Se mantiene la etiqueta visual "No computable" en la fila de cada cuenta excluida para informar al usuario.
+  - Pantalla de Evolución/Patrimonio (`lib/pages/home/evolution.dart`): los gráficos de Patrimonio Neto y Saldo excluyen las cuentas inactivas del cómputo, sumando todas las cuentas activas sin filtrar por `includeNetWorth`.
+
+---
+
+## [3.2.1-beta.5] - 2026-10-18
+
+### Fixed
+- **Cálculo de patrimonio neto en Cuentas (`lib/pages/accounts.dart`)**:
+  - Solo las cuentas con `attributes.includeNetWorth == true` (valor por defecto `true`) computan en el patrimonio neto. Las cuentas marcadas como excluidas se muestran con la etiqueta "No computable" para transparentar su exclusión al usuario.
+  - Las cuentas de pasivo (*liability/liabilities*) acumulan su deuda usando el valor absoluto del balance actual (`currentBalance.abs()`), corrigiendo el signo invertido que restaba en lugar de sumar la deuda total.
+  - El patrimonio neto se calcula como `totalAssets - totalLiabilities` y los pasivos se muestran como deuda positiva.
+
+### Changed
+- **Eliminación de botón "+" duplicado (`lib/pages/accounts.dart`, `lib/pages/categories.dart`)**:
+  - Se eliminó el `IconButton` con `Icons.add` de `nav.appBarActions` en las pantallas de Cuentas y Categorías, ya que la acción de añadir ya está cubierta por el `FloatingActionButton` asignado a `nav.fab`.
+
+---
+
+## [3.2.1-beta.4] - 2026-10-18
+
+### Fixed
+- **Carga infinita en Categorías (`lib/pages/categories.dart`)**:
+  - Se corrigió un bloqueo crítico introducido en la beta anterior: `_isLoading` se inicializaba a `true`, por lo que el `guard` de `_loadData()` hacía `return` inmediatamente en el arranque y la pantalla quedaba en un spinner infinito.
+  - `_isLoading` ahora inicia en `false` y el guard evita solo las cargas redundantes cuando ya hay datos cargados: `if (_isLoading && !isRefresh && _categories != null) return;`.
+  - Las peticiones `stock.get(stockDate)` y `_fetchAllCategories()` se ejecutan en paralelo con `Future.wait` para reducir el tiempo de carga.
+  - Los cambios de mes (`_previousMonth`, `_nextMonth`, `_currentMonth`) fuerzan la recarga con `_loadData(isRefresh: true)`.
+  - El `build` distingue ahora carga inicial, error y recarga en segundo plano: muestra un `CircularProgressIndicator` la primera vez, una pantalla de error reintentable si falla, y un `LinearProgressIndicator` superior sin parpadeo blanco durante las recargas posteriores.
+
+---
+
+## [3.2.1-beta.3] - 2026-10-18
+
+### Fixed
+- **Pantalla gris en Categorías (`lib/pages/categories.dart`, `lib/stock.dart`, `lib/extensions.dart`)**:
+  - Al cargar categorías desde la caché de disco, los objetos se deserializaban como `CategoryProperties` en lugar de `CategoryWithSum`, provocando un `TypeError` y una pantalla gris.
+  - `CatStock` reconstruye ahora `CategoryWithSum` con `sumSpent` y `sumEarned` al leer de `PersistentSourceOfTruth`.
+  - Añadida extensión segura `CategoryPropertiesSumExt` en `extensions.dart` con getters `sumSpent` y `sumEarned` que funcionan tanto para `CategoryWithSum` como para `CategoryProperties`.
+  - Refactorizado `CategoriesPage` para usar carga determinista mediante `_loadData()`, eliminando el `FutureBuilder` recreado en `build()` y todos los casts inseguros a `CategoryWithSum`.
+
+### Changed
+- **Acciones duplicadas en Presupuestos (`lib/pages/home/budgets.dart`)**:
+  - Eliminados los botones duplicados `auto_awesome` y `rule_folder` del `AppBar`; las acciones de generar presupuestos y aplicar reglas ya están presentes como `TextButton` en la cabecera "MIS PRESUPUESTOS". Solo permanece el botón de añadir presupuesto en el `AppBar`.
+
+---
+
+## [3.2.1-beta.2] - 2026-10-18
+
+### Changed
+- **Eje vertical adaptativo en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Los gráficos de **Patrimonio Neto** y **Saldo Agregado** ajustan ahora dinámicamente los límites del eje Y, centrándolos en la media de los datos en lugar de forzar el inicio en 0.
+  - La línea de la serie se sitúa aproximadamente a mitad del gráfico, mejorando la legibilidad cuando los importes son altos y las variaciones relativas pequeñas (por ejemplo, patrimonios de ~50.000 € que oscilan entre 49.000 € y 51.000 €).
+
+---
+
+## [3.2.1-beta.1] - 2026-10-18
+
+### Added
+- **Detalle temporal en gráficos de Evolución (`lib/pages/home/evolution.dart`)**:
+  - Al pulsar sobre los gráficos de evolución de Patrimonio Neto y Saldo, la línea vertical (trackball) muestra ahora la fecha además del importe (`d MMM` en rango mensual, `d MMM yyyy` en periodos superiores), formateado con la divisa y respetando el modo de privacidad (`hideAmounts`).
+
+---
+
 ## [3.2.0] - 2026-10-17
 
 ### Novedades y Análisis Financiero

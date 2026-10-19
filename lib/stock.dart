@@ -464,7 +464,36 @@ class CatStock {
       PersistentSourceOfTruth<DateTime, CategoryArray>(
         namespace: 'categories_insights',
         stringToKey: (String keyStr) => DateTime.parse(keyStr),
-        fromJson: (Map<String, dynamic> json) => CategoryArray.fromJson(json),
+        fromJson: (Map<String, dynamic> json) {
+          final CategoryArray parsed = CategoryArray.fromJson(json);
+          final List<CategoryRead> converted = parsed.data
+              .map((CategoryRead c) {
+                final CategoryWithSum cs = CategoryWithSum(
+                  createdAt: c.attributes.createdAt,
+                  updatedAt: c.attributes.updatedAt,
+                  name: c.attributes.name,
+                  notes: c.attributes.notes,
+                  spent: c.attributes.spent ?? <ArrayEntryWithCurrencyAndSum>[],
+                  earned:
+                      c.attributes.earned ?? <ArrayEntryWithCurrencyAndSum>[],
+                );
+                cs.sumSpent = (cs.spent ?? <ArrayEntryWithCurrencyAndSum>[])
+                    .fold<double>(
+                      0,
+                      (double p, ArrayEntryWithCurrencyAndSum e) =>
+                          p + (double.tryParse(e.sum ?? '0') ?? 0),
+                    );
+                cs.sumEarned = (cs.earned ?? <ArrayEntryWithCurrencyAndSum>[])
+                    .fold<double>(
+                      0,
+                      (double p, ArrayEntryWithCurrencyAndSum e) =>
+                          p + (double.tryParse(e.sum ?? '0') ?? 0),
+                    );
+                return CategoryRead(id: c.id, type: c.type, attributes: cs);
+              })
+              .toList(growable: false);
+          return CategoryArray(data: converted, meta: parsed.meta);
+        },
         toJson: (CategoryArray value) => value.toJson(),
       );
 

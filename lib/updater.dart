@@ -112,7 +112,7 @@ class AppUpdater {
       final int code = int.tryParse(info.buildNumber) ?? 0;
       return (info.version, code);
     } catch (e) {
-      return ('3.1.0', 71);
+      return ('3.2.1', 91);
     }
   }
 

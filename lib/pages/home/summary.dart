@@ -22,12 +22,14 @@ class _Account {
     required this.name,
     required this.balance,
     required this.role,
+    this.includeNetWorth = true,
     this.account,
   });
   final String id;
   final String name;
   final double balance;
   final String role;
+  final bool includeNetWorth;
   final AccountRead? account;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -35,6 +37,7 @@ class _Account {
     'name': name,
     'balance': balance,
     'role': role,
+    'includeNetWorth': includeNetWorth,
   };
 
   factory _Account.fromJson(Map<String, dynamic> json) => _Account(
@@ -42,6 +45,7 @@ class _Account {
     name: json['name'] as String? ?? '',
     balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
     role: json['role'] as String? ?? '',
+    includeNetWorth: json['includeNetWorth'] as bool? ?? true,
   );
 
   AccountRead toAccountRead() {
@@ -55,6 +59,7 @@ class _Account {
         name: name,
         currentBalance: balance.toString(),
         type: ShortAccountTypeProperty.asset,
+        includeNetWorth: includeNetWorth,
       ),
     );
   }
@@ -72,8 +77,9 @@ class _SummaryData {
   final double expense;
   final List<double> history;
 
-  double get total =>
-      accounts.fold(0.0, (double a, _Account c) => a + c.balance);
+  double get total => accounts
+      .where((_Account c) => c.includeNetWorth)
+      .fold(0.0, (double a, _Account c) => a + c.balance);
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'accounts': accounts.map((_Account a) => a.toJson()).toList(),
@@ -171,57 +177,75 @@ class _HomeSummaryState extends State<HomeSummary>
 
     try {
       final (
-        Response<AccountArray> accountsR,
+        Response<AccountArray> respAssets,
+        Response<AccountArray> respLiab,
         Response<InsightTotal> incomeR,
         Response<InsightTotal> expenseR,
         Response<List<ChartDataSet>> chartR,
       ) = await (
-        api.v1AccountsGet(type: AccountTypeFilter.asset),
+        api.v1AccountsGet(type: AccountTypeFilter.assetAccount, limit: 100),
+        api.v1AccountsGet(type: AccountTypeFilter.liabilities, limit: 100),
         api.v1InsightIncomeTotalGet(start: start, end: end),
         api.v1InsightExpenseTotalGet(start: start, end: end),
         api.v1ChartAccountOverviewGet(
           start: chartStart,
           end: end,
           period: apiPeriod,
+          preselected: V1ChartAccountOverviewGetPreselected.all,
         ),
       ).wait;
 
+      final List<AccountRead> allFetchedAccounts = <AccountRead>[
+        ...?respAssets.body?.data,
+        ...?respLiab.body?.data,
+      ];
       final List<_Account> accounts = <_Account>[];
       final Map<String, bool> includeInNetWorth = <String, bool>{};
-      for (final AccountRead a in accountsR.body?.data ?? <AccountRead>[]) {
-        if (!(a.attributes.active ?? true)) {
-          continue;
+      final Set<String> liabilityNames = <String>{};
+      for (final AccountRead a in allFetchedAccounts) {
+        final String name = a.attributes.name.trim();
+        final bool incNetWorth = a.attributes.includeNetWorth ?? true;
+        includeInNetWorth[name] = incNetWorth;
+        final bool isLiab =
+            a.attributes.type == ShortAccountTypeProperty.liability ||
+            a.attributes.type == ShortAccountTypeProperty.liabilities ||
+            (a.attributes.type.value?.toLowerCase().contains('liab') ?? false);
+        if (isLiab) {
+          liabilityNames.add(name);
         }
-        includeInNetWorth[a.attributes.name] =
-            a.attributes.includeNetWorth ?? true;
-        accounts.add(
-          _Account(
-            id: a.id,
-            name: a.attributes.name,
-            balance: double.tryParse(a.attributes.currentBalance ?? '0') ?? 0,
-            role: a.attributes.accountRole?.value ?? '',
-            account: a,
-          ),
-        );
+        final double bal =
+            double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0;
+        final double effectiveBal = isLiab ? -bal.abs() : bal;
+        if (incNetWorth && effectiveBal.abs() > 0.0001) {
+          accounts.add(
+            _Account(
+              id: a.id,
+              name: name,
+              balance: effectiveBal,
+              role: a.attributes.accountRole?.value ?? '',
+              includeNetWorth: incNetWorth,
+              account: a,
+            ),
+          );
+        }
       }
 
       final Map<String, double> dailyTotals = <String, double>{};
       final List<ChartDataSet>? chartItems = chartR.body;
       if (chartItems != null) {
         for (final ChartDataSet item in chartItems) {
-          if (item.currencyId != null && item.currencyId != currency.id) {
+          final String label = item.label ?? '';
+          if (includeInNetWorth[label] != true) {
             continue;
           }
-          if (item.label != null &&
-              includeInNetWorth.containsKey(item.label) &&
-              includeInNetWorth[item.label] != true) {
-            continue;
-          }
+          final bool isLiability =
+              item.type == 'liability' || liabilityNames.contains(label);
           if (item.entries is Map<String, dynamic>) {
             final Map<String, dynamic> entries =
                 item.entries as Map<String, dynamic>;
             for (final MapEntry<String, dynamic> e in entries.entries) {
-              final double val = double.tryParse(e.value.toString()) ?? 0.0;
+              final double rawVal = double.tryParse(e.value.toString()) ?? 0.0;
+              final double val = isLiability ? -rawVal.abs() : rawVal;
               dailyTotals[e.key] = (dailyTotals[e.key] ?? 0.0) + val;
             }
           }
@@ -451,7 +475,7 @@ class _PatrimonyCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Text(
-                        "Patrimonio total",
+                        "Saldo neto",
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
