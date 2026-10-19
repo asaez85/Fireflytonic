@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.2-beta.2] - 2026-10-19
+
+### Correcciones y Fiabilidad
+- **Cuentas y Patrimonio (`lib/pages/accounts`, `lib/pages/home/evolution`, `lib/pages/home/summary`)**:
+  - Corrección en el cálculo de patrimonio neto respetando la dirección de pasivos (`liabilityDirection`: credit vs debit).
+  - Los pasivos credit ("Se me debe esta deuda") computan como créditos/derechos de cobro a favor sumando al patrimonio neto.
+  - Los pasivos debit ("Le debo esta deuda a otra persona") restan de forma coherente según el signo del saldo.
+  - Ajuste dinámico de colores e impacto neto en la tarjeta de resumen de cuentas y desglose en gráficos de evolución.
+
+---
+
 ## [3.2.2-beta.1] - 2026-10-19
 
 ### Novedades y Mejoras
