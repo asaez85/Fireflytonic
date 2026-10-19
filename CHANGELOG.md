@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.2-beta.1] - 2026-10-19
+
+### Novedades y Mejoras
+- **Filtro de movimientos por importe (`lib/pages/home/transactions`)**:
+  - Nuevo modal inferior `AmountFilterSheet` para filtrar movimientos por rango de importe mínimo ("Desde") y máximo ("Hasta").
+  - Soporte completo para coma y punto decimal con ajuste dinámico de teclado (`viewInsets`).
+  - Píldora de filtro dinámico en `TransactionsSearchPage` que refleja el rango seleccionado ("Desde X €", "Hasta Y €", "X € - Y €").
+  - Integración en la búsqueda paginada y API de Firefly III mediante operadores `more:` y `less:`.
+
+---
+
 ## [3.2.1] - 2026-10-19
 
 ### Novedades y Mejoras

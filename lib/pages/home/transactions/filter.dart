@@ -25,6 +25,8 @@ class TransactionFilters with ChangeNotifier {
     this.tags,
     this.start,
     this.end,
+    this.minAmount,
+    this.maxAmount,
   }) : accounts = accounts ?? <AccountRead>[],
        categories = categories ?? <CategoryRead>[];
 
@@ -40,6 +42,8 @@ class TransactionFilters with ChangeNotifier {
   // Rango de fechas opcional (p. ej. detalle de categoría por periodo).
   DateTime? start;
   DateTime? end;
+  double? minAmount;
+  double? maxAmount;
 
   bool _hasFilters = false;
   bool get hasFilters => _hasFilters;
@@ -56,7 +60,9 @@ class TransactionFilters with ChangeNotifier {
         bill != null ||
         (tags?.tags.isNotEmpty ?? false) ||
         start != null ||
-        end != null;
+        end != null ||
+        minAmount != null ||
+        maxAmount != null;
     log.finest(() => "notify TransactionFilters, filters? $hasFilters");
     notifyListeners();
   }
@@ -73,6 +79,8 @@ class TransactionFilters with ChangeNotifier {
     Tags? tags,
     DateTime? start,
     DateTime? end,
+    double? minAmount,
+    double? maxAmount,
   }) => TransactionFilters(
     account: account ?? this.account,
     accounts: accounts ?? List<AccountRead>.from(this.accounts),
@@ -85,6 +93,8 @@ class TransactionFilters with ChangeNotifier {
     tags: tags ?? this.tags,
     start: start ?? this.start,
     end: end ?? this.end,
+    minAmount: minAmount ?? this.minAmount,
+    maxAmount: maxAmount ?? this.maxAmount,
   );
 
   void reset() {
@@ -99,6 +109,8 @@ class TransactionFilters with ChangeNotifier {
     tags = Tags();
     start = null;
     end = null;
+    minAmount = null;
+    maxAmount = null;
     updateFilters();
   }
 }
