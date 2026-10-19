@@ -65,30 +65,6 @@ extension AccountRole on AccountRoleProperty {
   }
 }
 
-extension AccountNetWorth on AccountRead {
-  bool get isLiability =>
-      attributes.type == ShortAccountTypeProperty.liability ||
-      attributes.type == ShortAccountTypeProperty.liabilities;
-
-  /// Devuelve `true` si esta cuenta de pasivo es un derecho de cobro a favor
-  /// del usuario (se le debe dinero, `liability_direction == credit`).
-  bool get isLiabilityCredit =>
-      attributes.liabilityDirection == LiabilityDirectionProperty.credit;
-
-  /// Contribución neta de la cuenta al patrimonio.
-  ///
-  /// - Activos: se suman con su saldo tal cual.
-  /// - Pasivos `debit` (le debo a otra persona): restan (`-currentBalance`).
-  /// - Pasivos `credit` (me deben a mí): suman (`+currentBalance`).
-  double get netWorthContribution {
-    final double bal = double.tryParse(attributes.currentBalance ?? '0') ?? 0.0;
-    if (isLiability) {
-      return isLiabilityCredit ? bal : -bal;
-    }
-    return bal;
-  }
-}
-
 extension TransactionType on TransactionTypeProperty {
   Color colorOf(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;

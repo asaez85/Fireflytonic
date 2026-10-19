@@ -261,9 +261,7 @@ class _AccountsPageState extends State<AccountsPage> {
       } else if (type == ShortAccountTypeProperty.liability ||
           type == ShortAccountTypeProperty.liabilities) {
         liabilities.add(acc);
-        // Los pasivos `credit` (se me debe) suman al patrimonio; los `debit`
-        // (le debo) restan. La tarjeta muestra el impacto neto como "deuda".
-        totalLiabilities -= acc.netWorthContribution;
+        totalLiabilities += bal.abs();
       } else {
         others.add(acc);
       }
@@ -495,11 +493,6 @@ class _AccountsPageState extends State<AccountsPage> {
         : (netWorth > 0
               ? FtColors.incomeOf(context)
               : Theme.of(context).colorScheme.onSurface);
-    final Color liabilityColor = totalLiabilities > 0
-        ? FtColors.coralOf(context)
-        : (totalLiabilities < 0
-              ? FtColors.incomeOf(context)
-              : Theme.of(context).colorScheme.onSurface);
 
     return Card(
       elevation: 0,
@@ -556,7 +549,7 @@ class _AccountsPageState extends State<AccountsPage> {
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           letterSpacing: 1.1,
                           fontWeight: FontWeight.w700,
-                          color: liabilityColor,
+                          color: FtColors.coralOf(context),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -564,7 +557,7 @@ class _AccountsPageState extends State<AccountsPage> {
                         currency.fmt(totalLiabilities, context: context),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: liabilityColor,
+                          color: FtColors.coralOf(context),
                           fontFeatures: const <FontFeature>[
                             FontFeature.tabularFigures(),
                           ],
@@ -692,22 +685,9 @@ class _AccountsPageState extends State<AccountsPage> {
     Color balanceColor;
     if (type == ShortAccountTypeProperty.liability ||
         type == ShortAccountTypeProperty.liabilities) {
-      if (account.isLiabilityCredit) {
-        // Crédito a favor: saldo positivo es dinero que me deben (verde),
-        // saldo negativo es deuda pendiente (coral).
-        balanceColor = balance > 0
-            ? FtColors.incomeOf(context)
-            : (balance < 0
-                  ? FtColors.coralOf(context)
-                  : Theme.of(context).colorScheme.onSurface);
-      } else {
-        // Débito: saldo positivo es deuda (coral), negativo es a favor (verde).
-        balanceColor = balance > 0
-            ? FtColors.coralOf(context)
-            : (balance < 0
-                  ? FtColors.incomeOf(context)
-                  : Theme.of(context).colorScheme.onSurface);
-      }
+      balanceColor = balance != 0
+          ? FtColors.coralOf(context)
+          : Theme.of(context).colorScheme.onSurface;
     } else if (type == ShortAccountTypeProperty.asset) {
       balanceColor = balance > 0
           ? FtColors.incomeOf(context)
