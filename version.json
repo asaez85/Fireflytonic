@@ -1,6 +1,6 @@
 {
-  "version": "3.2.1",
-  "versionCode": 313,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.1/fireflytonic-arm64-v8a.apk",
-  "changelog": "### Novedades y Mejoras\n- **Gráficos interactivos de Evolución y Saldo**: Tooltips táctiles con fecha e importe exacto y centrado dinámico del eje vertical en la media.\n\n### Correcciones y Fiabilidad\n- **Pantalla de Inicio**: Gráfico de saldo neto con `preselected: all` integrando activos y pasivos. Lista de cuentas filtrada por saldo e `includeNetWorth`.\n- **Cuentas y Patrimonio**: Cómputo global de patrimonio neto acumulando todas las cuentas (activas e inactivas). Pasivos con valor absoluto positivo y eliminación de botón '+' duplicado.\n- **Distinción de saldos**: Diferenciación consistente entre Patrimonio Neto global y Saldo Neto computable en Inicio, Movimientos y Evolución.\n- **Categorías**: Corrección de spinner infinito por condición de guarda y de deserialización de caché de categorías.\n\n---"
+  "version": "3.2.2-beta.1 (build 42)",
+  "versionCode": 423,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.2-beta.1/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Novedades y Mejoras\n- **Filtro de movimientos por importe (`lib/pages/home/transactions`)**:\n  - Nuevo modal inferior `AmountFilterSheet` para filtrar movimientos por rango de importe mínimo (\"Desde\") y máximo (\"Hasta\").\n  - Soporte completo para coma y punto decimal con ajuste dinámico de teclado (`viewInsets`).\n  - Píldora de filtro dinámico en `TransactionsSearchPage` que refleja el rango seleccionado (\"Desde X €\", \"Hasta Y €\", \"X € - Y €\").\n  - Integración en la búsqueda paginada y API de Firefly III mediante operadores `more:` y `less:`.\n\n---"
 }
