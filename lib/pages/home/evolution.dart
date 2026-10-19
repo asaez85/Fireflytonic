@@ -422,7 +422,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     final List<ChartDataSet> datasets = resp.body ?? <ChartDataSet>[];
     final Map<DateTime, double> assetsByDate = <DateTime, double>{};
-    final Map<DateTime, double> liabilitiesByDate = <DateTime, double>{};
+    final Map<DateTime, double> signedLiabilityByDate = <DateTime, double>{};
     final Map<String, double> latestBreakdown = <String, double>{};
 
     double latestAssets = 0;
@@ -430,40 +430,58 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     for (final ChartDataSet ds in datasets) {
       final String label = ds.label ?? '';
+      final AccountRead? acc = accountsMap[label];
 
       final bool isLiability =
           ds.type == 'liability' || liabilityNames.contains(label);
+      final bool isCreditLiability = isLiability && (acc?.isCreditLiability ?? false);
+      final bool isDebitLiability = isLiability && (acc?.isDebitLiability ?? false);
       final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
           ? (ds.entries as Map<String, dynamic>)
           : <String, dynamic>{};
 
-      double lastVal = 0;
+      double lastSignedVal = 0;
+      double lastAbsVal = 0;
       entries.forEach((String dStr, dynamic val) {
         final DateTime? date = DateTime.tryParse(dStr);
         if (date == null) return;
         final double rawV = double.tryParse(val.toString()) ?? 0;
-        final double v = isLiability ? rawV.abs() : rawV;
-        lastVal = v;
+        final double signedV;
+        final double absV = rawV.abs();
+        if (isCreditLiability) {
+          signedV = absV;
+        } else if (isDebitLiability) {
+          // Firefly III puede devolver la deuda en negativo o positivo;
+          // mantenemos el signo negativo económico.
+          signedV = rawV < 0 ? rawV : -absV;
+        } else {
+          signedV = rawV;
+        }
+        lastSignedVal = signedV;
+        lastAbsVal = absV;
 
         if (isLiability) {
-          liabilitiesByDate[date] = (liabilitiesByDate[date] ?? 0) + v;
+          signedLiabilityByDate[date] =
+              (signedLiabilityByDate[date] ?? 0) + signedV;
         } else {
-          assetsByDate[date] = (assetsByDate[date] ?? 0) + v;
+          assetsByDate[date] = (assetsByDate[date] ?? 0) + signedV;
         }
       });
       if (_shouldIncludeInBreakdown(label, accountsMap, entries)) {
-        latestBreakdown[label] = isLiability ? -lastVal : lastVal;
+        latestBreakdown[label] = lastSignedVal;
       }
-      if (isLiability) {
-        latestLiabilities += lastVal;
+      if (isCreditLiability) {
+        latestAssets += lastAbsVal;
+      } else if (isDebitLiability) {
+        latestLiabilities += lastAbsVal;
       } else {
-        latestAssets += lastVal;
+        latestAssets += lastSignedVal;
       }
     }
 
     final SplayTreeSet<DateTime> allDates = SplayTreeSet<DateTime>()
       ..addAll(assetsByDate.keys)
-      ..addAll(liabilitiesByDate.keys);
+      ..addAll(signedLiabilityByDate.keys);
 
     final List<ChartDataPoint> points = <ChartDataPoint>[];
     double minV = double.infinity;
@@ -471,8 +489,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     for (final DateTime d in allDates) {
       final double a = assetsByDate[d] ?? 0;
-      final double l = liabilitiesByDate[d] ?? 0;
-      final double net = a - l;
+      final double l = signedLiabilityByDate[d] ?? 0;
+      final double net = a + l;
       if (net < minV) minV = net;
       if (net > maxV) maxV = net;
       points.add(ChartDataPoint(date: d, value: net, secondaryValue: a));

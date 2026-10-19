@@ -239,7 +239,8 @@ class _AccountsPageState extends State<AccountsPage> {
     final List<AccountRead> others = <AccountRead>[];
 
     double totalAssets = 0.0;
-    double totalLiabilities = 0.0;
+    double totalLiabilities = 0.0; // deuda real pendiente (positiva)
+    double totalReceivables = 0.0; // préstamos/créditos a favor (positivo)
     int activeCount = 0;
     int inactiveCount = 0;
 
@@ -261,7 +262,11 @@ class _AccountsPageState extends State<AccountsPage> {
       } else if (type == ShortAccountTypeProperty.liability ||
           type == ShortAccountTypeProperty.liabilities) {
         liabilities.add(acc);
-        totalLiabilities += bal.abs();
+        if (acc.isCreditLiability) {
+          totalReceivables += bal.abs();
+        } else if (acc.isDebitLiability) {
+          totalLiabilities += bal.abs();
+        }
       } else {
         others.add(acc);
       }
@@ -317,6 +322,7 @@ class _AccountsPageState extends State<AccountsPage> {
             currency: currency,
             totalAssets: totalAssets,
             totalLiabilities: totalLiabilities,
+            totalReceivables: totalReceivables,
             activeCount: activeCount,
             inactiveCount: inactiveCount,
           ),
@@ -484,10 +490,11 @@ class _AccountsPageState extends State<AccountsPage> {
     required CurrencyRead currency,
     required double totalAssets,
     required double totalLiabilities,
+    required double totalReceivables,
     required int activeCount,
     required int inactiveCount,
   }) {
-    final double netWorth = totalAssets - totalLiabilities;
+    final double netWorth = totalAssets - totalLiabilities + totalReceivables;
     final Color netColor = netWorth < 0
         ? FtColors.coralOf(context)
         : (netWorth > 0
@@ -685,9 +692,15 @@ class _AccountsPageState extends State<AccountsPage> {
     Color balanceColor;
     if (type == ShortAccountTypeProperty.liability ||
         type == ShortAccountTypeProperty.liabilities) {
-      balanceColor = balance != 0
-          ? FtColors.coralOf(context)
-          : Theme.of(context).colorScheme.onSurface;
+      if (account.isCreditLiability) {
+        balanceColor = FtColors.incomeOf(context);
+      } else if (account.isDebitLiability) {
+        balanceColor = FtColors.coralOf(context);
+      } else {
+        balanceColor = balance != 0
+            ? FtColors.coralOf(context)
+            : Theme.of(context).colorScheme.onSurface;
+      }
     } else if (type == ShortAccountTypeProperty.asset) {
       balanceColor = balance > 0
           ? FtColors.incomeOf(context)
