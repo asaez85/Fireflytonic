@@ -199,6 +199,10 @@ class _HomeSummaryState extends State<HomeSummary>
         ...?respAssets.body?.data,
         ...?respLiab.body?.data,
       ];
+      final Map<String, AccountRead> accountByName = <String, AccountRead>{};
+      for (final AccountRead a in allFetchedAccounts) {
+        accountByName[a.attributes.name.trim()] = a;
+      }
       final List<_Account> accounts = <_Account>[];
       final Map<String, bool> includeInNetWorth = <String, bool>{};
       final Set<String> liabilityNames = <String>{};
@@ -206,16 +210,13 @@ class _HomeSummaryState extends State<HomeSummary>
         final String name = a.attributes.name.trim();
         final bool incNetWorth = a.attributes.includeNetWorth ?? true;
         includeInNetWorth[name] = incNetWorth;
-        final bool isLiab =
-            a.attributes.type == ShortAccountTypeProperty.liability ||
-            a.attributes.type == ShortAccountTypeProperty.liabilities ||
-            (a.attributes.type.value?.toLowerCase().contains('liab') ?? false);
+        final bool isLiab = a.isLiability;
         if (isLiab) {
           liabilityNames.add(name);
         }
-        final double bal =
-            double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0;
-        final double effectiveBal = isLiab ? -bal.abs() : bal;
+        final double effectiveBal = isLiab
+            ? a.netWorthContribution
+            : (double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0);
         if (incNetWorth && effectiveBal.abs() > 0.0001) {
           accounts.add(
             _Account(
@@ -240,12 +241,16 @@ class _HomeSummaryState extends State<HomeSummary>
           }
           final bool isLiability =
               item.type == 'liability' || liabilityNames.contains(label);
+          final AccountRead? acc = accountByName[label];
+          final bool isCredit = acc?.isLiabilityCredit ?? false;
           if (item.entries is Map<String, dynamic>) {
             final Map<String, dynamic> entries =
                 item.entries as Map<String, dynamic>;
             for (final MapEntry<String, dynamic> e in entries.entries) {
               final double rawVal = double.tryParse(e.value.toString()) ?? 0.0;
-              final double val = isLiability ? -rawVal.abs() : rawVal;
+              final double val = isLiability
+                  ? (isCredit ? rawVal : -rawVal)
+                  : rawVal;
               dailyTotals[e.key] = (dailyTotals[e.key] ?? 0.0) + val;
             }
           }

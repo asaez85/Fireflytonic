@@ -402,8 +402,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     final Set<String> liabilityNames = <String>{};
     for (final AccountRead acc in accountsMap.values) {
-      final String t = acc.attributes.type.value?.toLowerCase() ?? '';
-      if (t.contains('liab') || t == 'loan' || t == 'debt' || t == 'mortgage') {
+      if (acc.isLiability) {
         liabilityNames.add(acc.attributes.name);
       }
     }
@@ -430,34 +429,39 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
     for (final ChartDataSet ds in datasets) {
       final String label = ds.label ?? '';
+      final AccountRead? acc = accountsMap[label];
 
       final bool isLiability =
           ds.type == 'liability' || liabilityNames.contains(label);
+      final bool isCredit = acc?.isLiabilityCredit ?? false;
       final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
           ? (ds.entries as Map<String, dynamic>)
           : <String, dynamic>{};
 
-      double lastVal = 0;
+      double lastContribution = 0;
       entries.forEach((String dStr, dynamic val) {
         final DateTime? date = DateTime.tryParse(dStr);
         if (date == null) return;
         final double rawV = double.tryParse(val.toString()) ?? 0;
-        final double v = isLiability ? rawV.abs() : rawV;
-        lastVal = v;
+        final double contribution = isLiability
+            ? (isCredit ? rawV : -rawV)
+            : rawV;
+        lastContribution = contribution;
 
-        if (isLiability) {
-          liabilitiesByDate[date] = (liabilitiesByDate[date] ?? 0) + v;
+        if (contribution >= 0) {
+          assetsByDate[date] = (assetsByDate[date] ?? 0) + contribution;
         } else {
-          assetsByDate[date] = (assetsByDate[date] ?? 0) + v;
+          liabilitiesByDate[date] =
+              (liabilitiesByDate[date] ?? 0) - contribution;
         }
       });
       if (_shouldIncludeInBreakdown(label, accountsMap, entries)) {
-        latestBreakdown[label] = isLiability ? -lastVal : lastVal;
+        latestBreakdown[label] = lastContribution;
       }
-      if (isLiability) {
-        latestLiabilities += lastVal;
+      if (lastContribution >= 0) {
+        latestAssets += lastContribution;
       } else {
-        latestAssets += lastVal;
+        latestLiabilities += -lastContribution;
       }
     }
 
