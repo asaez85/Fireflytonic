@@ -1,6 +1,6 @@
 {
-  "version": "3.2.2-beta.1 (build 42)",
-  "versionCode": 423,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.2-beta.1/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Novedades y Mejoras\n- **Filtro de movimientos por importe (`lib/pages/home/transactions`)**:\n  - Nuevo modal inferior `AmountFilterSheet` para filtrar movimientos por rango de importe mínimo (\"Desde\") y máximo (\"Hasta\").\n  - Soporte completo para coma y punto decimal con ajuste dinámico de teclado (`viewInsets`).\n  - Píldora de filtro dinámico en `TransactionsSearchPage` que refleja el rango seleccionado (\"Desde X €\", \"Hasta Y €\", \"X € - Y €\").\n  - Integración en la búsqueda paginada y API de Firefly III mediante operadores `more:` y `less:`.\n\n---"
+  "version": "3.2.2-beta.2 (build 43)",
+  "versionCode": 433,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.2-beta.2/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Correcciones y Fiabilidad\n- **Cuentas y Patrimonio (`lib/pages/accounts`, `lib/pages/home/evolution`, `lib/pages/home/summary`)**:\n  - Corrección en el cálculo de patrimonio neto respetando la dirección de pasivos (`liabilityDirection`: credit vs debit).\n  - Los pasivos credit (\"Se me debe esta deuda\") computan como créditos/derechos de cobro a favor sumando al patrimonio neto.\n  - Los pasivos debit (\"Le debo esta deuda a otra persona\") restan de forma coherente según el signo del saldo.\n  - Ajuste dinámico de colores e impacto neto en la tarjeta de resumen de cuentas y desglose en gráficos de evolución.\n\n---"
 }
