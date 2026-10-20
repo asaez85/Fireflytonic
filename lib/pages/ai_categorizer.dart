@@ -47,9 +47,16 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
 
   Future<_AICategorizerPageData> _loadData() async {
     final AICategorizerClient client = _client;
-    final AICategorizerConfig config = await client.getConfig();
-    final List<AICategorizerReviewGroup> review = await client.getReview();
-    final List<AICategorizerCategory> categories = await client.getCategories();
+    final List<dynamic> results = await Future.wait<dynamic>(<Future<dynamic>>[
+      client.getConfig(),
+      client.getReview(),
+      client.getCategories(),
+    ]);
+    final AICategorizerConfig config = results[0] as AICategorizerConfig;
+    final List<AICategorizerReviewGroup> review =
+        results[1] as List<AICategorizerReviewGroup>;
+    final List<AICategorizerCategory> categories =
+        results[2] as List<AICategorizerCategory>;
     final Map<String, String> categoryIdByName = <String, String>{};
     for (final AICategorizerCategory c in categories) {
       categoryIdByName[c.name] = c.id;

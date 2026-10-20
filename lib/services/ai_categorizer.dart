@@ -187,6 +187,7 @@ class AICategorizerClient {
   final String? apiKey;
 
   static const Duration _timeout = Duration(seconds: 15);
+  static const Duration _longTimeout = Duration(seconds: 120);
 
   static String _cleanUrl(String url) {
     String cleaned = url.trim();
@@ -284,7 +285,7 @@ class AICategorizerClient {
 
       final http.Response response = await client
           .post(_uri("/batch/run"), headers: _headers(), body: jsonEncode(body))
-          .timeout(_timeout);
+          .timeout(_longTimeout);
       _checkResponse(response);
       final Map<String, dynamic> json =
           jsonDecode(response.body) as Map<String, dynamic>;
@@ -307,7 +308,7 @@ class AICategorizerClient {
     try {
       final http.Response response = await client
           .get(_uri("/api/review"), headers: _headers())
-          .timeout(_timeout);
+          .timeout(_longTimeout);
       _checkResponse(response);
       final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
       return json

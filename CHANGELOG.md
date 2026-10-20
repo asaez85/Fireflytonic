@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.3-beta.4] - 2026-10-20
+
+### Correcciones y Mejoras
+- **Rendimiento y tiempos de espera en Clasificador IA**:
+  - Carga paralela concurrente de configuración, lista de revisión y categorías con `Future.wait`.
+  - Ampliado el timeout a 120s para endpoints pesados como `/batch/run` y `/api/review`.
+
+---
+
 ## [3.2.3-beta.3] - 2026-10-20
 
 ### Correcciones y Mejoras
