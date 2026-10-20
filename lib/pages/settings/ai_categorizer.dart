@@ -182,6 +182,9 @@ class _AICategorizerSettingsSectionState
               autocorrect: false,
               decoration: const InputDecoration(
                 labelText: "API Key / token (opcional)",
+                helperText:
+                    "Pangolin SSO: TokenID.Token (ej: mvhbjdgs.secreto)",
+                helperMaxLines: 2,
                 prefixIcon: Icon(Icons.vpn_key),
               ),
             ),

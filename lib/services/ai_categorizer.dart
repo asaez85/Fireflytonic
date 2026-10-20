@@ -203,8 +203,11 @@ class AICategorizerClient {
     };
     if (apiKey != null && apiKey!.isNotEmpty) {
       headers[HttpHeaders.authorizationHeader] = "Bearer ${apiKey!}";
-      if (apiKey!.contains(".")) {
-        final List<String> parts = apiKey!.split(".");
+      final String sep = apiKey!.contains(".")
+          ? "."
+          : (apiKey!.contains(":") ? ":" : "");
+      if (sep.isNotEmpty) {
+        final List<String> parts = apiKey!.split(sep);
         if (parts.length == 2) {
           headers["P-Access-Token-Id"] = parts[0];
           headers["P-Access-Token"] = parts[1];
@@ -214,7 +217,25 @@ class AICategorizerClient {
     return headers;
   }
 
-  Uri _uri(String path) => Uri.parse("$_baseUrl$path");
+  Uri _uri(String path) {
+    final Uri base = Uri.parse("$_baseUrl$path");
+    if (apiKey != null && apiKey!.isNotEmpty) {
+      final String sep = apiKey!.contains(".")
+          ? "."
+          : (apiKey!.contains(":") ? ":" : "");
+      if (sep.isNotEmpty) {
+        final List<String> parts = apiKey!.split(sep);
+        if (parts.length == 2) {
+          final Map<String, dynamic> qp = Map<String, dynamic>.from(
+            base.queryParameters,
+          );
+          qp["p_token"] = "${parts[0]}.${parts[1]}";
+          return base.replace(queryParameters: qp);
+        }
+      }
+    }
+    return base;
+  }
 
   Future<AICategorizerConfig> getConfig() async {
     final http.Client client = http.Client();
@@ -378,6 +399,15 @@ class AICategorizerClient {
 
   void _checkResponse(http.Response response, {bool allowNoContent = false}) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
+      final String contentType = response.headers["content-type"] ?? "";
+      if (contentType.contains("text/html") ||
+          response.body.trimLeft().startsWith("<!DOCTYPE") ||
+          response.body.trimLeft().startsWith("<html")) {
+        throw AICategorizerException(
+          "El servidor devolvió HTML (posible pantalla de login o error de proxy SSO). Verifica el token o la URL.",
+          statusCode: response.statusCode,
+        );
+      }
       if (response.statusCode == 204 && allowNoContent) {
         return;
       }

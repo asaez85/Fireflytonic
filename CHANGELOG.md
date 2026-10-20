@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.3-beta.3] - 2026-10-20
+
+### Correcciones y Mejoras
+- **Autenticación con Pangolin SSO en Clasificador IA**:
+  - Soporte de tokens de acceso de recurso Pangolin (`TokenID.Token` o `TokenID:Token`).
+  - Inyección automática de cabeceras HTTP `P-Access-Token-Id` y `P-Access-Token`, además de query param de respaldo `p_token`.
+  - Detección proactiva de respuestas HTML del proxy para mostrar advertencia clara de autenticación en lugar de excepción de formato.
+  - Texto de ayuda descriptivo en el formulario de configuración.
+
+---
+
 ## [3.2.3-beta.2] - 2026-10-20
 
 ### Novedades y Mejoras
