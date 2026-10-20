@@ -137,48 +137,93 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
       }
 
       final String queryText = _searchController.text.trim();
-      String query = queryText;
 
+      final List<String> baseFilterParts = <String>[];
       if (_selectedAccounts.isNotEmpty) {
         final String accountIds = _selectedAccounts
             .map((AccountRead a) => a.id)
             .join(",");
-        query = "account_id:$accountIds $query";
+        baseFilterParts.add("account_id:$accountIds");
       }
 
       if (_selectedCategories.length == 1) {
-        query =
-            "category_is:\"${_selectedCategories.first.attributes.name}\" $query";
+        baseFilterParts.add(
+          "category_is:\"${_selectedCategories.first.attributes.name}\"",
+        );
       }
 
       if (_startDate != null) {
-        query =
-            "date_after:${DateFormat('yyyy-MM-dd', 'en_US').format(_startDate!)} $query";
+        baseFilterParts.add(
+          "date_after:${DateFormat('yyyy-MM-dd', 'en_US').format(_startDate!)}",
+        );
       }
       if (_endDate != null) {
-        query =
-            "date_before:${DateFormat('yyyy-MM-dd', 'en_US').format(_endDate!)} $query";
+        baseFilterParts.add(
+          "date_before:${DateFormat('yyyy-MM-dd', 'en_US').format(_endDate!)}",
+        );
       }
 
       if (_selectedBudget != null) {
-        query = (_selectedBudget!.id == "-1")
-            ? "budget_is:\"\" $query"
-            : "budget_is:\"${_selectedBudget!.attributes.name}\" $query";
+        baseFilterParts.add(
+          (_selectedBudget!.id == "-1")
+              ? "budget_is:\"\""
+              : "budget_is:\"${_selectedBudget!.attributes.name}\"",
+        );
       }
 
       if (_minAmount != null) {
-        query = "more:${_formatAmount(_minAmount!)} $query";
+        baseFilterParts.add("more:${_formatAmount(_minAmount!)}");
       }
       if (_maxAmount != null) {
-        query = "less:${_formatAmount(_maxAmount!)} $query";
+        baseFilterParts.add("less:${_formatAmount(_maxAmount!)}");
       }
 
-      query = query.trim();
+      final String baseFilterQuery = baseFilterParts.join(" ");
+      final String escapedQueryText = queryText.replaceAll('"', r'\"');
 
       late List<TransactionRead> transactions;
-      if (query.isNotEmpty) {
+      if (queryText.isNotEmpty) {
+        final String standardQuery = baseFilterQuery.isNotEmpty
+            ? "$baseFilterQuery $queryText"
+            : queryText;
+        final String notesQuery = baseFilterQuery.isNotEmpty
+            ? '$baseFilterQuery notes_contain:"$escapedQueryText"'
+            : 'notes_contain:"$escapedQueryText"';
+
+        Future<TransStockRead?> safeSearch(String q) async {
+          try {
+            return await stock.getSearch(query: q, page: 1, limit: 100);
+          } catch (e) {
+            debugPrint("Search failed for query $q: $e");
+            return null;
+          }
+        }
+
+        final List<TransStockRead?> responses = await Future.wait(
+          <Future<TransStockRead?>>[
+            safeSearch(standardQuery),
+            safeSearch(notesQuery),
+          ],
+        );
+
+        final Set<String> seenIds = <String>{};
+        transactions = <TransactionRead>[];
+        for (final TransStockRead? resp in responses) {
+          if (resp == null) continue;
+          for (final TransactionRead tx in resp.data) {
+            if (seenIds.add(tx.id)) {
+              transactions.add(tx);
+            }
+          }
+        }
+        transactions.sort((TransactionRead a, TransactionRead b) {
+          final DateTime da = a.attributes.transactions.first.date;
+          final DateTime db = b.attributes.transactions.first.date;
+          return db.compareTo(da);
+        });
+      } else if (baseFilterQuery.isNotEmpty) {
         final TransStockRead resp = await stock.getSearch(
-          query: query,
+          query: baseFilterQuery,
           page: 1,
           limit: 100,
         );

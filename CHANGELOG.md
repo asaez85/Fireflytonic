@@ -2,6 +2,19 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.3-beta.1] - 2026-10-20
+
+### Novedades y Mejoras
+- **Rango de fechas visible en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Indicador con icono de calendario bajo los selectores de periodo que muestra el intervalo exacto aplicado.
+  - Rango de fechas visible en el encabezado de la tarjeta KPI de evolución patrimonial y flujo de caja.
+  - Acceso directo para editar el rango al tocar el indicador en modo personalizado.
+- **Búsqueda en notas de movimientos (`lib/pages/home/transactions`)**:
+  - El buscador de movimientos ahora consulta tanto título/descripción como las notas (`notes_contain:"..."`) en paralelo contra la API de Firefly III.
+  - Resultados unificados, deduplicados y ordenados cronológicamente sin perder paginación ni filtros.
+
+---
+
 ## [3.2.2] - 2026-10-20
 
 ### Novedades y Mejoras
