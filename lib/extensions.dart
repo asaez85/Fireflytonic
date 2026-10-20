@@ -755,3 +755,58 @@ extension LocaleExt on Locale {
     return Locale(langCode, regionCode);
   }
 }
+
+/// Helpers para tratar los pasivos según Firefly III:
+/// - `debit` / saldo negativo  => deuda que reduciría el patrimonio neto.
+/// - `credit` / saldo positivo => crédito a favor que aumenta el patrimonio neto.
+extension AccountLiabilityHelpers on AccountRead {
+  bool get _isLiabilityType {
+    final ShortAccountTypeProperty t = attributes.type;
+    return t == ShortAccountTypeProperty.liability ||
+        t == ShortAccountTypeProperty.liabilities;
+  }
+
+  double get _balanceValue {
+    return double.tryParse(attributes.currentBalance ?? '0') ?? 0.0;
+  }
+
+  /// `true` si es un pasivo a favor (me deben dinero).
+  bool get isCreditLiability {
+    if (!_isLiabilityType) return false;
+    final LiabilityDirectionProperty? dir = attributes.liabilityDirection;
+    if (dir == LiabilityDirectionProperty.credit) return true;
+    if (dir == LiabilityDirectionProperty.debit) return false;
+    return _balanceValue > 0;
+  }
+
+  /// `true` si es una deuda real pendiente (yo debo dinero).
+  bool get isDebitLiability {
+    if (!_isLiabilityType) return false;
+    final LiabilityDirectionProperty? dir = attributes.liabilityDirection;
+    if (dir == LiabilityDirectionProperty.debit) return true;
+    if (dir == LiabilityDirectionProperty.credit) return false;
+    return _balanceValue < 0;
+  }
+
+  /// Balance con signo económico para el patrimonio neto.
+  /// Activo: tal cual. Pasivo a favor: positivo. Deuda: negativo.
+  double get signedNetBalance {
+    final double bal = _balanceValue;
+    if (!_isLiabilityType) return bal;
+    if (isCreditLiability) return bal.abs();
+    if (isDebitLiability) return -bal.abs();
+    return bal;
+  }
+
+  /// Importe positivo de la deuda pendiente (solo pasivos debit).
+  double get debtAmount {
+    if (!isDebitLiability) return 0.0;
+    return _balanceValue.abs();
+  }
+
+  /// Importe positivo de créditos a favor (solo pasivos credit).
+  double get receivableAmount {
+    if (!isCreditLiability) return 0.0;
+    return _balanceValue.abs();
+  }
+}

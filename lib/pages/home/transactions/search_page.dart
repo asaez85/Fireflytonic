@@ -9,6 +9,7 @@ import 'package:waterflyiii/extensions.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/pages/home/transactions/filter.dart';
 import 'package:waterflyiii/pages/home/transactions/widgets/accounts_filter_sheet.dart';
+import 'package:waterflyiii/pages/home/transactions/widgets/amount_filter_sheet.dart';
 import 'package:waterflyiii/pages/home/transactions/widgets/budget_filter_sheet.dart';
 import 'package:waterflyiii/pages/home/transactions/widgets/categories_filter_sheet.dart';
 import 'package:waterflyiii/pages/home/transactions/widgets/date_filter_sheet.dart';
@@ -38,6 +39,8 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
   List<CategoryRead> _selectedCategories = <CategoryRead>[];
   List<AccountRead> _selectedAccounts = <AccountRead>[];
   BudgetRead? _selectedBudget;
+  double? _minAmount;
+  double? _maxAmount;
 
   bool get _hasActiveFilters =>
       _searchController.text.trim().isNotEmpty ||
@@ -45,7 +48,9 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
       _endDate != null ||
       _selectedCategories.isNotEmpty ||
       _selectedAccounts.isNotEmpty ||
-      _selectedBudget != null;
+      _selectedBudget != null ||
+      _minAmount != null ||
+      _maxAmount != null;
 
   void _clearFilters() {
     _debounceTimer?.cancel();
@@ -57,6 +62,8 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
       _selectedCategories = <CategoryRead>[];
       _selectedAccounts = <AccountRead>[];
       _selectedBudget = null;
+      _minAmount = null;
+      _maxAmount = null;
     });
     if (widget.initialFilters != null) {
       widget.initialFilters!.reset();
@@ -94,6 +101,8 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
         _selectedAccounts = <AccountRead>[f.account!];
       }
       _selectedBudget = f.budget;
+      _minAmount = f.minAmount;
+      _maxAmount = f.maxAmount;
     }
 
     _fetchResults();
@@ -157,6 +166,13 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
             : "budget_is:\"${_selectedBudget!.attributes.name}\" $query";
       }
 
+      if (_minAmount != null) {
+        query = "more:${_formatAmount(_minAmount!)} $query";
+      }
+      if (_maxAmount != null) {
+        query = "less:${_formatAmount(_maxAmount!)} $query";
+      }
+
       query = query.trim();
 
       late List<TransactionRead> transactions;
@@ -217,6 +233,8 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
           ? _selectedAccounts.first
           : null;
       f.budget = _selectedBudget;
+      f.minAmount = _minAmount;
+      f.maxAmount = _maxAmount;
       f.updateFilters();
     }
     Navigator.pop(context, true);
@@ -234,6 +252,30 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
       groups.putIfAbsent(dayKey, () => <TransactionRead>[]).add(item);
     }
     return groups;
+  }
+
+  String _formatAmount(double value) {
+    final String s = value.toStringAsFixed(2);
+    if (s.endsWith('.00')) {
+      return s.substring(0, s.length - 3);
+    }
+    if (s.contains('.') && s.endsWith('0')) {
+      return s.substring(0, s.length - 1);
+    }
+    return s;
+  }
+
+  String _amountPillLabel() {
+    if (_minAmount == null && _maxAmount == null) {
+      return "Importe";
+    }
+    if (_minAmount != null && _maxAmount != null) {
+      return "${_formatAmount(_minAmount!)} € - ${_formatAmount(_maxAmount!)} €";
+    }
+    if (_minAmount != null) {
+      return "Desde ${_formatAmount(_minAmount!)} €";
+    }
+    return "Hasta ${_formatAmount(_maxAmount!)} €";
   }
 
   String _formatDateHeader(DateTime date) {
@@ -412,6 +454,29 @@ class _TransactionsSearchPageState extends State<TransactionsSearchPage> {
                               _startDate = res.start;
                               _endDate = res.end;
                               _dateLabel = res.label;
+                            });
+                            unawaited(_fetchResults());
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Pill: Importe
+                      _buildFilterPill(
+                        context,
+                        label: _amountPillLabel(),
+                        isActive: _minAmount != null || _maxAmount != null,
+                        onTap: () async {
+                          final AmountFilterResult? res =
+                              await AmountFilterSheet.show(
+                                context,
+                                initialMin: _minAmount,
+                                initialMax: _maxAmount,
+                              );
+                          if (res != null) {
+                            setState(() {
+                              _minAmount = res.minAmount;
+                              _maxAmount = res.maxAmount;
                             });
                             unawaited(_fetchResults());
                           }

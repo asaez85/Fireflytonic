@@ -2,6 +2,62 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.2] - 2026-10-20
+
+### Novedades y Mejoras
+- **Filtro de movimientos por importe (`lib/pages/home/transactions`)**:
+  - Nuevo modal inferior `AmountFilterSheet` para filtrar movimientos por rango de importe mínimo ("Desde") y máximo ("Hasta").
+  - Soporte completo para coma y punto decimal con ajuste dinámico de teclado (`viewInsets`).
+  - Píldora de filtro dinámico en `TransactionsSearchPage` que refleja el rango seleccionado ("Desde X €", "Hasta Y €", "X € - Y €").
+  - Integración en la búsqueda paginada y API de Firefly III mediante operadores `more:` y `less:`.
+
+### Correcciones y Fiabilidad
+- **Cálculo contable del patrimonio neto y pasivos**:
+  - `lib/extensions.dart`: nuevos helpers (`isCreditLiability`, `isDebitLiability`, `signedNetBalance`, `debtAmount`, `receivableAmount`) para interpretar los pasivos según Firefly III:
+    - `debit` / saldo negativo = deuda real que reduce el patrimonio neto.
+    - `credit` / saldo positivo = crédito a favor que aumenta el patrimonio neto.
+  - `lib/pages/accounts.dart`:
+    - El resumen distingue deuda pendiente (`totalLiabilities`) de créditos a favor (`totalReceivables`).
+    - El patrimonio neto se calcula como `activos - deuda + créditos a favor`, reflejando la suma algebraica real de Firefly III.
+    - Los pasivos a favor se muestran en verde; las deudas reales en coral.
+  - `lib/pages/home/summary.dart`:
+    - El saldo neto y el gráfico de fondo aplican signo económico correcto a cada pasivo (`credit` suma, `debit` resta), respetando el signo si la API ya lo devuelve negativo.
+    - La lista de cuentas destaca los pasivos a favor en verde.
+  - `lib/pages/home/evolution.dart`:
+    - El modo Patrimonio Neto distingue pasivos `credit` y `debit` en la evolución temporal, en el desglose por cuentas y en los totales de activos/deuda.
+
+---
+
+## [3.2.2-beta.2] - 2026-10-19
+
+### Correcciones y Fiabilidad
+- **Cálculo contable del patrimonio neto y pasivos**:
+  - `lib/extensions.dart`: nuevos helpers (`isCreditLiability`, `isDebitLiability`, `signedNetBalance`, `debtAmount`, `receivableAmount`) para interpretar los pasivos según Firefly III:
+    - `debit` / saldo negativo = deuda real que reduce el patrimonio neto.
+    - `credit` / saldo positivo = crédito a favor que aumenta el patrimonio neto.
+  - `lib/pages/accounts.dart`:
+    - El resumen distingue deuda pendiente (`totalLiabilities`) de créditos a favor (`totalReceivables`).
+    - El patrimonio neto se calcula como `activos - deuda + créditos a favor`, reflejando la suma algebraica real de Firefly III.
+    - Los pasivos a favor se muestran en verde; las deudas reales en coral.
+  - `lib/pages/home/summary.dart`:
+    - El saldo neto y el gráfico de fondo aplican signo económico correcto a cada pasivo (`credit` suma, `debit` resta), respetando el signo si la API ya lo devuelve negativo.
+    - La lista de cuentas destaca los pasivos a favor en verde.
+  - `lib/pages/home/evolution.dart`:
+    - El modo Patrimonio Neto distingue pasivos `credit` y `debit` en la evolución temporal, en el desglose por cuentas y en los totales de activos/deuda.
+
+---
+
+## [3.2.2-beta.1] - 2026-10-19
+
+### Novedades y Mejoras
+- **Filtro de movimientos por importe (`lib/pages/home/transactions`)**:
+  - Nuevo modal inferior `AmountFilterSheet` para filtrar movimientos por rango de importe mínimo ("Desde") y máximo ("Hasta").
+  - Soporte completo para coma y punto decimal con ajuste dinámico de teclado (`viewInsets`).
+  - Píldora de filtro dinámico en `TransactionsSearchPage` que refleja el rango seleccionado ("Desde X €", "Hasta Y €", "X € - Y €").
+  - Integración en la búsqueda paginada y API de Firefly III mediante operadores `more:` y `less:`.
+
+---
+
 ## [3.2.1] - 2026-10-19
 
 ### Novedades y Mejoras

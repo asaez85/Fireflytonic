@@ -23,6 +23,7 @@ class _Account {
     required this.balance,
     required this.role,
     this.includeNetWorth = true,
+    this.isCreditLiability = false,
     this.account,
   });
   final String id;
@@ -30,6 +31,7 @@ class _Account {
   final double balance;
   final String role;
   final bool includeNetWorth;
+  final bool isCreditLiability;
   final AccountRead? account;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -38,6 +40,7 @@ class _Account {
     'balance': balance,
     'role': role,
     'includeNetWorth': includeNetWorth,
+    'isCreditLiability': isCreditLiability,
   };
 
   factory _Account.fromJson(Map<String, dynamic> json) => _Account(
@@ -46,6 +49,7 @@ class _Account {
     balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
     role: json['role'] as String? ?? '',
     includeNetWorth: json['includeNetWorth'] as bool? ?? true,
+    isCreditLiability: json['isCreditLiability'] as bool? ?? false,
   );
 
   AccountRead toAccountRead() {
@@ -201,6 +205,7 @@ class _HomeSummaryState extends State<HomeSummary>
       ];
       final List<_Account> accounts = <_Account>[];
       final Map<String, bool> includeInNetWorth = <String, bool>{};
+      final Map<String, bool> isCreditLiabilityByName = <String, bool>{};
       final Set<String> liabilityNames = <String>{};
       for (final AccountRead a in allFetchedAccounts) {
         final String name = a.attributes.name.trim();
@@ -210,12 +215,18 @@ class _HomeSummaryState extends State<HomeSummary>
             a.attributes.type == ShortAccountTypeProperty.liability ||
             a.attributes.type == ShortAccountTypeProperty.liabilities ||
             (a.attributes.type.value?.toLowerCase().contains('liab') ?? false);
+        final bool isCreditLiability = isLiab && a.isCreditLiability;
         if (isLiab) {
           liabilityNames.add(name);
+          isCreditLiabilityByName[name] = isCreditLiability;
         }
         final double bal =
             double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0;
-        final double effectiveBal = isLiab ? -bal.abs() : bal;
+        final double effectiveBal = isLiab
+            ? (isCreditLiability
+                ? bal.abs()
+                : (bal < 0 ? bal : -bal.abs()))
+            : bal;
         if (incNetWorth && effectiveBal.abs() > 0.0001) {
           accounts.add(
             _Account(
@@ -224,6 +235,7 @@ class _HomeSummaryState extends State<HomeSummary>
               balance: effectiveBal,
               role: a.attributes.accountRole?.value ?? '',
               includeNetWorth: incNetWorth,
+              isCreditLiability: isCreditLiability,
               account: a,
             ),
           );
@@ -240,12 +252,22 @@ class _HomeSummaryState extends State<HomeSummary>
           }
           final bool isLiability =
               item.type == 'liability' || liabilityNames.contains(label);
+          final bool isCreditLiability = isCreditLiabilityByName[label] ?? false;
           if (item.entries is Map<String, dynamic>) {
             final Map<String, dynamic> entries =
                 item.entries as Map<String, dynamic>;
             for (final MapEntry<String, dynamic> e in entries.entries) {
               final double rawVal = double.tryParse(e.value.toString()) ?? 0.0;
-              final double val = isLiability ? -rawVal.abs() : rawVal;
+              final double val;
+              if (isCreditLiability) {
+                val = rawVal.abs();
+              } else if (isLiability) {
+                // deuda: respetar signo negativo si la API ya lo devuelve,
+                // o invertir si viene en positivo.
+                val = rawVal < 0 ? rawVal : -rawVal.abs();
+              } else {
+                val = rawVal;
+              }
               dailyTotals[e.key] = (dailyTotals[e.key] ?? 0.0) + val;
             }
           }
@@ -382,9 +404,11 @@ class _HomeSummaryState extends State<HomeSummary>
                           style: Theme.of(context).textTheme.titleSmall!
                               .copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: data.accounts[i].balance >= 0
+                                color: data.accounts[i].isCreditLiability
+                                    ? FtColors.incomeOf(context)
+                                    : (data.accounts[i].balance >= 0
                                     ? Theme.of(context).colorScheme.onSurface
-                                    : FtColors.coralOf(context),
+                                    : FtColors.coralOf(context)),
                                 fontFeatures: const <FontFeature>[
                                   FontFeature.tabularFigures(),
                                 ],

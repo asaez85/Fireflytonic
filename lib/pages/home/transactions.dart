@@ -85,6 +85,17 @@ class HomeTransactionsState extends State<HomeTransactions>
         type == ShortAccountTypeProperty.expense;
   }
 
+  String _formatAmount(double value) {
+    final String s = value.toStringAsFixed(2);
+    if (s.endsWith('.00')) {
+      return s.substring(0, s.length - 3);
+    }
+    if (s.contains('.') && s.endsWith('0')) {
+      return s.substring(0, s.length - 1);
+    }
+    return s;
+  }
+
   void setAccountFilter(AccountRead account) {
     _filters.reset();
     _filters.account = account;
@@ -409,6 +420,8 @@ class HomeTransactionsState extends State<HomeTransactions>
       _filters.tags = widget.filters!.tags;
       _filters.start = widget.filters!.start;
       _filters.end = widget.filters!.end;
+      _filters.minAmount = widget.filters!.minAmount;
+      _filters.maxAmount = widget.filters!.maxAmount;
       _filters.updateFilters();
     }
 
@@ -546,6 +559,8 @@ class HomeTransactionsState extends State<HomeTransactions>
                   _filters.tags = oldFilters.tags;
                   _filters.start = oldFilters.start;
                   _filters.end = oldFilters.end;
+                  _filters.minAmount = oldFilters.minAmount;
+                  _filters.maxAmount = oldFilters.maxAmount;
                   _filters.updateFilters();
                   return;
                 }
@@ -659,6 +674,8 @@ class HomeTransactionsState extends State<HomeTransactions>
           _filters.tags = widget.filters!.tags;
           _filters.start = widget.filters!.start;
           _filters.end = widget.filters!.end;
+          _filters.minAmount = widget.filters!.minAmount;
+          _filters.maxAmount = widget.filters!.maxAmount;
           _filters.updateFilters();
         }
 
@@ -706,7 +723,9 @@ class HomeTransactionsState extends State<HomeTransactions>
             _filters.bill != null ||
             (_filters.tags?.tags.isNotEmpty ?? false) ||
             _filters.start != null ||
-            _filters.end != null;
+            _filters.end != null ||
+            _filters.minAmount != null ||
+            _filters.maxAmount != null;
 
         if (_filters.account != null &&
             _filters.accounts.isEmpty &&
@@ -776,6 +795,12 @@ class HomeTransactionsState extends State<HomeTransactions>
                 "date_before:${DateFormat('yyyy-MM-dd', 'en_US').format(_filters.end!)} $query";
           } else if (!settings.showFutureTXs) {
             query = "date_before:today $query";
+          }
+          if (_filters.minAmount != null) {
+            query = "more:${_formatAmount(_filters.minAmount!)} $query";
+          }
+          if (_filters.maxAmount != null) {
+            query = "less:${_formatAmount(_filters.maxAmount!)} $query";
           }
           log.fine(() => "Search query: $query");
           stockResponse = await stock.getSearch(

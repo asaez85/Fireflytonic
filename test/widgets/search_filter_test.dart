@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/pages/home/transactions/filter.dart';
 import 'package:waterflyiii/pages/home/transactions/widgets/accounts_filter_sheet.dart';
+import 'package:waterflyiii/pages/home/transactions/widgets/amount_filter_sheet.dart';
 import 'package:waterflyiii/pages/home/transactions/widgets/date_filter_sheet.dart';
 
 void main() {
@@ -35,25 +36,58 @@ void main() {
       expect(filters.accounts, isEmpty);
     });
 
-    test('reset clears all filters including dates, text and budget', () {
-      final TransactionFilters filters = TransactionFilters();
-      filters.text = 'Supermercado';
-      filters.start = DateTime(2026, 1, 1);
-      filters.end = DateTime(2026, 1, 31);
-      filters.budget = const BudgetRead(
-        id: '1',
-        type: 'budgets',
-        attributes: BudgetProperties(name: 'Comida'),
-      );
-      filters.updateFilters();
-      expect(filters.hasFilters, isTrue);
+    test(
+      'reset clears all filters including dates, text, budget and amounts',
+      () {
+        final TransactionFilters filters = TransactionFilters();
+        filters.text = 'Supermercado';
+        filters.start = DateTime(2026, 1, 1);
+        filters.end = DateTime(2026, 1, 31);
+        filters.minAmount = 10.5;
+        filters.maxAmount = 50.0;
+        filters.budget = const BudgetRead(
+          id: '1',
+          type: 'budgets',
+          attributes: BudgetProperties(name: 'Comida'),
+        );
+        filters.updateFilters();
+        expect(filters.hasFilters, isTrue);
 
-      filters.reset();
-      expect(filters.hasFilters, isFalse);
-      expect(filters.text, isNull);
-      expect(filters.start, isNull);
-      expect(filters.end, isNull);
-      expect(filters.budget, isNull);
+        final TransactionFilters copy = filters.copyWith();
+        expect(copy.minAmount, 10.5);
+        expect(copy.maxAmount, 50.0);
+
+        filters.reset();
+        expect(filters.hasFilters, isFalse);
+        expect(filters.text, isNull);
+        expect(filters.start, isNull);
+        expect(filters.end, isNull);
+        expect(filters.budget, isNull);
+        expect(filters.minAmount, isNull);
+        expect(filters.maxAmount, isNull);
+      },
+    );
+  });
+
+  group('AmountFilterSheet Widget Tests', () {
+    testWidgets('Renders fields and buttons correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AmountFilterSheet(initialMin: 15.0, initialMax: 100.0),
+          ),
+        ),
+      );
+
+      expect(find.text("Importe"), findsOneWidget);
+      expect(find.text("Desde"), findsOneWidget);
+      expect(find.text("Hasta"), findsOneWidget);
+      expect(find.text("15"), findsOneWidget);
+      expect(find.text("100"), findsOneWidget);
+      expect(find.text("Limpiar"), findsOneWidget);
+      expect(find.text("Aplicar"), findsOneWidget);
     });
   });
 
