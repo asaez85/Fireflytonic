@@ -1,6 +1,6 @@
 {
-  "version": "3.2.3-beta.3 (build 48)",
-  "versionCode": 483,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.3/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Correcciones y Mejoras\n- **Autenticación con Pangolin SSO en Clasificador IA**:\n  - Soporte de tokens de acceso de recurso Pangolin (`TokenID.Token` o `TokenID:Token`).\n  - Inyección automática de cabeceras HTTP `P-Access-Token-Id` y `P-Access-Token`, además de query param de respaldo `p_token`.\n  - Detección proactiva de respuestas HTML del proxy para mostrar advertencia clara de autenticación en lugar de excepción de formato.\n  - Texto de ayuda descriptivo en el formulario de configuración.\n\n---"
+  "version": "3.2.3-beta.4 (build 49)",
+  "versionCode": 493,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.4/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Correcciones y Mejoras\n- **Rendimiento y tiempos de espera en Clasificador IA**:\n  - Carga paralela concurrente de configuración, lista de revisión y categorías con `Future.wait`.\n  - Ampliado el timeout a 120s para endpoints pesados como `/batch/run` y `/api/review`.\n\n---"
 }
