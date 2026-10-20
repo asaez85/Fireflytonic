@@ -1,6 +1,6 @@
 {
-  "version": "3.2.3-beta.1 (build 46)",
-  "versionCode": 463,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.1/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Novedades y Mejoras\n- **Rango de fechas visible en Evolución (`lib/pages/home/evolution.dart`)**:\n  - Indicador con icono de calendario bajo los selectores de periodo que muestra el intervalo exacto aplicado.\n  - Rango de fechas visible en el encabezado de la tarjeta KPI de evolución patrimonial y flujo de caja.\n  - Acceso directo para editar el rango al tocar el indicador en modo personalizado.\n- **Búsqueda en notas de movimientos (`lib/pages/home/transactions`)**:\n  - El buscador de movimientos ahora consulta tanto título/descripción como las notas (`notes_contain:\"...\"`) en paralelo contra la API de Firefly III.\n  - Resultados unificados, deduplicados y ordenados cronológicamente sin perder paginación ni filtros.\n\n---"
+  "version": "3.2.3-beta.2 (build 47)",
+  "versionCode": 473,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.2/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Novedades y Mejoras\n- **Integración del Clasificador de IA (FireflyIII-AI-Categorizer)**:\n  - **Configuración opcional en Ajustes**: toggle para habilitar/deshabilitar, URL del servicio (`/api/config`), API key y comprobación de conectividad.\n  - **Acceso directo en Menú Lateral**: destino dinámico con icono `auto_awesome` si la integración está activada.\n  - **Vista de Gestión de IA (`lib/pages/ai_categorizer.dart`)**: panel con estado de salud, disparador de categorización batch y revisión interactiva de movimientos pendientes (`NEEDS_REVIEW`).\n  - **Clasificación individual bajo demanda (`lib/pages/transaction_consult.dart`)**: botón en la barra superior del detalle de movimiento para enviar la transacción al clasificador IA y recargar los datos actualizados.\n\n---"
 }
