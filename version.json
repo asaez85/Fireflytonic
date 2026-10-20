@@ -1,6 +1,6 @@
 {
-  "version": "3.2.3-beta.2 (build 47)",
-  "versionCode": 473,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.2/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Novedades y Mejoras\n- **Integración del Clasificador de IA (FireflyIII-AI-Categorizer)**:\n  - **Configuración opcional en Ajustes**: toggle para habilitar/deshabilitar, URL del servicio (`/api/config`), API key y comprobación de conectividad.\n  - **Acceso directo en Menú Lateral**: destino dinámico con icono `auto_awesome` si la integración está activada.\n  - **Vista de Gestión de IA (`lib/pages/ai_categorizer.dart`)**: panel con estado de salud, disparador de categorización batch y revisión interactiva de movimientos pendientes (`NEEDS_REVIEW`).\n  - **Clasificación individual bajo demanda (`lib/pages/transaction_consult.dart`)**: botón en la barra superior del detalle de movimiento para enviar la transacción al clasificador IA y recargar los datos actualizados.\n\n---"
+  "version": "3.2.3-beta.3 (build 48)",
+  "versionCode": 483,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.3/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Correcciones y Mejoras\n- **Autenticación con Pangolin SSO en Clasificador IA**:\n  - Soporte de tokens de acceso de recurso Pangolin (`TokenID.Token` o `TokenID:Token`).\n  - Inyección automática de cabeceras HTTP `P-Access-Token-Id` y `P-Access-Token`, además de query param de respaldo `p_token`.\n  - Detección proactiva de respuestas HTML del proxy para mostrar advertencia clara de autenticación en lugar de excepción de formato.\n  - Texto de ayuda descriptivo en el formulario de configuración.\n\n---"
 }
