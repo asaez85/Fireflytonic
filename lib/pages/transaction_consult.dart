@@ -12,6 +12,7 @@ import 'package:waterflyiii/theme.dart';
 import 'package:waterflyiii/timezonehandler.dart';
 import 'package:waterflyiii/widgets/ft_category_icon.dart';
 import 'package:waterflyiii/auth.dart';
+import 'package:waterflyiii/services/ai_categorizer.dart';
 
 class TransactionConsultPage extends StatefulWidget {
   final TransactionRead transaction;
@@ -151,6 +152,42 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
       setState(() {
         _isUpdating = false;
       });
+    }
+  }
+
+  Future<void> _classifyWithAI() async {
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    setState(() => _isUpdating = true);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    try {
+      final AICategorizerClient client = AICategorizerClient(
+        baseUrl: settings.aiCategorizerUrl,
+        apiKey: settings.aiCategorizerKey,
+      );
+      final AICategorizerBatchResponse resp = await client
+          .classifyTransactionById(_transaction.id);
+      if (!mounted) return;
+      if (resp.enqueued > 0) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Enviada al clasificador de IA')),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo encolar en el clasificador'),
+          ),
+        );
+      }
+      await _reloadTransaction();
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Error al consultar clasificador: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
     }
   }
 
@@ -758,6 +795,12 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
             },
           ),
           actions: <Widget>[
+            if (context.watch<SettingsProvider>().aiCategorizerEnabled)
+              IconButton(
+                icon: const Icon(Icons.auto_awesome),
+                tooltip: 'Clasificar con IA',
+                onPressed: _isUpdating ? null : _classifyWithAI,
+              ),
             IconButton(icon: const Icon(Icons.help_outline), onPressed: () {}),
             IconButton(
               icon: Icon(

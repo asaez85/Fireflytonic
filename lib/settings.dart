@@ -209,6 +209,9 @@ class SettingsProvider with ChangeNotifier {
   static const String settingsDashboardHidden = "DASHBOARD_HIDDEN";
   static const String settingTransactionDateFilter = "TX_DATE_FILTER";
   static const String settingHomePatrimonyPeriod = "HOME_PATRIMONY_PERIOD";
+  static const String settingAICategorizerEnabled = "AI_CATEGORIZER_ENABLED";
+  static const String settingAICategorizerUrl = "AI_CATEGORIZER_URL";
+  static const String settingAICategorizerKey = "AI_CATEGORIZER_KEY";
 
   bool get debug => _boolSettings[.debug];
   bool get lock => _boolSettings[.lock];
@@ -265,6 +268,15 @@ class SettingsProvider with ChangeNotifier {
   HomePatrimonyPeriod _homePatrimonyPeriod = HomePatrimonyPeriod.oneYear;
 
   HomePatrimonyPeriod get homePatrimonyPeriod => _homePatrimonyPeriod;
+
+  bool _aiCategorizerEnabled = false;
+  bool get aiCategorizerEnabled => _aiCategorizerEnabled;
+
+  String _aiCategorizerUrl = "http://127.0.0.1:3000";
+  String get aiCategorizerUrl => _aiCategorizerUrl;
+
+  String? _aiCategorizerKey;
+  String? get aiCategorizerKey => _aiCategorizerKey;
 
   Future<void> setHomePatrimonyPeriod(HomePatrimonyPeriod period) async {
     _homePatrimonyPeriod = period;
@@ -494,6 +506,13 @@ class SettingsProvider with ChangeNotifier {
             patrimonyPeriodIndex >= HomePatrimonyPeriod.values.length)
         ? HomePatrimonyPeriod.oneYear
         : HomePatrimonyPeriod.values[patrimonyPeriodIndex];
+
+    _aiCategorizerEnabled =
+        await prefs.getBool(settingAICategorizerEnabled) ?? false;
+    _aiCategorizerUrl =
+        await prefs.getString(settingAICategorizerUrl) ??
+        "http://127.0.0.1:3000";
+    _aiCategorizerKey = await prefs.getString(settingAICategorizerKey);
 
     _loaded = _loading = true;
     log.finest(() => "notify SettingsProvider->loadSettings()");
@@ -859,6 +878,50 @@ class SettingsProvider with ChangeNotifier {
     );
 
     log.finest(() => "notify SettingsProvider->setTransactionDateFilter()");
+    notifyListeners();
+  }
+
+  Future<void> setAICategorizerEnabled(bool enabled) async {
+    if (enabled == _aiCategorizerEnabled) {
+      return;
+    }
+
+    _aiCategorizerEnabled = enabled;
+    await SharedPreferencesAsync().setBool(
+      settingAICategorizerEnabled,
+      enabled,
+    );
+
+    log.finest(() => "notify SettingsProvider->setAICategorizerEnabled()");
+    notifyListeners();
+  }
+
+  Future<void> setAICategorizerUrl(String url) async {
+    if (url == _aiCategorizerUrl) {
+      return;
+    }
+
+    _aiCategorizerUrl = url;
+    await SharedPreferencesAsync().setString(settingAICategorizerUrl, url);
+
+    log.finest(() => "notify SettingsProvider->setAICategorizerUrl()");
+    notifyListeners();
+  }
+
+  Future<void> setAICategorizerKey(String? key) async {
+    if (key == _aiCategorizerKey) {
+      return;
+    }
+
+    _aiCategorizerKey = key;
+    final SharedPreferencesAsync prefs = SharedPreferencesAsync();
+    if (key == null || key.isEmpty) {
+      await prefs.remove(settingAICategorizerKey);
+    } else {
+      await prefs.setString(settingAICategorizerKey, key);
+    }
+
+    log.finest(() => "notify SettingsProvider->setAICategorizerKey()");
     notifyListeners();
   }
 

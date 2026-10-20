@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.3-beta.2] - 2026-10-20
+
+### Novedades y Mejoras
+- **Integración del Clasificador de IA (FireflyIII-AI-Categorizer)**:
+  - **Configuración opcional en Ajustes**: toggle para habilitar/deshabilitar, URL del servicio (`/api/config`), API key y comprobación de conectividad.
+  - **Acceso directo en Menú Lateral**: destino dinámico con icono `auto_awesome` si la integración está activada.
+  - **Vista de Gestión de IA (`lib/pages/ai_categorizer.dart`)**: panel con estado de salud, disparador de categorización batch y revisión interactiva de movimientos pendientes (`NEEDS_REVIEW`).
+  - **Clasificación individual bajo demanda (`lib/pages/transaction_consult.dart`)**: botón en la barra superior del detalle de movimiento para enviar la transacción al clasificador IA y recargar los datos actualizados.
+
+---
+
 ## [3.2.3-beta.1] - 2026-10-20
 
 ### Novedades y Mejoras
