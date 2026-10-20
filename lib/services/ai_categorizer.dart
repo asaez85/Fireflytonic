@@ -203,6 +203,13 @@ class AICategorizerClient {
     };
     if (apiKey != null && apiKey!.isNotEmpty) {
       headers[HttpHeaders.authorizationHeader] = "Bearer ${apiKey!}";
+      if (apiKey!.contains(".")) {
+        final List<String> parts = apiKey!.split(".");
+        if (parts.length == 2) {
+          headers["P-Access-Token-Id"] = parts[0];
+          headers["P-Access-Token"] = parts[1];
+        }
+      }
     }
     return headers;
   }
