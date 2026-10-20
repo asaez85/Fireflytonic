@@ -223,9 +223,7 @@ class _HomeSummaryState extends State<HomeSummary>
         final double bal =
             double.tryParse(a.attributes.currentBalance ?? '0') ?? 0.0;
         final double effectiveBal = isLiab
-            ? (isCreditLiability
-                ? bal.abs()
-                : (bal < 0 ? bal : -bal.abs()))
+            ? (isCreditLiability ? bal.abs() : (bal < 0 ? bal : -bal.abs()))
             : bal;
         if (incNetWorth && effectiveBal.abs() > 0.0001) {
           accounts.add(
@@ -252,7 +250,8 @@ class _HomeSummaryState extends State<HomeSummary>
           }
           final bool isLiability =
               item.type == 'liability' || liabilityNames.contains(label);
-          final bool isCreditLiability = isCreditLiabilityByName[label] ?? false;
+          final bool isCreditLiability =
+              isCreditLiabilityByName[label] ?? false;
           if (item.entries is Map<String, dynamic>) {
             final Map<String, dynamic> entries =
                 item.entries as Map<String, dynamic>;
@@ -407,8 +406,10 @@ class _HomeSummaryState extends State<HomeSummary>
                                 color: data.accounts[i].isCreditLiability
                                     ? FtColors.incomeOf(context)
                                     : (data.accounts[i].balance >= 0
-                                    ? Theme.of(context).colorScheme.onSurface
-                                    : FtColors.coralOf(context)),
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface
+                                          : FtColors.coralOf(context)),
                                 fontFeatures: const <FontFeature>[
                                   FontFeature.tabularFigures(),
                                 ],

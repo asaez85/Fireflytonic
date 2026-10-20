@@ -447,8 +447,10 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
       final bool isLiability =
           ds.type == 'liability' || liabilityNames.contains(label);
-      final bool isCreditLiability = isLiability && (acc?.isCreditLiability ?? false);
-      final bool isDebitLiability = isLiability && (acc?.isDebitLiability ?? false);
+      final bool isCreditLiability =
+          isLiability && (acc?.isCreditLiability ?? false);
+      final bool isDebitLiability =
+          isLiability && (acc?.isDebitLiability ?? false);
       final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
           ? (ds.entries as Map<String, dynamic>)
           : <String, dynamic>{};
@@ -976,7 +978,9 @@ class _HomeEvolutionState extends State<HomeEvolution>
                   const SizedBox(width: 6),
                   InkWell(
                     borderRadius: BorderRadius.circular(4),
-                    onTap: _preset == EvolutionPeriodPreset.custom ? _pickCustomRange : null,
+                    onTap: _preset == EvolutionPeriodPreset.custom
+                        ? _pickCustomRange
+                        : null,
                     child: Text(
                       rangeText,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1064,7 +1068,13 @@ class _HomeEvolutionState extends State<HomeEvolution>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         // Tarjeta KPI principal
-                        _buildKpiCard(context, data, currency, settings, rangeText),
+                        _buildKpiCard(
+                          context,
+                          data,
+                          currency,
+                          settings,
+                          rangeText,
+                        ),
                         const SizedBox(height: 16),
 
                         // Gráfico Principal SfCartesianChart
