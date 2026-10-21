@@ -310,8 +310,11 @@ class AICategorizerClient {
           .get(_uri("/api/review"), headers: _headers())
           .timeout(_longTimeout);
       _checkResponse(response);
-      final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
-      return json
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded == null || decoded is! List<dynamic>) {
+        return <AICategorizerReviewGroup>[];
+      }
+      return decoded
           .map(
             (dynamic e) =>
                 AICategorizerReviewGroup.fromJson(e as Map<String, dynamic>),
@@ -380,8 +383,11 @@ class AICategorizerClient {
           .get(_uri("/api/categories"), headers: _headers())
           .timeout(_timeout);
       _checkResponse(response);
-      final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
-      return json
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded == null || decoded is! List<dynamic>) {
+        return <AICategorizerCategory>[];
+      }
+      return decoded
           .map(
             (dynamic e) =>
                 AICategorizerCategory.fromJson(e as Map<String, dynamic>),

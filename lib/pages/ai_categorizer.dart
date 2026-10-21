@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:waterflyiii/pages/navigation.dart';
 import 'package:waterflyiii/pages/transaction/category_select.dart';
 import 'package:waterflyiii/services/ai_categorizer.dart';
 import 'package:waterflyiii/settings.dart';
@@ -43,6 +44,22 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _dataFuture ??= _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateNavElements();
+    });
+  }
+
+  void _updateNavElements() {
+    if (!mounted) return;
+    final NavPageElements nav = context.read<NavPageElements>();
+    nav.appBarTitle = const Text("Clasificador IA");
+    nav.appBarActions = <Widget>[
+      IconButton(
+        icon: const Icon(Icons.refresh),
+        tooltip: "Actualizar",
+        onPressed: _runningBatch ? null : _refresh,
+      ),
+    ];
   }
 
   Future<_AICategorizerPageData> _loadData() async {
@@ -76,7 +93,10 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
 
   Future<void> _runBatch() async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    setState(() => _runningBatch = true);
+    setState(() {
+      _runningBatch = true;
+    });
+    _updateNavElements();
     try {
       final AICategorizerBatchResponse resp = await _client.runBatch();
       if (!mounted) return;
@@ -100,7 +120,10 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
       );
     } finally {
       if (mounted) {
-        setState(() => _runningBatch = false);
+        setState(() {
+          _runningBatch = false;
+        });
+        _updateNavElements();
       }
     }
   }
@@ -118,7 +141,10 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
       return;
     }
 
-    setState(() => _runningBatch = true);
+    setState(() {
+      _runningBatch = true;
+    });
+    _updateNavElements();
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     try {
       for (final AICategorizerReviewTransaction t in group.transactions) {
@@ -145,7 +171,10 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
       );
     } finally {
       if (mounted) {
-        setState(() => _runningBatch = false);
+        setState(() {
+          _runningBatch = false;
+        });
+        _updateNavElements();
       }
     }
   }
@@ -168,18 +197,9 @@ class _AICategorizerPageState extends State<AICategorizerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Clasificador IA"),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: "Actualizar",
-            onPressed: _runningBatch ? null : _refresh,
-          ),
-        ],
-      ),
-      body: FutureBuilder<_AICategorizerPageData>(
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: FutureBuilder<_AICategorizerPageData>(
         future: _dataFuture,
         builder:
             (
