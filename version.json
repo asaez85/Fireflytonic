@@ -1,6 +1,6 @@
 {
-  "version": "3.2.3-beta.4 (build 49)",
-  "versionCode": 493,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.4/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Correcciones y Mejoras\n- **Rendimiento y tiempos de espera en Clasificador IA**:\n  - Carga paralela concurrente de configuración, lista de revisión y categorías con `Future.wait`.\n  - Ampliado el timeout a 120s para endpoints pesados como `/batch/run` y `/api/review`.\n\n---"
+  "version": "3.2.3-beta.5 (build 50)",
+  "versionCode": 503,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.5/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Correcciones y Mejoras\n- **Clasificador IA**:\n  - Corregido título duplicado en la barra superior al integrar acciones en la barra de navegación global (`NavPageElements`) y habilitado pull-to-refresh (`RefreshIndicator`).\n  - Manejo defensivo de respuestas `null` en `/api/review` y `/api/categories` para evitar error de cast de tipo cuando no hay movimientos pendientes.\n\n---"
 }
