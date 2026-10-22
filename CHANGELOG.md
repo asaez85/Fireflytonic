@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.3-beta.5] - 2026-10-22
+
+### Correcciones y Mejoras
+- **Clasificador IA**:
+  - Corregido título duplicado en la barra superior al integrar acciones en la barra de navegación global (`NavPageElements`) y habilitado pull-to-refresh (`RefreshIndicator`).
+  - Manejo defensivo de respuestas `null` en `/api/review` y `/api/categories` para evitar error de cast de tipo cuando no hay movimientos pendientes.
+
+---
+
 ## [3.2.3-beta.4] - 2026-10-20
 
 ### Correcciones y Mejoras
