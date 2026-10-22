@@ -179,6 +179,80 @@ class AICategorizerCategory {
   }
 }
 
+class AICategorizerJob {
+  AICategorizerJob({
+    required this.id,
+    required this.batchId,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.transactionId,
+    required this.destinationName,
+    required this.description,
+    required this.amount,
+    required this.outcome,
+    this.category,
+    required this.reason,
+    required this.source,
+    required this.error,
+  });
+
+  final String id;
+  final String batchId;
+  final String status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String transactionId;
+  final String destinationName;
+  final String description;
+  final double amount;
+  final String outcome;
+  final String? category;
+  final String reason;
+  final String source;
+  final String error;
+
+  factory AICategorizerJob.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDateTime(dynamic value) {
+      if (value == null) return null;
+      if (value is DateTime) return value;
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } on FormatException {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    double? parseAmount(dynamic value) {
+      if (value == null) return null;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    return AICategorizerJob(
+      id: json['id'] as String? ?? "",
+      batchId: json['batch_id'] as String? ?? "",
+      status: json['status'] as String? ?? "",
+      createdAt: parseDateTime(json['created_at']) ?? DateTime.now(),
+      updatedAt: parseDateTime(json['updated_at']) ?? DateTime.now(),
+      transactionId: json['transaction_id']?.toString() ?? "",
+      destinationName: json['destination_name'] as String? ?? "",
+      description: json['description'] as String? ?? "",
+      amount: parseAmount(json['amount']) ?? 0.0,
+      outcome: json['outcome'] as String? ?? "",
+      category: json['category'] as String?,
+      reason: json['reason'] as String? ?? "",
+      source: json['source'] as String? ?? "",
+      error: json['error'] as String? ?? "",
+    );
+  }
+}
+
 class AICategorizerClient {
   AICategorizerClient({required String baseUrl, this.apiKey})
     : _baseUrl = _cleanUrl(baseUrl);
@@ -397,6 +471,40 @@ class AICategorizerClient {
       throw AICategorizerException(
         "Tiempo de espera agotado al obtener categorías",
       );
+    } catch (e) {
+      throw AICategorizerException("Error de conexión: $e");
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<List<AICategorizerJob>> getJobs() async {
+    final http.Client client = http.Client();
+    try {
+      final http.Response response = await client
+          .get(_uri("/jobs"), headers: _headers())
+          .timeout(_longTimeout);
+      _checkResponse(response);
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded == null || decoded is! List<dynamic>) {
+        return <AICategorizerJob>[];
+      }
+      final List<AICategorizerJob> jobs = decoded
+          .map(
+            (dynamic e) => AICategorizerJob.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+      jobs.sort(
+        (AICategorizerJob a, AICategorizerJob b) =>
+            b.updatedAt.compareTo(a.updatedAt),
+      );
+      return jobs;
+    } on TimeoutException {
+      throw AICategorizerException(
+        "Tiempo de espera agotado al obtener trabajos",
+      );
+    } on FormatException catch (e) {
+      throw AICategorizerException("Respuesta inválida del clasificador: $e");
     } catch (e) {
       throw AICategorizerException("Error de conexión: $e");
     } finally {
