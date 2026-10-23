@@ -1,6 +1,6 @@
 {
-  "version": "3.3.1-beta.1 (build 53)",
-  "versionCode": 533,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.3.1-beta.1/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Nuevas Características\n- **Acceso al detalle y edición manual desde el Clasificador IA (`lib/pages/ai_categorizer.dart`)**:\n  - Las filas de transacciones pendientes de revisión ahora son táctiles (`InkWell`) e incluyen un icono de flecha (`Icons.chevron_right`).\n  - Al pulsar una transacción se consulta el detalle completo en Firefly III (`GET /v1/transactions/{id}`) con indicador de carga y manejo de errores mediante `SnackBar`.\n  - Se abre `TransactionConsultPage`, reutilizando el flujo nativo de visualización y edición de movimientos.\n  - Al volver de la pantalla de detalle con cambios, la lista de revisión del clasificador IA se refresca automáticamente para reflejar las modificaciones.\n\n---"
+  "version": "3.3.1-beta.2 (build 54)",
+  "versionCode": 543,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.3.1-beta.2/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Nuevas Características\n- **Acceso al detalle del movimiento desde los trabajos del Clasificador IA (`lib/pages/ai_categorizer.dart`)**:\n  - En la tarjeta de cada trabajo se añade un icono de acceso directo (`Icons.open_in_new`) cuando el trabajo está vinculado a una transacción; al pulsarlo se abre el detalle nativo del movimiento (`TransactionConsultPage`).\n  - En el diálogo de detalle del trabajo se añade un botón principal \"Ver movimiento\" (`FilledButton.icon`) que cierra el diálogo y navega al detalle de la transacción asociada.\n  - Ambos accesos reutilizan el método `_openTransactionById`, que consulta el movimiento completo en Firefly III (`GET /v1/transactions/{id}`) con loader y manejo de errores, y refresca la lista del clasificador si se realizan cambios."
 }
