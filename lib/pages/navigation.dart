@@ -7,6 +7,7 @@ import 'package:waterflyiii/auth.dart';
 import 'package:waterflyiii/generated/l10n/app_localizations.dart';
 import 'package:waterflyiii/layout.dart';
 import 'package:waterflyiii/pages/accounts.dart';
+import 'package:waterflyiii/pages/ai_categorizer.dart';
 import 'package:waterflyiii/pages/categories.dart';
 import 'package:waterflyiii/pages/home.dart';
 import 'package:waterflyiii/pages/piggybanks.dart';
@@ -94,15 +95,14 @@ class NavPage extends StatefulWidget {
 class NavPageState extends State<NavPage> with TickerProviderStateMixin {
   final Logger log = Logger("Pages.Navigation.Page");
 
-  late TabController _tabController;
   int screenIndex = 0;
   late List<NavDestination> navDestinations;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    navDestinations = <NavDestination>[
+  List<NavDestination> _buildNavDestinations(BuildContext context) {
+    final bool aiEnabled = context
+        .watch<SettingsProvider>()
+        .aiCategorizerEnabled;
+    final List<NavDestination> destinations = <NavDestination>[
       NavDestination(
         S.of(context).navigationMain,
         const HomePage(),
@@ -127,6 +127,13 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
         const Icon(Icons.savings_outlined),
         const Icon(Icons.savings),
       ),
+      if (aiEnabled)
+        const NavDestination(
+          "Clasificador IA",
+          AICategorizerPage(),
+          Icon(Icons.auto_awesome_outlined),
+          Icon(Icons.auto_awesome),
+        ),
       const NavDestination(
         "Importación bancaria",
         SettingsImporter(),
@@ -140,15 +147,7 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
         const Icon(Icons.settings),
       ),
     ];
-
-    _tabController = TabController(vsync: this, length: navDestinations.length);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-
-    super.dispose();
+    return destinations;
   }
 
   void navOnDestinationSelected(BuildContext context, int index) {
@@ -185,6 +184,7 @@ class NavPageState extends State<NavPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    navDestinations = _buildNavDestinations(context);
     final NavDestination currentPage = navDestinations[screenIndex];
     log.finest(() => "nav build(page: $screenIndex)");
 

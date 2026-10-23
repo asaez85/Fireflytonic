@@ -22,6 +22,7 @@ import 'package:waterflyiii/notificationlistener.dart';
 import 'package:waterflyiii/pages/settings/connection.dart';
 import 'package:waterflyiii/pages/settings/debug.dart';
 import 'package:waterflyiii/pages/settings/notifications.dart';
+import 'package:waterflyiii/pages/settings/ai_categorizer.dart';
 import 'package:waterflyiii/settings.dart';
 import 'package:waterflyiii/updater.dart';
 
@@ -48,7 +49,7 @@ class SettingsPageState extends State<SettingsPage>
       padding: const .symmetric(horizontal: 24),
       primary: false,
       children: <Widget>[
-        const _SettingsSectionHeader(title: "Apariencia y gráficos"),
+        const SettingsSectionHeader(title: "Apariencia y gráficos"),
         ListTile(
           title: Text(S.of(context).settingsLanguage),
           subtitle: Text(S.of(context).localeName),
@@ -128,7 +129,7 @@ class SettingsPageState extends State<SettingsPage>
           },
         ),
         const Divider(),
-        const _SettingsSectionHeader(title: "Servidor y seguridad"),
+        const SettingsSectionHeader(title: "Servidor y seguridad"),
         ListTile(
           title: Text(S.of(context).settingsServerConnection),
           subtitle: Text(
@@ -234,7 +235,7 @@ class SettingsPageState extends State<SettingsPage>
         ),
         if (!kIsWeb && Platform.isAndroid) ...<Widget>[
           const Divider(),
-          const _SettingsSectionHeader(title: "Notificaciones"),
+          const SettingsSectionHeader(title: "Notificaciones"),
           FutureBuilder<NotificationListenerStatus>(
             future: nlStatus(),
             builder:
@@ -292,8 +293,9 @@ class SettingsPageState extends State<SettingsPage>
                 },
           ),
         ],
+        const AICategorizerSettingsSection(),
         const Divider(),
-        const _SettingsSectionHeader(title: "Acerca de"),
+        const SettingsSectionHeader(title: "Acerca de"),
         FutureBuilder<PackageInfo>(
           future: PackageInfo.fromPlatform(),
           builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
@@ -591,8 +593,8 @@ class _UpdateSettingsDialogState extends State<UpdateSettingsDialog> {
   }
 }
 
-class _SettingsSectionHeader extends StatelessWidget {
-  const _SettingsSectionHeader({required this.title});
+class SettingsSectionHeader extends StatelessWidget {
+  const SettingsSectionHeader({super.key, required this.title});
   final String title;
 
   @override

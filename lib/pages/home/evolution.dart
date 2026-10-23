@@ -274,6 +274,19 @@ class _HomeEvolutionState extends State<HomeEvolution>
     }
   }
 
+  String _formatRangeLabel(DateTime start, DateTime end) {
+    final String locale = Localizations.localeOf(context).toString();
+    final DateFormat dy = DateFormat.yMMMd(locale);
+    if (start.year == end.year) {
+      if (start.month == end.month && start.day == end.day) {
+        return dy.format(start);
+      }
+      final DateFormat d = DateFormat.MMMd(locale);
+      return '${d.format(start)} – ${dy.format(end)}';
+    }
+    return '${dy.format(start)} – ${dy.format(end)}';
+  }
+
   String _fmt(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 
   Future<void> _refresh({bool forceReloadAccounts = false}) async {
@@ -434,8 +447,10 @@ class _HomeEvolutionState extends State<HomeEvolution>
 
       final bool isLiability =
           ds.type == 'liability' || liabilityNames.contains(label);
-      final bool isCreditLiability = isLiability && (acc?.isCreditLiability ?? false);
-      final bool isDebitLiability = isLiability && (acc?.isDebitLiability ?? false);
+      final bool isCreditLiability =
+          isLiability && (acc?.isCreditLiability ?? false);
+      final bool isDebitLiability =
+          isLiability && (acc?.isDebitLiability ?? false);
       final Map<String, dynamic> entries = (ds.entries is Map<String, dynamic>)
           ? (ds.entries as Map<String, dynamic>)
           : <String, dynamic>{};
@@ -888,6 +903,8 @@ class _HomeEvolutionState extends State<HomeEvolution>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final ({DateTime start, DateTime end}) range = _computeDateRange();
+    final String rangeText = _formatRangeLabel(range.start, range.end);
     final CurrencyRead currency = context
         .read<FireflyService>()
         .defaultCurrency;
@@ -948,7 +965,34 @@ class _HomeEvolutionState extends State<HomeEvolution>
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(4),
+                    onTap: _preset == EvolutionPeriodPreset.custom
+                        ? _pickCustomRange
+                        : null,
+                    child: Text(
+                      rangeText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
 
             // Selector de Modo (Patrimonio, Saldo, Flujo, Categorías)
             SegmentedButton<EvolutionViewMode>(
@@ -1024,7 +1068,13 @@ class _HomeEvolutionState extends State<HomeEvolution>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         // Tarjeta KPI principal
-                        _buildKpiCard(context, data, currency, settings),
+                        _buildKpiCard(
+                          context,
+                          data,
+                          currency,
+                          settings,
+                          rangeText,
+                        ),
                         const SizedBox(height: 16),
 
                         // Gráfico Principal SfCartesianChart
@@ -1063,6 +1113,7 @@ class _HomeEvolutionState extends State<HomeEvolution>
     _EvolutionData data,
     CurrencyRead currency,
     SettingsProvider settings,
+    String rangeText,
   ) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final String mainTitle = switch (_mode) {
@@ -1084,11 +1135,22 @@ class _HomeEvolutionState extends State<HomeEvolution>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              mainTitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  mainTitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  rangeText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 6),
             Row(

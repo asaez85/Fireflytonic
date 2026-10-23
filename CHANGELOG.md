@@ -2,6 +2,93 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.3.0] - 2026-10-23
+
+### Novedades y Clasificador IA
+- **Integración con FireflyIII-AI-Categorizer**:
+  - **Configuración opcional en Ajustes**: interruptor para activar/desactivar, URL del servicio (`/api/config`), API key y comprobación interactiva de conectividad.
+  - **Acceso rápido desde el Menú Lateral**: acceso directo con icono `auto_awesome` si la integración está activa.
+  - **Panel de Gestión de IA (`lib/pages/ai_categorizer.dart`)**: panel con estado de salud del servicio, disparador de categorización en lote y revisión interactiva de movimientos pendientes (`NEEDS_REVIEW`).
+  - **Clasificación individual bajo demanda (`lib/pages/transaction_consult.dart`)**: botón en la barra superior del detalle de movimiento para categorizar la transacción con IA y recargar los datos actualizados.
+  - **Monitorización de Trabajos en tiempo real**: pestaña de actividad reciente y trabajos en curso (`GET /jobs`) con visualización de estado (en curso, clasificado, revisión requerida, ignorado o error), motor utilizado (Jev, LLM, Historial), justificación IA y diagnósticos.
+  - **Autenticación con Pangolin SSO**: soporte de tokens de acceso de recurso Pangolin (`TokenID.Token` o `TokenID:Token`) con cabeceras `P-Access-Token-Id` y `P-Access-Token`, query param de respaldo y detección proactiva de respuestas HTML del proxy.
+  - **Rendimiento optimizado**: llamadas concurrentes en paralelo con `Future.wait`, timeouts ampliados a 120s en endpoints pesados y soporte de pull-to-refresh.
+
+### Mejoras en Visualización y Búsqueda
+- **Rango de fechas visible en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Indicador con icono de calendario bajo los selectores de periodo que muestra el intervalo exacto aplicado.
+  - Rango de fechas visible en el encabezado de la tarjeta KPI de evolución patrimonial y flujo de caja.
+  - Acceso directo para editar el rango al tocar el indicador en modo personalizado.
+- **Búsqueda en notas de movimientos (`lib/pages/home/transactions`)**:
+  - El buscador de movimientos ahora consulta tanto título/descripción como las notas (`notes_contain:"..."`) en paralelo contra la API de Firefly III.
+  - Resultados unificados, deduplicados y ordenados cronológicamente sin perder paginación ni filtros.
+
+---
+
+## [3.2.3-beta.6] - 2026-10-23
+
+### Nuevas Características y Mejoras
+- **Clasificador IA**:
+  - Pestaña de Trabajos recientes y en curso con monitorización en tiempo real (`GET /jobs`).
+  - Visualización del estado del trabajo (en curso, clasificado, revisión requerida, ignorado o error), motor/origen utilizado (Jev, LLM, Historial), importe y beneficiario.
+  - Diálogo de detalle extendido con la justificación/razón generada por la IA, parámetros y diagnóstico de errores.
+  - Sistema de navegación por pestañas (`TabBar` en `appBarBottom`) para alternar fácilmente entre movimientos pendientes y actividad reciente.
+
+---
+
+## [3.2.3-beta.5] - 2026-10-22
+
+### Correcciones y Mejoras
+- **Clasificador IA**:
+  - Corregido título duplicado en la barra superior al integrar acciones en la barra de navegación global (`NavPageElements`) y habilitado pull-to-refresh (`RefreshIndicator`).
+  - Manejo defensivo de respuestas `null` en `/api/review` y `/api/categories` para evitar error de cast de tipo cuando no hay movimientos pendientes.
+
+---
+
+## [3.2.3-beta.4] - 2026-10-20
+
+### Correcciones y Mejoras
+- **Rendimiento y tiempos de espera en Clasificador IA**:
+  - Carga paralela concurrente de configuración, lista de revisión y categorías con `Future.wait`.
+  - Ampliado el timeout a 120s para endpoints pesados como `/batch/run` y `/api/review`.
+
+---
+
+## [3.2.3-beta.3] - 2026-10-20
+
+### Correcciones y Mejoras
+- **Autenticación con Pangolin SSO en Clasificador IA**:
+  - Soporte de tokens de acceso de recurso Pangolin (`TokenID.Token` o `TokenID:Token`).
+  - Inyección automática de cabeceras HTTP `P-Access-Token-Id` y `P-Access-Token`, además de query param de respaldo `p_token`.
+  - Detección proactiva de respuestas HTML del proxy para mostrar advertencia clara de autenticación en lugar de excepción de formato.
+  - Texto de ayuda descriptivo en el formulario de configuración.
+
+---
+
+## [3.2.3-beta.2] - 2026-10-20
+
+### Novedades y Mejoras
+- **Integración del Clasificador de IA (FireflyIII-AI-Categorizer)**:
+  - **Configuración opcional en Ajustes**: toggle para habilitar/deshabilitar, URL del servicio (`/api/config`), API key y comprobación de conectividad.
+  - **Acceso directo en Menú Lateral**: destino dinámico con icono `auto_awesome` si la integración está activada.
+  - **Vista de Gestión de IA (`lib/pages/ai_categorizer.dart`)**: panel con estado de salud, disparador de categorización batch y revisión interactiva de movimientos pendientes (`NEEDS_REVIEW`).
+  - **Clasificación individual bajo demanda (`lib/pages/transaction_consult.dart`)**: botón en la barra superior del detalle de movimiento para enviar la transacción al clasificador IA y recargar los datos actualizados.
+
+---
+
+## [3.2.3-beta.1] - 2026-10-20
+
+### Novedades y Mejoras
+- **Rango de fechas visible en Evolución (`lib/pages/home/evolution.dart`)**:
+  - Indicador con icono de calendario bajo los selectores de periodo que muestra el intervalo exacto aplicado.
+  - Rango de fechas visible en el encabezado de la tarjeta KPI de evolución patrimonial y flujo de caja.
+  - Acceso directo para editar el rango al tocar el indicador en modo personalizado.
+- **Búsqueda en notas de movimientos (`lib/pages/home/transactions`)**:
+  - El buscador de movimientos ahora consulta tanto título/descripción como las notas (`notes_contain:"..."`) en paralelo contra la API de Firefly III.
+  - Resultados unificados, deduplicados y ordenados cronológicamente sin perder paginación ni filtros.
+
+---
+
 ## [3.2.2] - 2026-10-20
 
 ### Novedades y Mejoras

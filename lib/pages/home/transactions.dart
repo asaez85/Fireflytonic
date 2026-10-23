@@ -743,71 +743,149 @@ class HomeTransactionsState extends State<HomeTransactions>
                 : DateFormat('yyyy-MM-dd', 'en_US').format(now),
           );
         } else if (_filters.hasFilters || hasOtherFilters) {
-          String query = _filters.text ?? "";
+          final String queryText = (_filters.text ?? "").trim();
+
+          final List<String> baseFilterParts = <String>[];
           if (_filters.accounts.isNotEmpty) {
             final String accountIds = _filters.accounts
                 .map((AccountRead a) => a.id)
                 .join(",");
-            query = "account_id:$accountIds $query";
+            baseFilterParts.add("account_id:$accountIds");
           } else if (_filters.account != null) {
-            query = "account_id:${_filters.account!.id} $query";
+            baseFilterParts.add("account_id:${_filters.account!.id}");
           }
           if (_segment == 1) {
-            query = "type:withdrawal $query";
+            baseFilterParts.add("type:withdrawal");
           } else if (_segment == 2) {
-            query = "type:deposit $query";
+            baseFilterParts.add("type:deposit");
           } else if (_segment == 3) {
-            query = "type:transfer $query";
+            baseFilterParts.add("type:transfer");
           }
           if (_filters.currency != null) {
-            query = "currency_is:${_filters.currency!.attributes.code} $query";
+            baseFilterParts.add(
+              "currency_is:${_filters.currency!.attributes.code}",
+            );
           }
           if (_filters.categories.isNotEmpty) {
             if (_filters.categories.length == 1) {
-              query =
-                  "category_is:\"${_filters.categories.first.attributes.name}\" $query";
+              baseFilterParts.add(
+                "category_is:\"${_filters.categories.first.attributes.name}\"",
+              );
             }
           } else if (_filters.category != null) {
-            query = (_filters.category!.id == "-1")
-                ? "has_no_category:true $query"
-                : "category_is:\"${_filters.category!.attributes.name}\" $query";
+            baseFilterParts.add(
+              (_filters.category!.id == "-1")
+                  ? "has_no_category:true"
+                  : "category_is:\"${_filters.category!.attributes.name}\"",
+            );
           }
           if (_filters.budget != null) {
-            query = (_filters.budget!.id == "-1")
-                ? "has_no_budget:true $query"
-                : "budget_is:\"${_filters.budget!.attributes.name}\" $query";
+            baseFilterParts.add(
+              (_filters.budget!.id == "-1")
+                  ? "has_no_budget:true"
+                  : "budget_is:\"${_filters.budget!.attributes.name}\"",
+            );
           }
           if (_filters.bill != null) {
-            query = (_filters.bill!.id == "-1")
-                ? "has_no_bill:true $query"
-                : "bill_is:\"${_filters.bill!.attributes.name}\" $query";
+            baseFilterParts.add(
+              (_filters.bill!.id == "-1")
+                  ? "has_no_bill:true"
+                  : "bill_is:\"${_filters.bill!.attributes.name}\"",
+            );
           }
           if (_filters.tags != null) {
             for (String tag in _filters.tags!.tags) {
-              query = "tag_is:\"$tag\" $query";
+              baseFilterParts.add("tag_is:\"$tag\"");
             }
           }
           final DateTime effectiveStart = _filters.start ?? startDate;
-          query =
-              "date_after:${DateFormat('yyyy-MM-dd', 'en_US').format(effectiveStart)} $query";
+          baseFilterParts.add(
+            "date_after:${DateFormat('yyyy-MM-dd', 'en_US').format(effectiveStart)}",
+          );
           if (_filters.end != null) {
-            query =
-                "date_before:${DateFormat('yyyy-MM-dd', 'en_US').format(_filters.end!)} $query";
+            baseFilterParts.add(
+              "date_before:${DateFormat('yyyy-MM-dd', 'en_US').format(_filters.end!)}",
+            );
           } else if (!settings.showFutureTXs) {
-            query = "date_before:today $query";
+            baseFilterParts.add("date_before:today");
           }
           if (_filters.minAmount != null) {
-            query = "more:${_formatAmount(_filters.minAmount!)} $query";
+            baseFilterParts.add("more:${_formatAmount(_filters.minAmount!)}");
           }
           if (_filters.maxAmount != null) {
-            query = "less:${_formatAmount(_filters.maxAmount!)} $query";
+            baseFilterParts.add("less:${_formatAmount(_filters.maxAmount!)}");
           }
-          log.fine(() => "Search query: $query");
-          stockResponse = await stock.getSearch(
-            query: query,
-            page: pageKey,
-            limit: _numberOfPostsPerRequest,
-          );
+
+          final String baseFilterQuery = baseFilterParts.join(" ");
+
+          if (queryText.isNotEmpty) {
+            final String escapedQueryText = queryText.replaceAll('"', r'\"');
+            final String standardQuery = baseFilterQuery.isNotEmpty
+                ? "$baseFilterQuery $queryText"
+                : queryText;
+            final String notesQuery = baseFilterQuery.isNotEmpty
+                ? '$baseFilterQuery notes_contain:"$escapedQueryText"'
+                : 'notes_contain:"$escapedQueryText"';
+
+            Future<TransStockRead?> safeSearch(String q) async {
+              try {
+                return await stock.getSearch(
+                  query: q,
+                  page: pageKey,
+                  limit: _numberOfPostsPerRequest,
+                );
+              } catch (e) {
+                log.warning("Search failed for query $q: $e");
+                return null;
+              }
+            }
+
+            final List<TransStockRead?> responses = await Future.wait(
+              <Future<TransStockRead?>>[
+                safeSearch(standardQuery),
+                safeSearch(notesQuery),
+              ],
+            );
+
+            final Set<String> seenIds = <String>{};
+            final List<TransactionRead> merged = <TransactionRead>[];
+            for (final TransStockRead? resp in responses) {
+              if (resp == null) continue;
+              for (final TransactionRead tx in resp.data) {
+                if (seenIds.add(tx.id)) {
+                  merged.add(tx);
+                }
+              }
+            }
+            merged.sort((TransactionRead a, TransactionRead b) {
+              final DateTime da = a.attributes.transactions.first.date;
+              final DateTime db = b.attributes.transactions.first.date;
+              return db.compareTo(da);
+            });
+
+            // Use the most generous pagination so we don't truncate notes-only
+            // pages prematurely.
+            Meta$Pagination? mergedPagination;
+            for (final TransStockRead? resp in responses) {
+              if (resp?.pagination == null) continue;
+              if (mergedPagination == null) {
+                mergedPagination = resp!.pagination;
+              } else if ((resp!.pagination!.totalPages ?? 0) >
+                  (mergedPagination.totalPages ?? 0)) {
+                mergedPagination = resp.pagination;
+              }
+            }
+
+            stockResponse = TransStockRead(merged, mergedPagination);
+          } else {
+            log.fine(() => "Search query: $baseFilterQuery");
+            stockResponse = await stock.getSearch(
+              query: baseFilterQuery,
+              page: pageKey,
+              limit: _numberOfPostsPerRequest,
+            );
+          }
+
           if (_filters.categories.length > 1) {
             final Set<String> catNames = _filters.categories
                 .map((CategoryRead c) => c.attributes.name.toLowerCase())
