@@ -1,6 +1,6 @@
 {
-  "version": "3.2.3-beta.5 (build 50)",
-  "versionCode": 503,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.5/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Correcciones y Mejoras\n- **Clasificador IA**:\n  - Corregido título duplicado en la barra superior al integrar acciones en la barra de navegación global (`NavPageElements`) y habilitado pull-to-refresh (`RefreshIndicator`).\n  - Manejo defensivo de respuestas `null` en `/api/review` y `/api/categories` para evitar error de cast de tipo cuando no hay movimientos pendientes.\n\n---"
+  "version": "3.2.3-beta.6 (build 51)",
+  "versionCode": 513,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.2.3-beta.6/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Nuevas Características y Mejoras\n- **Clasificador IA**:\n  - Pestaña de Trabajos recientes y en curso con monitorización en tiempo real (`GET /jobs`).\n  - Visualización del estado del trabajo (en curso, clasificado, revisión requerida, ignorado o error), motor/origen utilizado (Jev, LLM, Historial), importe y beneficiario.\n  - Diálogo de detalle extendido con la justificación/razón generada por la IA, parámetros y diagnóstico de errores.\n  - Sistema de navegación por pestañas (`TabBar` en `appBarBottom`) para alternar fácilmente entre movimientos pendientes y actividad reciente.\n\n---"
 }
