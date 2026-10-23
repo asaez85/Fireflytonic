@@ -1,9 +1,15 @@
+import 'dart:async';
+
+import 'package:chopper/chopper.dart' show Response;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:waterflyiii/auth.dart';
+import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/pages/navigation.dart';
 import 'package:waterflyiii/pages/transaction/category_select.dart';
+import 'package:waterflyiii/pages/transaction_consult.dart';
 import 'package:waterflyiii/services/ai_categorizer.dart';
 import 'package:waterflyiii/settings.dart';
 
@@ -873,7 +879,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
             const SizedBox(height: 8),
             ...group.transactions.map(
               (AICategorizerReviewTransaction t) =>
-                  _buildReviewTransactionRow(t),
+                  _buildReviewTransactionRow(context, t),
             ),
             const SizedBox(height: 12),
             Row(
@@ -910,30 +916,113 @@ class _AICategorizerPageState extends State<AICategorizerPage>
     );
   }
 
-  Widget _buildReviewTransactionRow(AICategorizerReviewTransaction t) {
+  Widget _buildReviewTransactionRow(
+    BuildContext context,
+    AICategorizerReviewTransaction t,
+  ) {
     final double? amount = double.tryParse(t.amount);
     final String amountText = amount != null
         ? NumberFormat.currency(symbol: "", decimalDigits: 2).format(amount)
         : t.amount;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              t.date.isNotEmpty ? t.date : "Movimiento ${t.id}",
-              style: Theme.of(context).textTheme.bodySmall,
+    return InkWell(
+      onTap: () => _openTransaction(context, t),
+      borderRadius: BorderRadius.circular(8.0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                t.date.isNotEmpty ? t.date : "Movimiento ${t.id}",
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
-          ),
-          Text(
-            amountText,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-        ],
+            Text(
+              amountText,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _openTransaction(
+    BuildContext context,
+    AICategorizerReviewTransaction t,
+  ) async {
+    final BuildContext rootContext = context;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(rootContext);
+    bool loaderOpen = true;
+
+    unawaited(
+      showDialog(
+        context: rootContext,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) => const PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Row(
+              children: <Widget>[
+                CircularProgressIndicator.adaptive(),
+                SizedBox(width: 16),
+                Text("Cargando movimiento..."),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final FireflyIii api = rootContext.read<FireflyService>().api;
+      final Response<TransactionSingle> response = await api
+          .v1TransactionsIdGet(id: t.id);
+
+      if (loaderOpen) {
+        loaderOpen = false;
+        if (rootContext.mounted) {
+          Navigator.of(rootContext).pop();
+        }
+      }
+
+      if (!rootContext.mounted) {
+        return;
+      }
+      apiThrowErrorIfEmpty(response, rootContext);
+      final TransactionRead transaction = response.body!.data;
+
+      final dynamic result = await Navigator.of(rootContext).push(
+        MaterialPageRoute<dynamic>(
+          builder: (BuildContext context) =>
+              TransactionConsultPage(transaction: transaction),
+        ),
+      );
+
+      if (result == true && mounted) {
+        await _refresh();
+      }
+    } catch (e) {
+      if (loaderOpen) {
+        loaderOpen = false;
+        if (rootContext.mounted) {
+          Navigator.of(rootContext).pop();
+        }
+      }
+      if (rootContext.mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text("Error al cargar el movimiento: $e")),
+        );
+      }
+    }
   }
 
   Color _outcomeColor(String outcome) {

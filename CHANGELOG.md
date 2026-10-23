@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.3.1-beta.1] - 2026-10-23
+
+### Nuevas Características
+- **Acceso al detalle y edición manual desde el Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - Las filas de transacciones pendientes de revisión ahora son táctiles (`InkWell`) e incluyen un icono de flecha (`Icons.chevron_right`).
+  - Al pulsar una transacción se consulta el detalle completo en Firefly III (`GET /v1/transactions/{id}`) con indicador de carga y manejo de errores mediante `SnackBar`.
+  - Se abre `TransactionConsultPage`, reutilizando el flujo nativo de visualización y edición de movimientos.
+  - Al volver de la pantalla de detalle con cambios, la lista de revisión del clasificador IA se refresca automáticamente para reflejar las modificaciones.
+
+---
+
 ## [3.3.0] - 2026-10-23
 
 ### Novedades y Clasificador IA
