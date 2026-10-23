@@ -3,7 +3,7 @@ description: Fireflytonic, a mobile client for Firefly III inspired by Fintonic
 publish_to: 'none'
 
 
-version: 3.2.3-beta.5+99
+version: 3.2.3-beta.6+100
 
 environment:
   sdk: '>=3.10.0 <4.0.0'

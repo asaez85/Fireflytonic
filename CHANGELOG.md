@@ -2,6 +2,17 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.2.3-beta.6] - 2026-10-23
+
+### Nuevas Características y Mejoras
+- **Clasificador IA**:
+  - Pestaña de Trabajos recientes y en curso con monitorización en tiempo real (`GET /jobs`).
+  - Visualización del estado del trabajo (en curso, clasificado, revisión requerida, ignorado o error), motor/origen utilizado (Jev, LLM, Historial), importe y beneficiario.
+  - Diálogo de detalle extendido con la justificación/razón generada por la IA, parámetros y diagnóstico de errores.
+  - Sistema de navegación por pestañas (`TabBar` en `appBarBottom`) para alternar fácilmente entre movimientos pendientes y actividad reciente.
+
+---
+
 ## [3.2.3-beta.5] - 2026-10-22
 
 ### Correcciones y Mejoras
