@@ -2,6 +2,15 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.3.1-beta.3] - 2026-10-23
+
+### Correcciones y Mejoras
+- **Selector de vistas del Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - Corregida la altura y el padding de las pestañas *Pendientes* y *Trabajos* envolviendo el contenido en widgets `Tab`, restaurando la altura estándar de Material (`kTabHeight`) y evitando que el selector se vea aplastado o desalineado.
+- **Mayor visibilidad del destinatario asignado por el Clasificador IA**:
+  - En los movimientos pendientes de revisión, el destinatario sugerido/asignado se muestra ahora con un icono `storefront` y la etiqueta "Destinatario: ...", evitando duplicados cuando coincide con la descripción y diferenciándolo claramente de la categoría sugerida.
+  - En la tarjeta y el diálogo de detalle de cada trabajo, el destinatario aparece destacado con icono y etiqueta, y el campo del diálogo se renombra a "Destinatario" para mayor claridad.
+
 ## [3.3.1-beta.2] - 2026-10-23
 
 ### Nuevas Características

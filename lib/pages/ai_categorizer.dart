@@ -103,14 +103,12 @@ class _AICategorizerPageState extends State<AICategorizerPage>
   }
 
   Widget _buildTab(String label, int count) {
-    if (count > 0) {
-      return Badge(
-        isLabelVisible: true,
-        label: Text("$count"),
-        child: Text(label),
-      );
-    }
-    return Text(label);
+    final Widget text = Text(label);
+    return Tab(
+      child: count > 0
+          ? Badge(isLabelVisible: true, label: Text("$count"), child: text)
+          : text,
+    );
   }
 
   Future<_AICategorizerPageData> _loadData() async {
@@ -454,12 +452,24 @@ class _AICategorizerPageState extends State<AICategorizerPage>
                 ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (job.destinationName.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 4),
-                Text(
-                  job.destinationName,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.storefront,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        "Destinatario: ${job.destinationName}",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               const SizedBox(height: 8),
@@ -611,7 +621,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
                 _buildDetailRow("Origen", _jobSourceLabel(job.source)),
                 _buildDetailRow("Transacción", job.transactionId),
                 _buildDetailRow("Descripción", job.description),
-                _buildDetailRow("Destino", job.destinationName),
+                _buildDetailRow("Destinatario", job.destinationName),
                 _buildDetailRow(
                   "Importe",
                   NumberFormat.currency(
@@ -852,21 +862,35 @@ class _AICategorizerPageState extends State<AICategorizerPage>
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              group.description.isNotEmpty
-                  ? group.description
-                  : group.destinationName,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            if (group.destinationName.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 4),
+            if (group.description.isNotEmpty &&
+                group.description != group.destinationName)
               Text(
-                group.destinationName,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                group.description,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            if (group.destinationName.isNotEmpty) ...<Widget>[
+              if (group.description.isNotEmpty &&
+                  group.description != group.destinationName)
+                const SizedBox(height: 4),
+              Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.storefront,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      "Destinatario: ${group.destinationName}",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
             if (canConfirm) ...<Widget>[
