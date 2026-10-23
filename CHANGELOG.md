@@ -2,6 +2,14 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.3.1-beta.2] - 2026-10-23
+
+### Nuevas Características
+- **Acceso al detalle del movimiento desde los trabajos del Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - En la tarjeta de cada trabajo se añade un icono de acceso directo (`Icons.open_in_new`) cuando el trabajo está vinculado a una transacción; al pulsarlo se abre el detalle nativo del movimiento (`TransactionConsultPage`).
+  - En el diálogo de detalle del trabajo se añade un botón principal "Ver movimiento" (`FilledButton.icon`) que cierra el diálogo y navega al detalle de la transacción asociada.
+  - Ambos accesos reutilizan el método `_openTransactionById`, que consulta el movimiento completo en Firefly III (`GET /v1/transactions/{id}`) con loader y manejo de errores, y refresca la lista del clasificador si se realizan cambios.
+
 ## [3.3.1-beta.1] - 2026-10-23
 
 ### Nuevas Características

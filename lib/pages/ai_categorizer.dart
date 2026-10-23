@@ -425,6 +425,13 @@ class _AICategorizerPageState extends State<AICategorizerPage>
                 children: <Widget>[
                   _buildJobStatusChip(context, job),
                   const Spacer(),
+                  if (job.transactionId.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.open_in_new),
+                      tooltip: "Ver movimiento",
+                      onPressed: () =>
+                          _openTransactionById(context, job.transactionId),
+                    ),
                   if (job.source.isNotEmpty) ...<Widget>[
                     Chip(
                       label: Text(_jobSourceLabel(job.source)),
@@ -586,7 +593,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
   ) async {
     await showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text("Detalle del trabajo"),
           content: SingleChildScrollView(
@@ -637,9 +644,18 @@ class _AICategorizerPageState extends State<AICategorizerPage>
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Cerrar"),
             ),
+            if (job.transactionId.isNotEmpty)
+              FilledButton.icon(
+                icon: const Icon(Icons.receipt_long),
+                label: const Text("Ver movimiento"),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _openTransactionById(context, job.transactionId);
+                },
+              ),
           ],
         );
       },
@@ -955,9 +971,9 @@ class _AICategorizerPageState extends State<AICategorizerPage>
     );
   }
 
-  Future<void> _openTransaction(
+  Future<void> _openTransactionById(
     BuildContext context,
-    AICategorizerReviewTransaction t,
+    String transactionId,
   ) async {
     final BuildContext rootContext = context;
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(rootContext);
@@ -985,7 +1001,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
     try {
       final FireflyIii api = rootContext.read<FireflyService>().api;
       final Response<TransactionSingle> response = await api
-          .v1TransactionsIdGet(id: t.id);
+          .v1TransactionsIdGet(id: transactionId);
 
       if (loaderOpen) {
         loaderOpen = false;
@@ -1024,6 +1040,11 @@ class _AICategorizerPageState extends State<AICategorizerPage>
       }
     }
   }
+
+  Future<void> _openTransaction(
+    BuildContext context,
+    AICategorizerReviewTransaction t,
+  ) => _openTransactionById(context, t.id);
 
   Color _outcomeColor(String outcome) {
     final ThemeData theme = Theme.of(context);
