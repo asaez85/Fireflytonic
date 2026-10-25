@@ -1,9 +1,15 @@
+import 'dart:async';
+
+import 'package:chopper/chopper.dart' show Response;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:waterflyiii/auth.dart';
+import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/pages/navigation.dart';
 import 'package:waterflyiii/pages/transaction/category_select.dart';
+import 'package:waterflyiii/pages/transaction_consult.dart';
 import 'package:waterflyiii/services/ai_categorizer.dart';
 import 'package:waterflyiii/settings.dart';
 
@@ -97,14 +103,12 @@ class _AICategorizerPageState extends State<AICategorizerPage>
   }
 
   Widget _buildTab(String label, int count) {
-    if (count > 0) {
-      return Badge(
-        isLabelVisible: true,
-        label: Text("$count"),
-        child: Text(label),
-      );
-    }
-    return Text(label);
+    final Widget text = Text(label);
+    return Tab(
+      child: count > 0
+          ? Badge(isLabelVisible: true, label: Text("$count"), child: text)
+          : text,
+    );
   }
 
   Future<_AICategorizerPageData> _loadData() async {
@@ -419,6 +423,13 @@ class _AICategorizerPageState extends State<AICategorizerPage>
                 children: <Widget>[
                   _buildJobStatusChip(context, job),
                   const Spacer(),
+                  if (job.transactionId.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.open_in_new),
+                      tooltip: "Ver movimiento",
+                      onPressed: () =>
+                          _openTransactionById(context, job.transactionId),
+                    ),
                   if (job.source.isNotEmpty) ...<Widget>[
                     Chip(
                       label: Text(_jobSourceLabel(job.source)),
@@ -441,12 +452,24 @@ class _AICategorizerPageState extends State<AICategorizerPage>
                 ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (job.destinationName.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 4),
-                Text(
-                  job.destinationName,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.storefront,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        "Destinatario: ${job.destinationName}",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               const SizedBox(height: 8),
@@ -580,7 +603,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
   ) async {
     await showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text("Detalle del trabajo"),
           content: SingleChildScrollView(
@@ -598,7 +621,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
                 _buildDetailRow("Origen", _jobSourceLabel(job.source)),
                 _buildDetailRow("Transacción", job.transactionId),
                 _buildDetailRow("Descripción", job.description),
-                _buildDetailRow("Destino", job.destinationName),
+                _buildDetailRow("Destinatario", job.destinationName),
                 _buildDetailRow(
                   "Importe",
                   NumberFormat.currency(
@@ -631,9 +654,18 @@ class _AICategorizerPageState extends State<AICategorizerPage>
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Cerrar"),
             ),
+            if (job.transactionId.isNotEmpty)
+              FilledButton.icon(
+                icon: const Icon(Icons.receipt_long),
+                label: const Text("Ver movimiento"),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _openTransactionById(context, job.transactionId);
+                },
+              ),
           ],
         );
       },
@@ -830,21 +862,35 @@ class _AICategorizerPageState extends State<AICategorizerPage>
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              group.description.isNotEmpty
-                  ? group.description
-                  : group.destinationName,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            if (group.destinationName.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 4),
+            if (group.description.isNotEmpty &&
+                group.description != group.destinationName)
               Text(
-                group.destinationName,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                group.description,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            if (group.destinationName.isNotEmpty) ...<Widget>[
+              if (group.description.isNotEmpty &&
+                  group.description != group.destinationName)
+                const SizedBox(height: 4),
+              Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.storefront,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      "Destinatario: ${group.destinationName}",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
             if (canConfirm) ...<Widget>[
@@ -873,7 +919,7 @@ class _AICategorizerPageState extends State<AICategorizerPage>
             const SizedBox(height: 8),
             ...group.transactions.map(
               (AICategorizerReviewTransaction t) =>
-                  _buildReviewTransactionRow(t),
+                  _buildReviewTransactionRow(context, t),
             ),
             const SizedBox(height: 12),
             Row(
@@ -910,31 +956,119 @@ class _AICategorizerPageState extends State<AICategorizerPage>
     );
   }
 
-  Widget _buildReviewTransactionRow(AICategorizerReviewTransaction t) {
+  Widget _buildReviewTransactionRow(
+    BuildContext context,
+    AICategorizerReviewTransaction t,
+  ) {
     final double? amount = double.tryParse(t.amount);
     final String amountText = amount != null
         ? NumberFormat.currency(symbol: "", decimalDigits: 2).format(amount)
         : t.amount;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              t.date.isNotEmpty ? t.date : "Movimiento ${t.id}",
-              style: Theme.of(context).textTheme.bodySmall,
+    return InkWell(
+      onTap: () => _openTransaction(context, t),
+      borderRadius: BorderRadius.circular(8.0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                t.date.isNotEmpty ? t.date : "Movimiento ${t.id}",
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
-          ),
-          Text(
-            amountText,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-        ],
+            Text(
+              amountText,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  Future<void> _openTransactionById(
+    BuildContext context,
+    String transactionId,
+  ) async {
+    final BuildContext rootContext = context;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(rootContext);
+    bool loaderOpen = true;
+
+    unawaited(
+      showDialog(
+        context: rootContext,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) => const PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Row(
+              children: <Widget>[
+                CircularProgressIndicator.adaptive(),
+                SizedBox(width: 16),
+                Text("Cargando movimiento..."),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final FireflyIii api = rootContext.read<FireflyService>().api;
+      final Response<TransactionSingle> response = await api
+          .v1TransactionsIdGet(id: transactionId);
+
+      if (loaderOpen) {
+        loaderOpen = false;
+        if (rootContext.mounted) {
+          Navigator.of(rootContext).pop();
+        }
+      }
+
+      if (!rootContext.mounted) {
+        return;
+      }
+      apiThrowErrorIfEmpty(response, rootContext);
+      final TransactionRead transaction = response.body!.data;
+
+      final dynamic result = await Navigator.of(rootContext).push(
+        MaterialPageRoute<dynamic>(
+          builder: (BuildContext context) =>
+              TransactionConsultPage(transaction: transaction),
+        ),
+      );
+
+      if (result == true && mounted) {
+        await _refresh();
+      }
+    } catch (e) {
+      if (loaderOpen) {
+        loaderOpen = false;
+        if (rootContext.mounted) {
+          Navigator.of(rootContext).pop();
+        }
+      }
+      if (rootContext.mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text("Error al cargar el movimiento: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _openTransaction(
+    BuildContext context,
+    AICategorizerReviewTransaction t,
+  ) => _openTransactionById(context, t.id);
 
   Color _outcomeColor(String outcome) {
     final ThemeData theme = Theme.of(context);

@@ -1932,6 +1932,38 @@ class _TransactionPageState extends State<TransactionPage>
 
     childs.add(const SizedBox(height: 16));
 
+    // Budget (for withdrawals)
+    if (_budgetTextControllers.isNotEmpty && _transactionType == .withdrawal) {
+      childs.add(
+        Row(
+          children: <Widget>[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.secondary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.pie_chart_outline,
+                color: Theme.of(context).colorScheme.secondary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TransactionBudget(
+                textController: _budgetTextControllers[0],
+                focusNode: _budgetFocusNodes[0],
+              ),
+            ),
+          ],
+        ),
+      );
+      childs.add(const SizedBox(height: 16));
+    }
+
     // Tags (editable chips)
     if (_tags.isNotEmpty && _tagsTextControllers.isNotEmpty) {
       childs.add(

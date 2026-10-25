@@ -6,6 +6,7 @@ import 'package:waterflyiii/extensions.dart';
 import 'package:waterflyiii/generated/l10n/app_localizations.dart';
 import 'package:waterflyiii/generated/swagger_fireflyiii_api/firefly_iii.swagger.dart';
 import 'package:waterflyiii/pages/transaction.dart';
+import 'package:waterflyiii/pages/transaction/budget_select.dart';
 import 'package:waterflyiii/pages/transaction/category_select.dart';
 import 'package:waterflyiii/settings.dart';
 import 'package:waterflyiii/theme.dart';
@@ -129,6 +130,79 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     }
   }
 
+  Future<void> _updateBudget(String? newBudgetName, {int? splitIndex}) async {
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      final FireflyIii api = context.read<FireflyService>().api;
+      final String id = _transaction.id;
+
+      final List<TransactionSplitUpdate> txS = <TransactionSplitUpdate>[];
+      for (int i = 0; i < _transaction.attributes.transactions.length; i++) {
+        final TransactionSplit oldSplit =
+            _transaction.attributes.transactions[i];
+
+        final String budget = (splitIndex == null || splitIndex == i)
+            ? (newBudgetName ?? "")
+            : (oldSplit.budgetName ?? "");
+
+        final TransactionSplitUpdate txSs = TransactionSplitUpdate(
+          amount: oldSplit.amount,
+          billId: oldSplit.billId ?? "0",
+          budgetName: budget,
+          categoryName: oldSplit.categoryName ?? "",
+          date: oldSplit.date,
+          description: oldSplit.description,
+          destinationName: oldSplit.destinationName ?? "",
+          foreignAmount: oldSplit.foreignCurrencyId != null
+              ? oldSplit.foreignAmount ?? "0"
+              : "0",
+          foreignCurrencyId: oldSplit.foreignCurrencyId,
+          notes: oldSplit.notes ?? "",
+          order: i,
+          sourceName: oldSplit.sourceName ?? "",
+          tags: oldSplit.tags ?? <String>[],
+          transactionJournalId: oldSplit.transactionJournalId ?? "0",
+          type: oldSplit.type,
+          reconciled: oldSplit.reconciled ?? false,
+        );
+
+        txS.add(_txFilterSameFields(txSs, oldSplit));
+      }
+
+      final TransactionUpdate txUpdate = TransactionUpdate(
+        groupTitle: _transaction.attributes.groupTitle,
+        transactions: txS,
+      );
+
+      final Response<TransactionSingle> resp = await api.v1TransactionsIdPut(
+        id: id,
+        body: txUpdate,
+      );
+      if (resp.isSuccessful && resp.body != null) {
+        await _reloadTransaction();
+      } else {
+        setState(() {
+          _isUpdating = false;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error al actualizar presupuesto")),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isUpdating = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error al actualizar presupuesto")),
+      );
+    }
+  }
+
   Future<void> _reloadTransaction() async {
     setState(() {
       _isUpdating = true;
@@ -207,6 +281,10 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     final IconData catIcon = hasCat
         ? FtCategoryIcon.forName(catName)
         : split.type.icon;
+    final String splitBudget = split.budgetName ?? "";
+    final bool splitHasBudget = splitBudget.isNotEmpty;
+    final bool splitShowBudget =
+        splitHasBudget || split.type == TransactionTypeProperty.withdrawal;
 
     return Container(
       decoration: BoxDecoration(
@@ -294,24 +372,52 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
               ),
             ),
           ),
-          if (split.budgetName != null &&
-              split.budgetName!.isNotEmpty) ...<Widget>[
+          if (splitShowBudget) ...<Widget>[
             const SizedBox(height: 8),
-            Row(
-              children: <Widget>[
-                Icon(
-                  Icons.pie_chart_outline,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.secondary,
+            InkWell(
+              onTap: _isUpdating
+                  ? null
+                  : () async {
+                      final BudgetSelectResult? result =
+                          await BudgetSelectPage.show(
+                            context,
+                            selectedBudgetName: splitBudget,
+                          );
+                      if (result == null) return;
+                      final String? newBudget = result.budget?.attributes.name;
+                      if (newBudget != splitBudget) {
+                        await _updateBudget(newBudget, splitIndex: index);
+                      }
+                    },
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.pie_chart_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        splitHasBudget
+                            ? splitBudget
+                            : S.of(context).generalUnknown,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  split.budgetName!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
           if (split.notes != null && split.notes!.isNotEmpty) ...<Widget>[
@@ -421,6 +527,12 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     final IconData catIcon = hasCategory
         ? FtCategoryIcon.forName(category)
         : t.type.icon;
+
+    // Budget for single split
+    final String budget = t.budgetName ?? "";
+    final bool hasBudget = budget.isNotEmpty;
+    final bool showBudget =
+        hasBudget || t.type == TransactionTypeProperty.withdrawal;
 
     Widget bodyContent = Column(
       children: <Widget>[
@@ -589,6 +701,67 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                     ),
                   ),
                   const Divider(height: 1),
+
+                  // Budget
+                  if (showBudget) ...<Widget>[
+                    InkWell(
+                      onTap: _isUpdating
+                          ? null
+                          : () async {
+                              final BudgetSelectResult? result =
+                                  await BudgetSelectPage.show(
+                                    context,
+                                    selectedBudgetName: budget,
+                                  );
+                              if (result == null) return;
+                              final String? newBudget =
+                                  result.budget?.attributes.name;
+                              if (newBudget != budget) {
+                                await _updateBudget(newBudget);
+                              }
+                            },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Row(
+                          children: <Widget>[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.secondary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.pie_chart_outline,
+                                color: Theme.of(context).colorScheme.secondary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                hasBudget
+                                    ? budget
+                                    : S.of(context).generalUnknown,
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                  ],
 
                   // Notes & Tags
                   if ((t.notes != null && t.notes!.isNotEmpty) ||

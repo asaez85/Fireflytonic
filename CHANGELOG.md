@@ -2,6 +2,56 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.3.1] - 2026-10-25
+
+### Nuevas Características y Mejoras
+- **Presupuestos (Budgets) en detalle y edición de movimientos**:
+  - **Vista de detalle (`lib/pages/transaction_consult.dart`)**: añadido campo interactivo de presupuesto para movimientos de gasto (o con presupuesto existente), permitiendo consultar y cambiar directamente el presupuesto asignado mediante un nuevo selector dedicado (`BudgetSelectPage`), incluyendo soporte completo en desgloses/splits.
+  - **Vista de edición (`lib/pages/transaction.dart`)**: integrado `TransactionBudget` en la edición simplificada de movimientos existentes (`_transactionEditSimple`) para transacciones de tipo gasto (`withdrawal`).
+  - **Nuevo selector (`lib/pages/transaction/budget_select.dart`)**: pantalla dedicada para buscar, seleccionar o remover presupuestos activos vía API.
+- **Mejoras en el Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - **Acceso directo a movimientos**: filas de transacciones pendientes táctiles y accesos directos desde las tarjetas y el diálogo de detalle de trabajos para abrir el detalle nativo (`TransactionConsultPage`) y editar movimientos cómodamente.
+  - **Mayor visibilidad del destinatario**: icono `storefront` y etiqueta dedicada "Destinatario: ..." para distinguir nítidamente el beneficiario respecto a la categoría sugerida.
+  - **Corrección de interfaz**: ajuste de altura y padding en el selector de pestañas (`TabBar`) restaurando el estándar Material (`kTabHeight`).
+
+---
+
+## [3.3.1-beta.4] - 2026-10-25
+
+### Nuevas Características
+- **Campo y selector de presupuesto (Budget) en detalle y edición de movimientos**:
+  - **Vista de detalle (`lib/pages/transaction_consult.dart`)**: añadido campo de presupuesto para movimientos de gasto (o con presupuesto existente), permitiendo consultar y cambiar directamente el presupuesto asignado mediante un nuevo selector dedicado (`BudgetSelectPage`), incluyendo soporte en desgloses/splits.
+  - **Vista de edición (`lib/pages/transaction.dart`)**: integrado `TransactionBudget` en la edición simplificada de movimientos existentes (`_transactionEditSimple`) para transacciones de tipo gasto (`withdrawal`).
+  - **Nuevo selector (`lib/pages/transaction/budget_select.dart`)**: pantalla dedicada para buscar, seleccionar o remover presupuestos activos vía API.
+
+## [3.3.1-beta.3] - 2026-10-23
+
+### Correcciones y Mejoras
+- **Selector de vistas del Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - Corregida la altura y el padding de las pestañas *Pendientes* y *Trabajos* envolviendo el contenido en widgets `Tab`, restaurando la altura estándar de Material (`kTabHeight`) y evitando que el selector se vea aplastado o desalineado.
+- **Mayor visibilidad del destinatario asignado por el Clasificador IA**:
+  - En los movimientos pendientes de revisión, el destinatario sugerido/asignado se muestra ahora con un icono `storefront` y la etiqueta "Destinatario: ...", evitando duplicados cuando coincide con la descripción y diferenciándolo claramente de la categoría sugerida.
+  - En la tarjeta y el diálogo de detalle de cada trabajo, el destinatario aparece destacado con icono y etiqueta, y el campo del diálogo se renombra a "Destinatario" para mayor claridad.
+
+## [3.3.1-beta.2] - 2026-10-23
+
+### Nuevas Características
+- **Acceso al detalle del movimiento desde los trabajos del Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - En la tarjeta de cada trabajo se añade un icono de acceso directo (`Icons.open_in_new`) cuando el trabajo está vinculado a una transacción; al pulsarlo se abre el detalle nativo del movimiento (`TransactionConsultPage`).
+  - En el diálogo de detalle del trabajo se añade un botón principal "Ver movimiento" (`FilledButton.icon`) que cierra el diálogo y navega al detalle de la transacción asociada.
+  - Ambos accesos reutilizan el método `_openTransactionById`, que consulta el movimiento completo en Firefly III (`GET /v1/transactions/{id}`) con loader y manejo de errores, y refresca la lista del clasificador si se realizan cambios.
+
+## [3.3.1-beta.1] - 2026-10-23
+
+### Nuevas Características
+- **Acceso al detalle y edición manual desde el Clasificador IA (`lib/pages/ai_categorizer.dart`)**:
+  - Las filas de transacciones pendientes de revisión ahora son táctiles (`InkWell`) e incluyen un icono de flecha (`Icons.chevron_right`).
+  - Al pulsar una transacción se consulta el detalle completo en Firefly III (`GET /v1/transactions/{id}`) con indicador de carga y manejo de errores mediante `SnackBar`.
+  - Se abre `TransactionConsultPage`, reutilizando el flujo nativo de visualización y edición de movimientos.
+  - Al volver de la pantalla de detalle con cambios, la lista de revisión del clasificador IA se refresca automáticamente para reflejar las modificaciones.
+
+---
+
 ## [3.3.0] - 2026-10-23
 
 ### Novedades y Clasificador IA
