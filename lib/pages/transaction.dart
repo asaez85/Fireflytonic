@@ -1933,8 +1933,7 @@ class _TransactionPageState extends State<TransactionPage>
     childs.add(const SizedBox(height: 16));
 
     // Budget (for withdrawals)
-    if (_budgetTextControllers.isNotEmpty &&
-        _transactionType == .withdrawal) {
+    if (_budgetTextControllers.isNotEmpty && _transactionType == .withdrawal) {
       childs.add(
         Row(
           children: <Widget>[

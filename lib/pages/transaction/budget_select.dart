@@ -27,9 +27,8 @@ class BudgetSelectPage extends StatefulWidget {
     return Navigator.push<BudgetSelectResult>(
       context,
       MaterialPageRoute<BudgetSelectResult>(
-        builder: (BuildContext context) => BudgetSelectPage(
-          selectedBudgetName: selectedBudgetName,
-        ),
+        builder: (BuildContext context) =>
+            BudgetSelectPage(selectedBudgetName: selectedBudgetName),
       ),
     );
   }
@@ -119,8 +118,7 @@ class _BudgetSelectPageState extends State<BudgetSelectPage> {
       return b.attributes.name.toLowerCase().contains(_searchQuery);
     }).toList();
 
-    final bool hasSelection =
-        widget.selectedBudgetName?.isNotEmpty ?? false;
+    final bool hasSelection = widget.selectedBudgetName?.isNotEmpty ?? false;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -154,7 +152,9 @@ class _BudgetSelectPageState extends State<BudgetSelectPage> {
                     horizontal: 20.0,
                     vertical: 16.0,
                   ),
-                  prefixIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  prefixIconColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -176,8 +176,9 @@ class _BudgetSelectPageState extends State<BudgetSelectPage> {
                   title: Text(
                     S.of(context).generalUnknown,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight:
-                          hasSelection ? FontWeight.normal : FontWeight.bold,
+                      fontWeight: hasSelection
+                          ? FontWeight.normal
+                          : FontWeight.bold,
                     ),
                   ),
                   trailing: !hasSelection
@@ -195,11 +196,14 @@ class _BudgetSelectPageState extends State<BudgetSelectPage> {
                 if (filtered.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(24.0),
-                    child: Center(child: Text("No se encontraron presupuestos")),
+                    child: Center(
+                      child: Text("No se encontraron presupuestos"),
+                    ),
                   )
                 else
                   ...filtered.map((BudgetRead b) {
-                    final bool isSelected = widget.selectedBudgetName != null &&
+                    final bool isSelected =
+                        widget.selectedBudgetName != null &&
                         widget.selectedBudgetName!.toLowerCase() ==
                             b.attributes.name.toLowerCase();
                     final IconData icon = FtCategoryIcon.forName(
@@ -224,24 +228,24 @@ class _BudgetSelectPageState extends State<BudgetSelectPage> {
                           ),
                           title: Text(
                             b.attributes.name,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
                           ),
                           trailing: isSelected
                               ? Icon(
                                   Icons.check,
-                                  color: Theme.of(context).colorScheme.secondary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
                                   size: 24,
                                 )
                               : null,
                           onTap: () {
-                            Navigator.pop(
-                              context,
-                              BudgetSelectResult(b),
-                            );
+                            Navigator.pop(context, BudgetSelectResult(b));
                           },
                         ),
                         const Divider(height: 1),

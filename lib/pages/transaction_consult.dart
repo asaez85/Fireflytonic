@@ -130,10 +130,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
     }
   }
 
-  Future<void> _updateBudget(
-    String? newBudgetName, {
-    int? splitIndex,
-  }) async {
+  Future<void> _updateBudget(String? newBudgetName, {int? splitIndex}) async {
     setState(() {
       _isUpdating = true;
     });
@@ -191,9 +188,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
           _isUpdating = false;
         });
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Error al actualizar presupuesto")),
         );
       }
@@ -202,9 +197,7 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
         _isUpdating = false;
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Error al actualizar presupuesto")),
       );
     }
@@ -290,8 +283,8 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
         : split.type.icon;
     final String splitBudget = split.budgetName ?? "";
     final bool splitHasBudget = splitBudget.isNotEmpty;
-    final bool splitShowBudget = splitHasBudget ||
-        split.type == TransactionTypeProperty.withdrawal;
+    final bool splitShowBudget =
+        splitHasBudget || split.type == TransactionTypeProperty.withdrawal;
 
     return Container(
       decoration: BoxDecoration(
@@ -387,12 +380,11 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                   : () async {
                       final BudgetSelectResult? result =
                           await BudgetSelectPage.show(
-                        context,
-                        selectedBudgetName: splitBudget,
-                      );
+                            context,
+                            selectedBudgetName: splitBudget,
+                          );
                       if (result == null) return;
-                      final String? newBudget =
-                          result.budget?.attributes.name;
+                      final String? newBudget = result.budget?.attributes.name;
                       if (newBudget != splitBudget) {
                         await _updateBudget(newBudget, splitIndex: index);
                       }
@@ -718,9 +710,9 @@ class _TransactionConsultPageState extends State<TransactionConsultPage> {
                           : () async {
                               final BudgetSelectResult? result =
                                   await BudgetSelectPage.show(
-                                context,
-                                selectedBudgetName: budget,
-                              );
+                                    context,
+                                    selectedBudgetName: budget,
+                                  );
                               if (result == null) return;
                               final String? newBudget =
                                   result.budget?.attributes.name;

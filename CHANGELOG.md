@@ -2,6 +2,14 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.3.1-beta.4] - 2026-10-25
+
+### Nuevas Características
+- **Campo y selector de presupuesto (Budget) en detalle y edición de movimientos**:
+  - **Vista de detalle (`lib/pages/transaction_consult.dart`)**: añadido campo de presupuesto para movimientos de gasto (o con presupuesto existente), permitiendo consultar y cambiar directamente el presupuesto asignado mediante un nuevo selector dedicado (`BudgetSelectPage`), incluyendo soporte en desgloses/splits.
+  - **Vista de edición (`lib/pages/transaction.dart`)**: integrado `TransactionBudget` en la edición simplificada de movimientos existentes (`_transactionEditSimple`) para transacciones de tipo gasto (`withdrawal`).
+  - **Nuevo selector (`lib/pages/transaction/budget_select.dart`)**: pantalla dedicada para buscar, seleccionar o remover presupuestos activos vía API.
+
 ## [3.3.1-beta.3] - 2026-10-23
 
 ### Correcciones y Mejoras
