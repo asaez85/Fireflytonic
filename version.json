@@ -1,6 +1,6 @@
 {
-  "version": "3.3.1-beta.3 (build 55)",
-  "versionCode": 553,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.3.1-beta.3/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Correcciones y Mejoras\n- **Selector de vistas del Clasificador IA (`lib/pages/ai_categorizer.dart`)**:\n  - Corregida la altura y el padding de las pestañas *Pendientes* y *Trabajos* envolviendo el contenido en widgets `Tab`, restaurando la altura estándar de Material (`kTabHeight`) y evitando que el selector se vea aplastado o desalineado.\n- **Mayor visibilidad del destinatario asignado por el Clasificador IA**:\n  - En los movimientos pendientes de revisión, el destinatario sugerido/asignado se muestra ahora con un icono `storefront` y la etiqueta \"Destinatario: ...\", evitando duplicados cuando coincide con la descripción y diferenciándolo claramente de la categoría sugerida.\n  - En la tarjeta y el diálogo de detalle de cada trabajo, el destinatario aparece destacado con icono y etiqueta, y el campo del diálogo se renombra a \"Destinatario\" para mayor claridad."
+  "version": "3.3.1-beta.4 (build 56)",
+  "versionCode": 563,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.3.1-beta.4/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Nuevas Características\n- **Campo y selector de presupuesto (Budget) en detalle y edición de movimientos**:\n  - **Vista de detalle (`lib/pages/transaction_consult.dart`)**: añadido campo de presupuesto para movimientos de gasto (o con presupuesto existente), permitiendo consultar y cambiar directamente el presupuesto asignado mediante un nuevo selector dedicado (`BudgetSelectPage`), incluyendo soporte en desgloses/splits.\n  - **Vista de edición (`lib/pages/transaction.dart`)**: integrado `TransactionBudget` en la edición simplificada de movimientos existentes (`_transactionEditSimple`) para transacciones de tipo gasto (`withdrawal`).\n  - **Nuevo selector (`lib/pages/transaction/budget_select.dart`)**: pantalla dedicada para buscar, seleccionar o remover presupuestos activos vía API."
 }
