@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:475077040578:android:3520fefc8f52de99f65e5b",
+        "android_client_info": {
+          "package_name": "com.asaezs.fireflytonic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzn23SmCjPhWa5hh7nED-JY84sK8A1rIw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:475077040578:android:7a5e34c557611189f65e5b",
         "android_client_info": {
           "package_name": "com.asaezs.fireflytonic.beta"
