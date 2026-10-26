@@ -1,6 +1,6 @@
 {
-  "version": "3.3.1-beta.4 (build 56)",
-  "versionCode": 563,
-  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.3.1-beta.4/fireflytonic-beta-arm64-v8a.apk",
-  "changelog": "### Nuevas Características\n- **Campo y selector de presupuesto (Budget) en detalle y edición de movimientos**:\n  - **Vista de detalle (`lib/pages/transaction_consult.dart`)**: añadido campo de presupuesto para movimientos de gasto (o con presupuesto existente), permitiendo consultar y cambiar directamente el presupuesto asignado mediante un nuevo selector dedicado (`BudgetSelectPage`), incluyendo soporte en desgloses/splits.\n  - **Vista de edición (`lib/pages/transaction.dart`)**: integrado `TransactionBudget` en la edición simplificada de movimientos existentes (`_transactionEditSimple`) para transacciones de tipo gasto (`withdrawal`).\n  - **Nuevo selector (`lib/pages/transaction/budget_select.dart`)**: pantalla dedicada para buscar, seleccionar o remover presupuestos activos vía API."
+  "version": "3.3.1-beta.5 (build 58)",
+  "versionCode": 583,
+  "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.3.1-beta.5/fireflytonic-beta-arm64-v8a.apk",
+  "changelog": "### Nuevas Características\n- **Soporte de notificaciones push de nuevos movimientos (FCM)**:\n  - Integración del cliente FCM (`firebase_core`, `firebase_messaging`) con recepción y manejo de avisos en primer y segundo plano.\n  - Nueva pantalla de ajustes 'Avisos de nuevos movimientos' (`lib/pages/settings/push_notifications.dart`) con interruptor de activación, comprobación y solicitud del permiso de sistema en Android 13+, visualización y copia de token FCM, y envío de notificación local de prueba.\n  - Configuración del plugin Google Services y vinculación con Firebase (`google-services.json`)."
 }
