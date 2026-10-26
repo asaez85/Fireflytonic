@@ -12,9 +12,11 @@ import 'package:timezone/data/latest.dart' as tz;
 
 import 'package:waterflyiii/app.dart';
 import 'package:waterflyiii/offline_cache.dart';
+import 'package:waterflyiii/services/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PushNotificationService().initialize();
   unawaited(OfflineCache.instance.init());
   Logger.root.level = kDebugMode ? Level.ALL : Level.INFO;
   Logger.root.onRecord.listen((LogRecord record) {

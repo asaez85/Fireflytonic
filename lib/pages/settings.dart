@@ -22,6 +22,8 @@ import 'package:waterflyiii/notificationlistener.dart';
 import 'package:waterflyiii/pages/settings/connection.dart';
 import 'package:waterflyiii/pages/settings/debug.dart';
 import 'package:waterflyiii/pages/settings/notifications.dart';
+import 'package:waterflyiii/pages/settings/push_notifications.dart';
+import 'package:waterflyiii/services/push_notification_service.dart';
 import 'package:waterflyiii/pages/settings/ai_categorizer.dart';
 import 'package:waterflyiii/settings.dart';
 import 'package:waterflyiii/updater.dart';
@@ -291,6 +293,34 @@ class SettingsPageState extends State<SettingsPage>
                     onClosed: (_) => setState(() {}),
                   );
                 },
+          ),
+          FutureBuilder<bool>(
+            future: PushNotificationService().isEnabled(),
+            builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+              final bool enabled = snapshot.data ?? true;
+              return OpenContainer(
+                openBuilder: (BuildContext context, Function closedContainer) =>
+                    const PushNotificationsSettingsPage(),
+                openColor: Theme.of(context).cardColor,
+                closedColor: Theme.of(context).cardColor,
+                closedElevation: 0,
+                closedBuilder: (BuildContext context, Function openContainer) =>
+                    ListTile(
+                      title: const Text("Avisos de nuevos movimientos"),
+                      subtitle: Text(
+                        enabled
+                            ? "Activado • Notificaciones push al importar transacciones"
+                            : "Desactivado • Notificaciones push al importar transacciones",
+                        maxLines: 2,
+                      ),
+                      leading: const CircleAvatar(
+                        child: Icon(Icons.notifications_active_outlined),
+                      ),
+                      onTap: () => openContainer(),
+                    ),
+                onClosed: (_) => setState(() {}),
+              );
+            },
           ),
         ],
         const AICategorizerSettingsSection(),

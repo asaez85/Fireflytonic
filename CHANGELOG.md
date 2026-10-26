@@ -2,6 +2,16 @@
 
 Todas las novedades notables de Fireflytonic se documentan en este archivo.
 
+## [3.4.0] - 2026-10-26
+
+### Nuevas Características y Mejoras
+- **Notificaciones Push de nuevos movimientos (Firebase Cloud Messaging)**:
+  - Integración completa del cliente FCM (`firebase_core`, `firebase_messaging`) para recepción y gestión de alertas en primer plano, segundo plano y con la app cerrada.
+  - Nueva pantalla de ajustes dedicada 'Avisos de nuevos movimientos' (`lib/pages/settings/push_notifications.dart`) con interruptor de activación, comprobación y solicitud interactiva del permiso en Android 13+ (`POST_NOTIFICATIONS`), visualización y copia de token FCM, y envío de notificación local de prueba.
+  - Configuración del plugin Google Services y vinculación con Firebase (`android/app/google-services.json`).
+
+---
+
 ## [3.3.1] - 2026-10-25
 
 ### Nuevas Características y Mejoras
@@ -15,6 +25,14 @@ Todas las novedades notables de Fireflytonic se documentan en este archivo.
   - **Corrección de interfaz**: ajuste de altura y padding en el selector de pestañas (`TabBar`) restaurando el estándar Material (`kTabHeight`).
 
 ---
+
+## [3.3.1-beta.5] - 2026-10-26
+
+### Nuevas Características
+- **Soporte de notificaciones push de nuevos movimientos (FCM)**:
+  - Integración del cliente FCM (`firebase_core`, `firebase_messaging`) con recepción y manejo de avisos en primer y segundo plano.
+  - Nueva pantalla de ajustes 'Avisos de nuevos movimientos' (`lib/pages/settings/push_notifications.dart`) con interruptor de activación, comprobación y solicitud del permiso de sistema en Android 13+, visualización y copia de token FCM, y envío de notificación local de prueba.
+  - Configuración del plugin Google Services y vinculación con Firebase (`google-services.json`).
 
 ## [3.3.1-beta.4] - 2026-10-25
 

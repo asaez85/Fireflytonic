@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "475077040578",
+    "project_id": "fireflytonic-9f3fc",
+    "storage_bucket": "fireflytonic-9f3fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475077040578:android:7a5e34c557611189f65e5b",
+        "android_client_info": {
+          "package_name": "com.asaezs.fireflytonic.beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzn23SmCjPhWa5hh7nED-JY84sK8A1rIw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
