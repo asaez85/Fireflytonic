@@ -1,6 +1,6 @@
 {
-  "version": "3.4.0 (build 59)",
-  "versionCode": 593,
+  "version": "3.4.0 (build 60)",
+  "versionCode": 603,
   "apkUrl": "https://github.com/asaez85/Fireflytonic/releases/download/v3.4.0/fireflytonic-arm64-v8a.apk",
-  "changelog": "### Nuevas Características y Mejoras\n- **Notificaciones Push de nuevos movimientos (Firebase Cloud Messaging)**:\n  - Integración completa del cliente FCM (`firebase_core`, `firebase_messaging`) para recepción y gestión de alertas en primer plano, segundo plano y con la app cerrada.\n  - Nueva pantalla de ajustes dedicada 'Avisos de nuevos movimientos' (`lib/pages/settings/push_notifications.dart`) con interruptor de activación, comprobación y solicitud interactiva del permiso en Android 13+ (`POST_NOTIFICATIONS`), visualización y copia de token FCM, y envío de notificación local de prueba.\n  - Configuración del plugin Google Services y vinculación con Firebase (`android/app/google-services.json`)."
+  "changelog": "### Nuevas Características y Mejoras\n- **Notificaciones Push de nuevos movimientos (Firebase Cloud Messaging)**:\n  - Integración completa del cliente FCM (`firebase_core`, `firebase_messaging`) para recepción y gestión de alertas en primer plano, segundo plano y con la app cerrada.\n  - Nueva pantalla de ajustes dedicada 'Avisos de nuevos movimientos' (`lib/pages/settings/push_notifications.dart`) con interruptor de activación, comprobación y solicitud interactiva del permiso en Android 13+ (`POST_NOTIFICATIONS`), visualización y copia de token FCM, y envío de notificación local de prueba.\n  - Configuración del plugin Google Services y vinculación con Firebase (`android/app/google-services.json`).\n\n---"
 }
